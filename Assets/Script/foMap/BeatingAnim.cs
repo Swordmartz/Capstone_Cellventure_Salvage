@@ -1,65 +1,54 @@
 using UnityEngine;
+using System.Collections;
 
 public class HeartFrameAnimator : MonoBehaviour
 {
     [Header("Frames")]
-    public GameObject[] heartFrames;
+    public GameObject[] heartPrefabs;
     public float frameRate = 10f;
 
     private int currentFrame = 0;
-    private float timer = 0f;
+    private GameObject[] pooledFrames;
 
-    private GameObject[] spawnedFrames;
+    private Vector3 hiddenPos = new Vector3(9999, 9999, 9999); // offscreen
 
     void Start()
     {
-        if (heartFrames.Length == 0)
+        if (heartPrefabs.Length == 0)
         {
-            Debug.LogWarning("No heart frames assigned!");
+            Debug.LogWarning("No heart prefabs assigned!");
             return;
         }
 
-        spawnedFrames = new GameObject[heartFrames.Length];
-
-        // Spawn all frames once
-        for (int i = 0; i < heartFrames.Length; i++)
+        // Preload all prefabs once
+        pooledFrames = new GameObject[heartPrefabs.Length];
+        for (int i = 0; i < heartPrefabs.Length; i++)
         {
-            spawnedFrames[i] = Instantiate(
-                heartFrames[i],
-                transform.position,
-                Quaternion.identity,
-                transform
-            );
-
-            spawnedFrames[i].transform.localPosition = Vector3.zero;
-            spawnedFrames[i].transform.localRotation = Quaternion.identity;
-            spawnedFrames[i].transform.localScale = Vector3.one;
-
-            spawnedFrames[i].SetActive(false); // disable initially
+            pooledFrames[i] = Instantiate(heartPrefabs[i], transform);
+            pooledFrames[i].transform.localPosition = hiddenPos; // keep hidden
         }
 
         // Show first frame
-        spawnedFrames[currentFrame].SetActive(true);
+        pooledFrames[0].transform.localPosition = Vector3.zero;
+
+        // Start coroutine
+        StartCoroutine(AnimateFrames());
     }
 
-    void Update()
+    IEnumerator AnimateFrames()
     {
-        if (spawnedFrames == null || spawnedFrames.Length == 0) return;
-
-        timer += Time.deltaTime;
-
-        if (timer >= 1f / frameRate)
+        while (true)
         {
-            timer = 0f;
+            yield return new WaitForSeconds(1f / frameRate);
 
-            // Hide current frame
-            spawnedFrames[currentFrame].SetActive(false);
+            // Hide current by moving offscreen (no SetActive)
+            pooledFrames[currentFrame].transform.localPosition = hiddenPos;
 
             // Next frame
-            currentFrame = (currentFrame + 1) % spawnedFrames.Length;
+            currentFrame = (currentFrame + 1) % pooledFrames.Length;
 
-            // Show next frame
-            spawnedFrames[currentFrame].SetActive(true);
+            // Show next
+            pooledFrames[currentFrame].transform.localPosition = Vector3.zero;
         }
     }
 }
