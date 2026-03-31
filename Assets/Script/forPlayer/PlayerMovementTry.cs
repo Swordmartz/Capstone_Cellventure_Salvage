@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerMovementTry : MonoBehaviour
 {
+
     [SerializeField] private float moveSpeed = 6f;
     [SerializeField] private float acceleration = 20f;
     [SerializeField] private float deceleration = 30f; // braking force
