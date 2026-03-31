@@ -7,12 +7,37 @@ public class Item : MonoBehaviour
     // Reference to your GuideSystem script
     [SerializeField] private AIGuide guideSystem;
 
+    // 🔥 NEW: Inventory check
+    [Header("Item Requirement")]
+    public bool requireItem = false;       
+    public Inventory playerInventory;      // Assign player inventory
+    public O2Item requiredItem;            // The item needed
+
     public void Execute()
     {
-        // Step 1: Disable guide system by setting its bool to false
+        // 🧠 STEP 0: Check if item is required
+        if (requireItem)
+        {
+            if (playerInventory == null)
+            {
+                Debug.LogWarning("Inventory not assigned.");
+                return;
+            }
+
+            if (!playerInventory.HasItem || playerInventory.currentItem != requiredItem)
+            {
+                StartCoroutine(guideSystem.HandleTriggerSequence3());
+                Debug.Log("Required item not found. Cannot execute.");
+                return; // ❌ STOP everything
+            }
+
+            Debug.Log("Required item found. Proceeding...");
+        }
+
+        // Step 1: Disable guide system
         if (guideSystem != null)
         {
-            guideSystem.guideEnabled = false; // set the guide flag to false
+            guideSystem.guideEnabled = false;
             Debug.Log("Guide system deactivated.");
         }
         else
@@ -31,16 +56,12 @@ public class Item : MonoBehaviour
 
                 if (rb != null)
                 {
-                    // Stop movement
                     rb.linearVelocity = Vector3.zero;
                     rb.angularVelocity = Vector3.zero;
-
-                    // Teleport player
                     rb.position = teleportTarget.position;
                 }
                 else
                 {
-                    // Fallback if no Rigidbody
                     player.transform.position = teleportTarget.position;
                 }
 

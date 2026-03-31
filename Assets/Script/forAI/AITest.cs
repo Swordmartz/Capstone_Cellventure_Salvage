@@ -4,8 +4,17 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
-public class AIGuide : MonoBehaviour
+public class AIGuideDecisionTree : MonoBehaviour
 {
+    public enum AIState
+    {
+        Idle,
+        DisableTarget,
+        PlayDialogue,
+        EnableGuide,
+        PostDialogueActions,
+        Completed
+    }
 
     [Header("UI References")]
     public GameObject dialoguePanel;
@@ -44,17 +53,19 @@ public class AIGuide : MonoBehaviour
 
     public List<DialogueSet> dialogueSets = new List<DialogueSet>();
 
-    private int currentMessage = 0;
-    private Coroutine typingCoroutine;
-    private DialogueSet activeDialogueSet;
-    private bool dialogueFinished = false;
-
     [Header("Trigger Settings")]
     public GameObject targetGameObject; // GameObject1
     public GameObject oxygen;           // GameObject2, inactive at start
-    
+    public string dialogueSetName;      // Name of the dialogue set to play
 
-    // ------------------ Unity Callbacks ------------------
+    // ------------------ Internal ------------------
+    private int currentMessage = 0;
+    private Coroutine typingCoroutine;
+    private DialogueSet activeDialogueSet;
+    public bool dialogueFinished = false;
+
+    private AIState currentState = AIState.Idle;
+
     void Start()
     {
         if (dialoguePanel != null) dialoguePanel.SetActive(false);
@@ -66,20 +77,14 @@ public class AIGuide : MonoBehaviour
 
         if (targetObject != null) targetObject.SetActive(false);
         if (guideLine != null) guideLine.enabled = false;
-
-        if (dialogueSets.Count > 0)
-        {
-            TriggerDialogue(dialogueSets[0].setName);
-        }
     }
 
     void Update()
     {
-        // ---------- Guide Line Logic ----------
+        // ------------------ Guide Line Logic ------------------
         if (dialogueFinished && guideEnabled && guideMark != null && player != null && guideLine != null)
         {
             float distance = Vector3.Distance(player.position, guideMark.position);
-
             bool blocked = Physics.Linecast(player.position, guideMark.position, obstacleMask);
 
             if (!blocked && distance >= minDistance && distance <= maxDistance)
@@ -98,102 +103,52 @@ public class AIGuide : MonoBehaviour
         {
             guideLine.enabled = false;
         }
-    }
-    // ------------------ Trigger Sequence ------------------
-    public IEnumerator HandleTriggerSequence1()
-    {
-        // 1️⃣ Immediately disable GameObject1
-        if (targetGameObject != null)
-            targetGameObject.SetActive(false);
 
-        // 2️⃣ Play the second dialogue set (index 1)
-        if (dialogueSets.Count > 1)
+        // ------------------ Decision Tree Logic ------------------
+        switch (currentState)
         {
-            // Reset dialogueFinished locally for this set
-            bool localDialogueFinished = false;
+            case AIState.Idle:
+                break; // Waiting for trigger
 
-            // Trigger second dialogue
-            TriggerDialogue(dialogueSets[1].setName);
+            case AIState.DisableTarget:
+                if (targetGameObject != null) targetGameObject.SetActive(false);
+                currentState = AIState.PlayDialogue;
+                break;
 
-            // Wait until the dialogue finishes
-            StartCoroutine(WaitForDialogue(() => localDialogueFinished = true));
-            while (!localDialogueFinished)
-                yield return null;
+            case AIState.PlayDialogue:
+                if (dialogueSets.Count > 0)
+                {
+                    TriggerDialogue(dialogueSetName);
+                    currentState = AIState.EnableGuide;
+                }
+                else
+                {
+                    currentState = AIState.PostDialogueActions;
+                }
+                break;
+
+            case AIState.EnableGuide:
+                // Wait until dialogue finishes
+                if (dialogueFinished)
+                    currentState = AIState.PostDialogueActions;
+                break;
+
+            case AIState.PostDialogueActions:
+                guideEnabled = true;
+                if (oxygen != null)
+                {
+                    oxygen.SetActive(true);
+                    guideMark = oxygen.transform;
+                }
+                if (targetGameObject != null)
+                    targetGameObject.SetActive(true);
+
+                currentState = AIState.Completed;
+                break;
+
+            case AIState.Completed:
+                break; // AI sequence finished
         }
-
-        // 3️⃣ Reactivate guide system
-        guideEnabled = true;
-
-        // 4️⃣ Activate GameObject2 (oxygen) and switch guideMark
-        if (oxygen != null)
-        {
-            oxygen.SetActive(true);
-            guideMark = oxygen.transform;
-        }
-
-        // 5️⃣ Re-enable GameObject1
-        if (targetGameObject != null)
-            targetGameObject.SetActive(true);
-    }
-
-        public IEnumerator HandleTriggerSequence2()
-    {
-        // 1️⃣ Disable GameObject
-        if (targetGameObject != null)
-            targetGameObject.SetActive(false);
-
-        // 2️⃣ Play the THIRD dialogue set
-        if (dialogueSets.Count > 2)
-        {
-            TriggerDialogue(dialogueSets[2].setName);
-
-            // 3️⃣ Wait until dialogue finishes
-            yield return new WaitUntil(() => dialogueFinished);
-        }
-        else
-        {
-            Debug.LogWarning("Dialogue Set 3 (index 2) not found!");
-        }
-
-        // 4️⃣ Reactivate GameObject
-        if (targetGameObject != null)
-            targetGameObject.SetActive(true);
-    }
-
-    public IEnumerator HandleTriggerSequence3()
-    {
-        // 1️⃣ Disable GameObject
-        if (targetGameObject != null)
-            targetGameObject.SetActive(false);
-
-        // 2️⃣ Reset dialogue flag
-        dialogueFinished = false;
-
-        // 3️⃣ Play the FOURTH dialogue set (index 3)
-        if (dialogueSets.Count > 3)
-        {
-            TriggerDialogue(dialogueSets[3].setName);
-
-            // 4️⃣ Wait until dialogue finishes
-            yield return new WaitUntil(() => dialogueFinished);
-        }
-        else
-        {
-            Debug.LogWarning("Dialogue Set 4 (index 3) not found!");
-        }
-
-        // 5️⃣ Reactivate GameObject
-        if (targetGameObject != null)
-            targetGameObject.SetActive(true);
-    }
-    // Helper coroutine to track when a dialogue finishes
-    private IEnumerator WaitForDialogue(System.Action onFinished)
-    {
-        // Wait until the current dialogue set is done
-        while (activeDialogueSet != null)
-            yield return null;
-
-        onFinished?.Invoke();
     }
 
     // ------------------ Dialogue System ------------------
@@ -205,6 +160,7 @@ public class AIGuide : MonoBehaviour
         {
             activeDialogueSet = set;
             currentMessage = 0;
+            dialogueFinished = false;
 
             if (dialoguePanel != null) dialoguePanel.SetActive(true);
             ShowNextMessage();
@@ -212,6 +168,7 @@ public class AIGuide : MonoBehaviour
         else
         {
             Debug.LogWarning($"Dialogue set '{setName}' not found or empty.");
+            dialogueFinished = true;
         }
     }
 
@@ -270,5 +227,12 @@ public class AIGuide : MonoBehaviour
         {
             ShowNextMessage();
         }
+    }
+
+    // ------------------ Public Trigger ------------------
+    public void TriggerAISequence()
+    {
+        if (currentState == AIState.Idle || currentState == AIState.Completed)
+            currentState = AIState.DisableTarget;
     }
 }
