@@ -9,9 +9,12 @@ public class Item : MonoBehaviour
 
     // 🔥 NEW: Inventory check
     [Header("Item Requirement")]
-    public bool requireItem = false;       
+    public bool requireItem = false;
     public Inventory playerInventory;      // Assign player inventory
     public O2Item requiredItem;            // The item needed
+
+    [Header("Optional Object to Disable")]
+    public GameObject optionalObjectToDisable; // Assign if you want to disable something
 
     public void Execute()
     {
@@ -43,6 +46,13 @@ public class Item : MonoBehaviour
         else
         {
             Debug.LogWarning("GuideSystem reference not assigned.");
+        }
+
+        // ✅ Step 1.5: Disable optional object if assigned
+        if (optionalObjectToDisable != null)
+        {
+            optionalObjectToDisable.SetActive(false);
+            Debug.Log(optionalObjectToDisable.name + " disabled.");
         }
 
         // Step 2: Teleport the player

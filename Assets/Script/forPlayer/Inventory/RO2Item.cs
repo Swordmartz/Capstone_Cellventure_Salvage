@@ -10,10 +10,6 @@ public class PickupButton : MonoBehaviour
     public Image inventoryImage;         // UI Image where the icon will appear
     [SerializeField] private AIGuide guideSystem;
 
-    [Header("Animator Change")]
-    public Animator playerAnimator;            // Player Animator component
-    public RuntimeAnimatorController newController; // The new Animator Controller to switch to
-
 
     private void Start()
     {
@@ -58,12 +54,6 @@ public class PickupButton : MonoBehaviour
         {
             inventoryImage.sprite = itemToPickup.icon;
             inventoryImage.enabled = true;
-        }
-
-        // Change the player animator controller
-        if (playerAnimator != null && newController != null)
-        {
-            playerAnimator.runtimeAnimatorController = newController;
         }
 
         // Hide the pickup button
