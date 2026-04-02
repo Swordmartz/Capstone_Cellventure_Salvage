@@ -8,7 +8,8 @@ public class PickupButton : MonoBehaviour
     public Button inventoryButton;       // Button to show item description
     public Button pickupButton;          // Button to pick up this item
     public Image inventoryImage;         // UI Image where the icon will appear
-    [SerializeField] private AIGuide guideSystem;
+    [SerializeField] private AIforGuide guideSystem;
+    [SerializeField] private AI_TestTD AIM;
 
 
     private void Start()
@@ -30,7 +31,7 @@ public class PickupButton : MonoBehaviour
             Debug.Log("Guide system deactivated.");
 
             // 🔥 START the trigger sequence
-            StartCoroutine(guideSystem.HandleTriggerSequence2());
+            StartCoroutine(AIM.HandleTriggerSequence2());
         }
         else
         {

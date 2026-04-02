@@ -2,7 +2,8 @@ using UnityEngine;
 
 public class AI_Trigger : MonoBehaviour
 {
-    public AIGuide guide;          // Assign AIGuide
+    public AI_TestTD MAI;          // Assign AIGuide
+    public AIforGuide AIG;
     public float newMaxDistance = 5f; // Your custom distance
 
     private bool triggered = false;
@@ -16,10 +17,10 @@ public class AI_Trigger : MonoBehaviour
             triggered = true;
 
             // 🎯 Set the max distance of the guide
-            guide.maxDistance = newMaxDistance;
+            AIG.maxDistance = newMaxDistance;
 
             // Start your sequence
-            guide.StartCoroutine(guide.HandleTriggerSequence1());
+            MAI.StartCoroutine(MAI.HandleTriggerSequence1());
         }
     }
 }

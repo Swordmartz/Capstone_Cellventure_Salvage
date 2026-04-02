@@ -15,7 +15,7 @@ EditorBuildSettings:
     path: Assets/Scenes/CharacterSelect.unity
     guid: c5826706aec12ea488baf3081f3f8c7d
   - enabled: 1
-    path: Assets/Scenes/Chapter1.unity
+    path: Assets/Scenes/Chapter1 - IRBC.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
     com.unity.adaptivePerformance.basic.provider_settings: {fileID: 11400000, guid: 0d3f4e05340d6274ab04857f14418b92, type: 2}

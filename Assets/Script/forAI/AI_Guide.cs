@@ -100,6 +100,33 @@ public class AIGuide : MonoBehaviour
         }
     }
     // ------------------ Trigger Sequence ------------------
+    public IEnumerator HandleTriggerSequence0()
+    {
+        // 1️⃣ Disable GameObject
+        if (targetGameObject != null)
+            targetGameObject.SetActive(false);
+
+        // 2️⃣ Play FIRST dialogue set (index 0)
+        if (dialogueSets.Count > 0)
+        {
+            // Reset flag BEFORE starting
+            dialogueFinished = false;
+
+            TriggerDialogue(dialogueSets[0].setName);
+
+            // 3️⃣ Wait until dialogue finishes
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 1 (index 0) not found!");
+        }
+
+        // 4️⃣ Reactivate GameObject
+        if (targetGameObject != null)
+            targetGameObject.SetActive(true);
+    }
+
     public IEnumerator HandleTriggerSequence1()
     {
         // 1️⃣ Immediately disable GameObject1

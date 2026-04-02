@@ -5,7 +5,8 @@ public class Item : MonoBehaviour
     [SerializeField] private Transform teleportTarget;
 
     // Reference to your GuideSystem script
-    [SerializeField] private AIGuide guideSystem;
+    [SerializeField] private AI_TestTD AI_Test;
+    [SerializeField] private AIforGuide guideSystem;
 
     // 🔥 NEW: Inventory check
     [Header("Item Requirement")]
@@ -29,7 +30,7 @@ public class Item : MonoBehaviour
 
             if (!playerInventory.HasItem || playerInventory.currentItem != requiredItem)
             {
-                StartCoroutine(guideSystem.HandleTriggerSequence3());
+                StartCoroutine(AI_Test.HandleTriggerSequence3());
                 Debug.Log("Required item not found. Cannot execute.");
                 return; // ❌ STOP everything
             }
@@ -38,7 +39,7 @@ public class Item : MonoBehaviour
         }
 
         // Step 1: Disable guide system
-        if (guideSystem != null)
+        if (AI_Test != null)
         {
             guideSystem.guideEnabled = false;
             Debug.Log("Guide system deactivated.");
