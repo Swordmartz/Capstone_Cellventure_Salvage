@@ -30,7 +30,7 @@ public class Item : MonoBehaviour
 
             if (!playerInventory.HasItem || playerInventory.currentItem != requiredItem)
             {
-                StartCoroutine(AI_Test.HandleTriggerSequence3());
+                StartCoroutine(AI_Test.DialogueSequence3IRBC());
                 Debug.Log("Required item not found. Cannot execute.");
                 return; // ❌ STOP everything
             }

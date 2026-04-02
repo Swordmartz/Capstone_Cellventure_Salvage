@@ -43,19 +43,7 @@ public class AIforDialogue : MonoBehaviour
     public GameObject targetGameObject;
 
     // ------------------ Setup ------------------
-    void Start()
-    {
-        if (dialoguePanel != null) dialoguePanel.SetActive(false);
-
-        if (nextButton != null)
-        {
-            nextButton.gameObject.SetActive(false);
-            nextButton.onClick.AddListener(OnNextButton);
-        }
-
-        if (targetObject != null)
-            targetObject.SetActive(false);
-    }
+   
 
     // ------------------ Dialogue Core ------------------
 

@@ -9,7 +9,8 @@ public class SpriteLooksCamera : MonoBehaviour
         cam = Camera.main;
     }
     void LateUpdate()
-    {
+    { 
         transform.LookAt(transform.position + Camera.main.transform.forward);
     }
+
 }

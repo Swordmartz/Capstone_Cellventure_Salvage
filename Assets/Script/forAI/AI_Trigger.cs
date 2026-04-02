@@ -20,7 +20,7 @@ public class AI_Trigger : MonoBehaviour
             AIG.maxDistance = newMaxDistance;
 
             // Start your sequence
-            MAI.StartCoroutine(MAI.HandleTriggerSequence1());
+            MAI.StartCoroutine(MAI.DialogueSequence1IRBC());
         }
     }
 }

@@ -31,7 +31,7 @@ public class PickupButton : MonoBehaviour
             Debug.Log("Guide system deactivated.");
 
             // 🔥 START the trigger sequence
-            StartCoroutine(AIM.HandleTriggerSequence2());
+            StartCoroutine(AIM.DialogueSequence2IRBC());
         }
         else
         {
