@@ -10,6 +10,7 @@ public class AI_TestTD : MonoBehaviour
     public AIforGuide guideSystem; // Your guide script
     public GameObject oxygen;
     public LayerMask enemyLayer;
+    public GameObject MB;
 
     [Header("Triggers")]
     public bool playerInTrigger = false;
@@ -71,9 +72,20 @@ public class AI_TestTD : MonoBehaviour
             dialogueSystem.targetGameObject.SetActive(false);
 
         }
+        if (MB != null)
+        {
+            MB.SetActive(true);
+            dialogueSystem.dialoguePanel.SetActive(false);
+        }
         if (line != null)
         {
             line.SetActive(false);
+        }
+        yield return new WaitForSeconds(5f);
+        if (MB != null)
+        {
+            MB.SetActive(false);
+
         }
 
         // ------------------- Step 2: Play dialogue index 0 -------------------
