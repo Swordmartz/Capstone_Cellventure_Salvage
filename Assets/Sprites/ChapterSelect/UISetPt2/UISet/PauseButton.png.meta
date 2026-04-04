@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 0ccf9e4582805f44b97276662fb58b28
+guid: 45991d41327fcfa4b8ff8a09a0b1cc01
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -110,13 +110,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: LevelHeader_0
+      name: PauseButton_0
       rect:
         serializedVersion: 2
-        x: 636
-        y: 534
-        width: 672
-        height: 92
+        x: 753
+        y: 584
+        width: 97
+        height: 81
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -125,8 +125,30 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7d87ef574b4c4e34f905720d300b524b
-      internalID: 2130797535
+      spriteID: 789e2a3abf8cc8747a0c7481be3484a3
+      internalID: -191822672
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PauseButton_1
+      rect:
+        serializedVersion: 2
+        x: 711
+        y: 665
+        width: 173
+        height: 134
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 22d3d20d7a17e274ebc6b59edbc69056
+      internalID: 1329159846
       vertices: []
       indices: 
       edges: []
@@ -135,7 +157,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 2d0bce65cf48af74d8ea3fb7c6d2c339
     internalID: 0
     vertices: []
     indices: 
@@ -145,7 +167,8 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      LevelHeader_0: 2130797535
+      PauseButton_0: -191822672
+      PauseButton_1: 1329159846
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

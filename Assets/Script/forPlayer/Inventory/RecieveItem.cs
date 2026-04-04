@@ -5,7 +5,7 @@ public class ItemReceiver : MonoBehaviour
 {
     [Header("UI")]
     public Button useButton; // Button to press
-
+    public AI_TestTD halu;
     [Header("Item Requirement")]
     public bool requireItem = true;
     public Inventory playerInventory;
@@ -70,7 +70,6 @@ public class ItemReceiver : MonoBehaviour
 
             Debug.Log("Item received!");
 
-            // Consume item if needed
             if (consumeItem)
             {
                 playerInventory.ClearItem();
@@ -78,7 +77,14 @@ public class ItemReceiver : MonoBehaviour
             }
         }
 
-        // Hide button after use
+        // ✅ Increment the counter safely
+        if (halu != null)
+        {
+            halu.itemsDelivered++;
+            halu.UpdateCounterUI(); // ✅ refresh the UI
+            Debug.Log("Items delivered: " + halu.itemsDelivered);
+        }
+
         if (useButton != null)
             useButton.gameObject.SetActive(false);
     }

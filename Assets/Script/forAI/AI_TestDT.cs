@@ -1,4 +1,5 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -6,20 +7,23 @@ using UnityEngine.SceneManagement;
 public class AI_TestTD : MonoBehaviour
 {
     [Header("Reference")]
-    public AIforDialogue dialogueSystem;  // Your dialogue script
-    public AIforGuide guideSystem; // Your guide script
+    public AIforDialogue dialogueSystem;
+    public AIforGuide guideSystem;
     public GameObject oxygen;
     public LayerMask enemyLayer;
     public GameObject MB;
 
     [Header("Triggers")]
     public bool playerInTrigger = false;
-
     private bool sequenceRunning = false;
 
     [Header("CheatSystem")]
     public GameObject line;
 
+    [Header("Mission Progress")]
+    public int itemsDelivered = 0;        // counter
+    public int deliveryThreshold = 5;     // win condition
+    public TMP_Text counterText;          // ✅ assign a TMP_Text in Inspector
 
     void Start()
     {
@@ -38,19 +42,19 @@ public class AI_TestTD : MonoBehaviour
             Debug.Log("no");
         }
 
+        // Initialize UI
+        UpdateCounterUI();
     }
 
     void Update()
     {
-        // Example: detect trigger to advance sequence
         if (playerInTrigger && !sequenceRunning)
         {
             StartCoroutine(DialogueSequence0IRBC());
-            playerInTrigger = false; // reset trigger
+            playerInTrigger = false;
         }
     }
 
-    // ---------------- TRIGGER HANDLERS ----------------
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
@@ -61,6 +65,15 @@ public class AI_TestTD : MonoBehaviour
     {
         if (other.CompareTag("Player"))
             playerInTrigger = false;
+    }
+
+    // ✅ Call this whenever itemsDelivered changes
+    public void UpdateCounterUI()
+    {
+        if (counterText != null)
+        {
+            counterText.text = $"{itemsDelivered}/{deliveryThreshold}";
+        }
     }
 
     // ---------------- CORE SEQUENCE ----------------
