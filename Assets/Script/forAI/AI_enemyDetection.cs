@@ -56,25 +56,26 @@ public class DetectionTest : MonoBehaviour
 
         if (!isHiding && canHide && distanceToPlayer <= detectionRadius)
         {
-            Transform nearestHideable = FindNearestHideable();
-
-            if (nearestHideable != null)
+            // Only choose a hideable if we don't already have one locked in
+            if (currentTarget == null)
             {
-                if (currentTarget != nearestHideable)
+                Transform randomHideable = FindRandomHideable();
+
+                if (randomHideable != null)
                 {
-                    currentTarget = nearestHideable;
+                    currentTarget = randomHideable;
                     agent.SetDestination(currentTarget.position);
 
                     float boostFactor = Mathf.Clamp01(1f - (float)hideCount / maxBoosts);
                     float boostedSpeed = Mathf.Lerp(normalSpeed, maxBoostSpeed, boostFactor);
 
-                    agent.speed = boostedSpeed;
-                    StartCoroutine(GraduallyReduceSpeed());
+                    StartCoroutine(ApplyBoostAfterSlow(boostedSpeed));
 
                     Debug.Log($"{name} detected player! Moving to hideable: {currentTarget.name} with boosted speed {agent.speed}");
                 }
             }
         }
+
 
         if (currentTarget != null && !isHiding && canHide)
         {
@@ -155,24 +156,39 @@ public class DetectionTest : MonoBehaviour
         }
     }
 
-    private Transform FindNearestHideable()
+    private Transform FindRandomHideable()
     {
         Collider[] hits = Physics.OverlapSphere(transform.position, searchRadius, hideableLayer);
         if (hits.Length == 0) return null;
 
-        Transform nearest = hits[0].transform;
-        float minDist = Vector3.Distance(transform.position, nearest.position);
+        int randomIndex = Random.Range(0, hits.Length);
+        return hits[randomIndex].transform;
+    }
 
-        foreach (Collider c in hits)
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, detectionRadius);
+
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireSphere(transform.position, searchRadius);
+    }
+    private IEnumerator ApplyBoostAfterSlow(float boostedSpeed)
+    {
+        Pathogen pathogen = GetComponent<Pathogen>();
+        if (pathogen != null)
         {
-            float dist = Vector3.Distance(transform.position, c.transform.position);
-            if (dist < minDist)
+            // Wait until slow effect ends
+            while (pathogen.isSlowed)
             {
-                nearest = c.transform;
-                minDist = dist;
+                yield return null;
             }
         }
 
-        return nearest;
+        // Now apply boost
+        agent.speed = boostedSpeed;
+        StartCoroutine(GraduallyReduceSpeed());
+        Debug.Log($"{name} applied boost AFTER slow finished. Current speed: {agent.speed}");
     }
+
 }

@@ -4,35 +4,41 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerMovementTry : MonoBehaviour
 {
-
     [SerializeField] private float moveSpeed = 6f;
     [SerializeField] private float acceleration = 20f;
-    [SerializeField] private float deceleration = 30f; // braking force
+    [SerializeField] private float deceleration = 30f;
 
     private Rigidbody rb;
     private Vector2 movementInput;
     private Vector3 targetVelocity;
 
+    // Store last joystick direction for attacks
+    public Vector3 lastInputDirection = Vector3.forward;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        rb.freezeRotation = true; // prevent unwanted physics rotation
+        rb.freezeRotation = true;
     }
 
     void Update()
     {
-        // Desired velocity based on input
         targetVelocity = new Vector3(movementInput.x, 0, movementInput.y) * moveSpeed;
+
+        // Update last direction if joystick moved
+        if (movementInput.sqrMagnitude > 0.01f)
+        {
+            lastInputDirection = new Vector3(movementInput.x, 0, movementInput.y).normalized;
+        }
     }
 
     void FixedUpdate()
     {
-        Vector3 velocity = rb.linearVelocity; //  use linearVelocity
+        Vector3 velocity = rb.linearVelocity;
         Vector3 horizontalVel = new Vector3(velocity.x, 0, velocity.z);
 
         if (movementInput.sqrMagnitude > 0.01f)
         {
-            // Accelerate toward target velocity
             Vector3 velocityChange = targetVelocity - horizontalVel;
             velocityChange = Vector3.ClampMagnitude(velocityChange, acceleration * Time.fixedDeltaTime);
 
@@ -44,7 +50,6 @@ public class PlayerMovementTry : MonoBehaviour
         }
         else
         {
-            // Decelerate smoothly when no input
             horizontalVel = Vector3.MoveTowards(horizontalVel, Vector3.zero, deceleration * Time.fixedDeltaTime);
 
             rb.linearVelocity = new Vector3(

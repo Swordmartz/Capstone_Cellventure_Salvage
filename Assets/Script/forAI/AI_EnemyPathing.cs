@@ -4,52 +4,85 @@ using System.Collections;
 
 public class Pathogen : MonoBehaviour
 {
-    [Header("Pathing")]
-    public Transform targetArea;            // original target area
-    private Transform originalTarget;       // store original target
-    private NavMeshAgent agent;
-
-    [Header("Health")]
     public int health = 10;
+    public float moveSpeed = 5f;
+    public float acceleration = 8f; // default acceleration
+    public bool isSlowed = false; // add this at the top
 
-    [Header("Hide Settings")]
-    public LayerMask hideableLayer;         // objects to hide behind
-    public float hideDuration = 3f;         // seconds to hide
-
-    [Header("Player Detection")]
-    public Transform player;                // assign player
-    public float detectionRadius = 5f;      // player detection range
+    private float originalSpeed;
+    private float originalAcceleration;
+    private NavMeshAgent agent;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        originalTarget = targetArea;
+        if (agent != null)
+        {
+            agent.speed = moveSpeed;
+            agent.acceleration = acceleration;
 
-        if (targetArea != null)
-            agent.SetDestination(targetArea.position);
+            originalSpeed = agent.speed;
+            originalAcceleration = agent.acceleration;
+        }
+        else
+        {
+            originalSpeed = moveSpeed;
+            originalAcceleration = acceleration;
+        }
     }
-
-    
 
     public void TakeDamage(int amount)
     {
+        // If invincible, ignore damage from projectiles
+        DetectionTest detection = GetComponent<DetectionTest>();
+        if (detection != null && detection.isInvincible)
+        {
+            Debug.Log($"{name} is invincible! Ignoring projectile damage.");
+            return;
+        }
+
+        // Apply damage normally
         health -= amount;
+        health = Mathf.Max(health, 0); // clamp to 0
+
         if (health <= 0)
             gameObject.SetActive(false);
     }
 
-    private void OnDrawGizmosSelected()
+
+    public void ApplySlow(float slowFactor, float duration)
     {
-        if (targetArea != null)
+        // If invincible, ignore slow
+        DetectionTest detection = GetComponent<DetectionTest>();
+        if (detection != null && detection.isInvincible)
         {
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(targetArea.position, 0.5f);
+            Debug.Log($"{name} is invincible! Slow effect ignored.");
+            return;
         }
 
-        if (player != null)
+        StopAllCoroutines();
+        StartCoroutine(SlowCoroutine(slowFactor, duration));
+    }
+
+
+    private IEnumerator SlowCoroutine(float slowFactor, float duration)
+    {
+        isSlowed = true;
+
+        if (agent != null)
         {
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(player.position, detectionRadius);
+            agent.speed = originalSpeed * slowFactor;
+            agent.acceleration = originalAcceleration * (1f / slowFactor);
         }
+
+        yield return new WaitForSeconds(duration);
+
+        if (agent != null)
+        {
+            agent.speed = originalSpeed;
+            agent.acceleration = originalAcceleration;
+        }
+
+        isSlowed = false; // slow finished
     }
 }

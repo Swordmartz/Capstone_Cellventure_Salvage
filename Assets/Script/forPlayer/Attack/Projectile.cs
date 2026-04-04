@@ -1,43 +1,81 @@
 using UnityEngine;
 
-public class Projectile : MonoBehaviour
+public class PlayerShooter : MonoBehaviour
 {
-    public int damage = 5;
-    public LayerMask enemyLayer;
-    public float speed = 10f;
-    public float lifetime = 3f;
+    [Header("Projectile Settings")]
+    public GameObject projectilePrefab;   // assign prefab in Inspector
+    public Transform firePoint;           // empty GameObject at gun barrel
+    public float projectileSpeed = 10f;
+    public float projectileLifeTime = 5f;
+    public int projectileDamage = 1;
 
-    private float timer = 0f;
-    private bool stopped = false;
+    private PlayerMovementTry playerMovement;
+
+    void Start()
+    {
+        playerMovement = GetComponent<PlayerMovementTry>();
+    }
+
+    // Called by UI Button OnClick()
+    public void Shoot()
+    {
+        // Use last joystick direction from PlayerMovementTry
+        Vector3 shootDir = playerMovement.lastInputDirection;
+        if (shootDir.sqrMagnitude < 0.01f)
+        {
+            // fallback: use player facing if no input
+            shootDir = transform.forward;
+        }
+
+        // Spawn projectile at firePoint
+        GameObject proj = Instantiate(projectilePrefab, firePoint.position, Quaternion.LookRotation(shootDir));
+
+        // Add movement + collision behavior directly here
+        Rigidbody rb = proj.GetComponent<Rigidbody>();
+        if (rb == null)
+        {
+            rb = proj.AddComponent<Rigidbody>();
+            rb.isKinematic = true; // move manually
+        }
+
+        proj.AddComponent<ProjectileBehaviour>().Init(projectileSpeed, projectileLifeTime, projectileDamage);
+    }
+}
+
+// Inner class for projectile behavior
+public class ProjectileBehaviour : MonoBehaviour
+{
+    private float speed;
+    private float lifeTime;
+    private int damage;
+
+    public void Init(float spd, float life, int dmg)
+    {
+        speed = spd;
+        lifeTime = life;
+        damage = dmg;
+        Destroy(gameObject, lifeTime);
+    }
 
     void Update()
     {
-        if (!stopped)
-        {
-            // Move forward in the direction set by rotation
-            transform.Translate(Vector3.forward * speed * Time.deltaTime);
+        transform.Translate(Vector3.forward * speed * Time.deltaTime);
+    }
 
-            timer += Time.deltaTime;
-            if (timer >= lifetime)
-            {
-                stopped = true; // stop moving after lifetime
-            }
+    void OnTriggerEnter(Collider other)
+    {
+        DetectionFSM enemy = other.GetComponent<DetectionFSM>();
+        if (enemy != null)
+        {
+            enemy.TakeDamage(damage);
+            Destroy(gameObject); // only destroys projectile itself
         }
     }
 
-    private void OnTriggerEnter(Collider other)
+    void OnDrawGizmos()
     {
-        if (((1 << other.gameObject.layer) & enemyLayer) != 0)
-        {
-            Pathogen pathogen = other.GetComponent<Pathogen>();
-            if (pathogen != null)
-            {
-                pathogen.TakeDamage(damage);
-                Debug.Log("Projectile hit enemy: " + other.name);
-            }
-
-            // Stop immediately at collision point
-            stopped = true;
-        }
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawLine(transform.position, transform.position + transform.forward * 2f);
+        Gizmos.DrawWireSphere(transform.position, 0.2f);
     }
 }

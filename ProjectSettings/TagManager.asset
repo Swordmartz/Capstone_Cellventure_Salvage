@@ -15,11 +15,11 @@ TagManager:
   - Floors
   - Walls
   - Enemy
-  - Hideable
+  - Hideable1
   - Player
-  - 
-  - 
-  - 
+  - Projectile
+  - Hideable2
+  - Meele
   - 
   - 
   - 
