@@ -9,6 +9,10 @@ public class PlayerShooter : MonoBehaviour
     public float projectileLifeTime = 5f;
     public int projectileDamage = 1;
 
+    [Header("Cooldown Settings")]
+    public float shootCooldown = 0.5f;
+    private float lastShootTime = -999f;
+
     private PlayerMovementTry playerMovement;
 
     void Start()
@@ -19,63 +23,27 @@ public class PlayerShooter : MonoBehaviour
     // Called by UI Button OnClick()
     public void Shoot()
     {
-        // Use last joystick direction from PlayerMovementTry
-        Vector3 shootDir = playerMovement.lastInputDirection;
-        if (shootDir.sqrMagnitude < 0.01f)
+        if (Time.time < lastShootTime + shootCooldown)
         {
-            // fallback: use player facing if no input
-            shootDir = transform.forward;
+            Debug.Log("Projectile attack on cooldown!");
+            return;
         }
+        lastShootTime = Time.time;
 
-        // Spawn projectile at firePoint
+        // Use last joystick direction, fallback to forward
+        Vector3 shootDir = playerMovement.lastInputDirection.sqrMagnitude > 0.01f
+            ? playerMovement.lastInputDirection
+            : transform.forward;
+
+        // Spawn projectile
         GameObject proj = Instantiate(projectilePrefab, firePoint.position, Quaternion.LookRotation(shootDir));
 
-        // Add movement + collision behavior directly here
-        Rigidbody rb = proj.GetComponent<Rigidbody>();
-        if (rb == null)
+        // Initialize behaviour
+        ProjectileBehaviour behaviour = proj.GetComponent<ProjectileBehaviour>();
+        if (behaviour == null)
         {
-            rb = proj.AddComponent<Rigidbody>();
-            rb.isKinematic = true; // move manually
+            behaviour = proj.AddComponent<ProjectileBehaviour>();
         }
-
-        proj.AddComponent<ProjectileBehaviour>().Init(projectileSpeed, projectileLifeTime, projectileDamage);
-    }
-}
-
-// Inner class for projectile behavior
-public class ProjectileBehaviour : MonoBehaviour
-{
-    private float speed;
-    private float lifeTime;
-    private int damage;
-
-    public void Init(float spd, float life, int dmg)
-    {
-        speed = spd;
-        lifeTime = life;
-        damage = dmg;
-        Destroy(gameObject, lifeTime);
-    }
-
-    void Update()
-    {
-        transform.Translate(Vector3.forward * speed * Time.deltaTime);
-    }
-
-    void OnTriggerEnter(Collider other)
-    {
-        DetectionFSM enemy = other.GetComponent<DetectionFSM>();
-        if (enemy != null)
-        {
-            enemy.TakeDamage(damage);
-            Destroy(gameObject); // only destroys projectile itself
-        }
-    }
-
-    void OnDrawGizmos()
-    {
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawLine(transform.position, transform.position + transform.forward * 2f);
-        Gizmos.DrawWireSphere(transform.position, 0.2f);
+        behaviour.Init(projectileSpeed, projectileLifeTime, projectileDamage, 15f, 5f);
     }
 }

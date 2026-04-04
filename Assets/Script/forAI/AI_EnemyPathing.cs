@@ -85,4 +85,6 @@ public class Pathogen : MonoBehaviour
 
         isSlowed = false; // slow finished
     }
+    
+
 }

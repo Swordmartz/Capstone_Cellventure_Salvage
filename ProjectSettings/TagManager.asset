@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 3
   tags:
   - IgnoreBillboard
+  - Enemy
   layers:
   - Default
   - TransparentFX

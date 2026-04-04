@@ -4,8 +4,11 @@ public class MeleeAttack : MonoBehaviour
 {
     public int damage = 2;
     public float attackRange = 1.5f;
-    public float attackRadius = 1f; // bigger radius for detection
+    public float attackRadius = 1f;
     public LayerMask enemyLayer;
+
+    public float meleeCooldown = 1f; // seconds between attacks
+    private float lastMeleeTime = -999f;
 
     private PlayerMovementTry playerMovement;
 
@@ -14,16 +17,16 @@ public class MeleeAttack : MonoBehaviour
         playerMovement = GetComponent<PlayerMovementTry>();
     }
 
-    // Called by UI Button OnClick()
     public void PerformAttack()
     {
-        if (playerMovement == null)
+        if (Time.time < lastMeleeTime + meleeCooldown)
         {
-            Debug.LogError("PlayerMovementTry reference missing!");
+            Debug.Log("Melee attack on cooldown!");
             return;
         }
 
-        // Use last joystick direction, fallback to forward
+        lastMeleeTime = Time.time;
+
         Vector3 attackDir = playerMovement.lastInputDirection.sqrMagnitude > 0.01f
             ? playerMovement.lastInputDirection
             : transform.forward;
@@ -40,19 +43,6 @@ public class MeleeAttack : MonoBehaviour
                 enemy.TakeDamage(damage);
                 Debug.Log($"Hit {enemy.name} with melee attack!");
             }
-        }
-    }
-
-    void OnDrawGizmosSelected()
-    {
-        if (playerMovement != null)
-        {
-            Vector3 attackDir = playerMovement.lastInputDirection.sqrMagnitude > 0.01f
-                ? playerMovement.lastInputDirection
-                : transform.forward;
-
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(transform.position + attackDir * attackRange, attackRadius);
         }
     }
 }

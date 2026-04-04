@@ -9,6 +9,7 @@ public class AI_TestTD : MonoBehaviour
     public AIforDialogue dialogueSystem;  // Your dialogue script
     public AIforGuide guideSystem; // Your guide script
     public GameObject oxygen;
+    public LayerMask enemyLayer;
 
     [Header("Triggers")]
     public bool playerInTrigger = false;
@@ -226,6 +227,44 @@ public class AI_TestTD : MonoBehaviour
         }
 
         // 4️⃣ Reactivate the target object
+        if (dialogueSystem.targetObject != null)
+            dialogueSystem.targetObject.SetActive(true);
+    }
+
+    public IEnumerator DialogueSequence1IWBC()
+    {
+        // 1️⃣ Disable the first object
+        if (dialogueSystem.targetObject != null)
+            dialogueSystem.targetObject.SetActive(false);
+
+        // 2️⃣ Play dialogue at index 1
+        if (dialogueSystem != null && dialogueSystem.dialogueSets.Count > 1)
+        {
+            dialogueSystem.dialogueFinished = false;
+            dialogueSystem.TriggerDialogue(dialogueSystem.dialogueSets[1].setName);
+
+            // Wait until dialogue finishes
+            yield return new WaitUntil(() => dialogueSystem.dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 1 not found or dialogueSystem is null!");
+        }
+
+        // 3️⃣ Activate all GameObjects in the enemy layer
+        GameObject[] allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+        foreach (GameObject obj in allObjects)
+        {
+            if (((1 << obj.layer) & enemyLayer) != 0)
+            {
+                obj.SetActive(true);
+                Debug.Log("Activated enemy: " + obj.name);
+            }
+        }
+
+
+
+        // 4️⃣ Re‑enable the first object
         if (dialogueSystem.targetObject != null)
             dialogueSystem.targetObject.SetActive(true);
     }

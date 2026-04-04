@@ -32,7 +32,7 @@ public class DetectionFSM : MonoBehaviour
 
     [Header("Health Settings")]
     public int maxHealth = 10;
-    private int currentHealth;
+    public int currentHealth;
     public bool isInvincible = false;
 
     void Start()
@@ -151,8 +151,8 @@ public class DetectionFSM : MonoBehaviour
         if (agent != null)
             agent.isStopped = true;
 
-        // Disable enemy object (or play death animation first)
-        gameObject.SetActive(false);
+        // Do nothing else — leave the GameObject active
+        // You could add a death animation or particle effect here if desired
     }
 
     private IEnumerator HideTimer()
@@ -234,6 +234,26 @@ public class DetectionFSM : MonoBehaviour
             yield return null;
         }
     }
+    public void ApplySlow(float slowFactor, float duration)
+    {
+        if (agent == null) return;
+
+        StartCoroutine(SlowCoroutine(slowFactor, duration));
+    }
+
+    private IEnumerator SlowCoroutine(float slowFactor, float duration)
+    {
+        float originalSpeed = agent.speed;
+        agent.speed = originalSpeed * slowFactor;
+
+        Debug.Log($"{name} slowed to {agent.speed} for {duration} seconds.");
+
+        yield return new WaitForSeconds(duration);
+
+        agent.speed = normalSpeed; // restore to normal
+        Debug.Log($"{name} speed restored to {agent.speed}.");
+    }
+
     void OnDrawGizmos()
     {
         // Draw detection radius (red)
