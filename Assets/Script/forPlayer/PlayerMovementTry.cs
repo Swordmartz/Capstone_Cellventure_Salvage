@@ -60,8 +60,20 @@ public class PlayerMovementTry : MonoBehaviour
         }
     }
 
+    // Called by Input System (keyboard / gamepad via Player Input component)
     public void OnMove(InputAction.CallbackContext context)
     {
         movementInput = context.ReadValue<Vector2>();
+    }
+
+    // ── Mobile bridge entry point ────────────────────────────────────────────
+    /// <summary>
+    /// Called by MobileInputBridge every frame with the floating joystick's
+    /// normalized direction. Works alongside OnMove — whichever runs last wins,
+    /// so on mobile you simply won't have a keyboard driving OnMove.
+    /// </summary>
+    public void SetMovementInput(Vector2 input)
+    {
+        movementInput = input;
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -10,6 +11,7 @@ public class MainMenuManager : MonoBehaviour
     public enum SettingButtons { back }
     public enum AlmanacButtons { back }
 
+    [SerializeField] private RFadeManager fadeManage;
     [SerializeField] private GameObject _MainMenuContainer;
     [SerializeField] private GameObject _SettingsContainer;
     [SerializeField] private GameObject _AlmanacContainer;
@@ -60,7 +62,8 @@ public class MainMenuManager : MonoBehaviour
     }
     public void PlayClicked()
     {
-        SceneManager.LoadScene(_sceneToLoad);
+
+        StartCoroutine(LoadSceneFade());
     }
     public void SettingsButtonClicked(SettingButtons buttonClicked)
     {
@@ -74,6 +77,8 @@ public class MainMenuManager : MonoBehaviour
     public void SettingsClicked()
     {
         OpenMenu(_SettingsContainer);
+        
+
     }
     public void AlmanacButtonClicked(AlmanacButtons buttonClicked)
     {
@@ -110,4 +115,13 @@ public class MainMenuManager : MonoBehaviour
         _AlmanacContainer.SetActive(menuToOpen == _AlmanacContainer);
         _SettingsContainer.SetActive(menuToOpen == _SettingsContainer);
     }
+
+   IEnumerator LoadSceneFade()
+   {
+        fadeManage.DoFade(0f, 1.5f, 1f, 0f);
+        yield return  new WaitForSeconds(1f);
+        SceneManager.LoadScene(_sceneToLoad);
+
+    }
+
 }

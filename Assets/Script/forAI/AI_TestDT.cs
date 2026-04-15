@@ -1,8 +1,11 @@
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.ProBuilder.MeshOperations;
+using UnityEngine.Rendering.Universal.Internal;
 using UnityEngine.SceneManagement;
-
 
 public class AI_TestTD : MonoBehaviour
 {
@@ -12,6 +15,21 @@ public class AI_TestTD : MonoBehaviour
     public GameObject oxygen;
     public LayerMask enemyLayer;
     public GameObject MB;
+    private bool firstDeliveryTriggered = false; // ADD THIS
+
+    private Dictionary<int, bool> triggeredFlags = new Dictionary<int, bool>()
+    {
+        {210, false},
+        {90, false},
+        {30, false}
+    };
+
+    public GameTimer MissionManager;
+
+    [Header("Player score")]
+    public float comptTime = 0;
+    public int performanceScore = 0;
+    public int quizScore = 0;
 
     [Header("Triggers")]
     public bool playerInTrigger = false;
@@ -21,9 +39,16 @@ public class AI_TestTD : MonoBehaviour
     public GameObject line;
 
     [Header("Mission Progress")]
-    public int itemsDelivered = 0;        // counter
-    public int deliveryThreshold = 5;     // win condition
-    public TMP_Text counterText;          // ✅ assign a TMP_Text in Inspector
+    public int itemsDelivered = 0;
+    public int deliveryThreshold = 5;
+    public TMP_Text counterText;
+    public GameTimer missionTimer;
+    public bool hasCapturedTime = false;
+
+ 
+
+    // 🔥 NEW (for proper checkpoint detection)
+    private float previousTime;
 
     void Start()
     {
@@ -31,28 +56,39 @@ public class AI_TestTD : MonoBehaviour
 
         if (sceneName == "Chapter1 - IRBC")
         {
-            StartCoroutine(DialogueSequence0IRBC());
+            StartCoroutine(dialogueSystem.DialogueSequence0IRBC());
         }
         else if (sceneName == "Chapter1 - IWBC")
         {
-            StartCoroutine(DialogueSequence0IWBC());
-        }
-        else
-        {
-            Debug.Log("no");
+            StartCoroutine(dialogueSystem.DialogueSequence0IWBC());
         }
 
-        // Initialize UI
         UpdateCounterUI();
+
+        // 🔥 INIT previous time
+        if (missionTimer != null)
+            previousTime = missionTimer.GetCurrentTime();
     }
 
     void Update()
     {
         if (playerInTrigger && !sequenceRunning)
         {
-            StartCoroutine(DialogueSequence0IRBC());
+            string sceneName = SceneManager.GetActiveScene().name;
+
+            if (sceneName == "Chapter1 - IRBC")
+            
+                StartCoroutine(dialogueSystem.DialogueSequence0IRBC());
+            
+            else if (sceneName == "Chapter1 - IWBC")
+            
+                StartCoroutine(dialogueSystem.DialogueSequence0IWBC());
+
             playerInTrigger = false;
         }
+
+        LogMissionTimer();
+        ItemTimeChecker();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -67,7 +103,6 @@ public class AI_TestTD : MonoBehaviour
             playerInTrigger = false;
     }
 
-    // ✅ Call this whenever itemsDelivered changes
     public void UpdateCounterUI()
     {
         if (counterText != null)
@@ -76,223 +111,161 @@ public class AI_TestTD : MonoBehaviour
         }
     }
 
-    // ---------------- CORE SEQUENCE ----------------
-    public IEnumerator DialogueSequence0IRBC()
+    public void ItemTimeChecker()
+{
+    if (missionTimer != null && !hasCapturedTime)
     {
-        // ------------------- Step 1: Disable target object if assigned -------------------
-        if (dialogueSystem.targetGameObject != null)
-        {
-            dialogueSystem.targetGameObject.SetActive(false);
-
-        }
-        if (MB != null)
-        {
-            MB.SetActive(true);
-            dialogueSystem.dialoguePanel.SetActive(false);
-        }
-        if (line != null)
-        {
-            line.SetActive(false);
-        }
-        yield return new WaitForSeconds(5f);
-        if (MB != null)
-        {
-            MB.SetActive(false);
-
-        }
-
-        // ------------------- Step 2: Play dialogue index 0 -------------------
-        if (dialogueSystem != null && dialogueSystem.dialogueSets.Count > 0)
-        {
-            // Reset dialogue finished flag before starting
-            dialogueSystem.dialogueFinished = false;
-
-            // Ensure dialogue panel is active immediately
-            if (dialogueSystem.dialoguePanel != null)
-                dialogueSystem.dialoguePanel.SetActive(true);
-
-            // Trigger the first dialogue
-            dialogueSystem.TriggerDialogue(dialogueSystem.dialogueSets[0].setName);
-
-            // Wait until the dialogue finishes
-            yield return new WaitUntil(() => dialogueSystem.dialogueFinished);
-        }
-       
-        else
-        {
-            Debug.LogWarning("Dialogue Set 0 not found or dialogueSystem is null!");
-        }
-
-        // ------------------- Step 3: Reactivate target object if assigned -------------------
-        if (dialogueSystem.targetGameObject != null)
-        {
-            dialogueSystem.targetGameObject.SetActive(true);
-
-        }
-        if (line != null)
-        {
-            line.SetActive(true);
-        }
-    }
-    public IEnumerator DialogueSequence1IRBC()
-    {
-        // 1️⃣ Immediately disable GameObject1
-        if (dialogueSystem.targetGameObject != null)
-            dialogueSystem.targetGameObject.SetActive(false);
-
-        // 2️⃣ Play the second dialogue set (index 1)
-        if (dialogueSystem.dialogueSets.Count > 1)
-        {
-            // Reset dialogueFinished locally for this set
-            bool localDialogueFinished = false;
-
-            // Trigger second dialogue
-            dialogueSystem.TriggerDialogue(dialogueSystem.dialogueSets[1].setName);
-
-            // Wait until the dialogue finishes
-            StartCoroutine(dialogueSystem.WaitForDialogue(() => localDialogueFinished = true));
-            while (!localDialogueFinished)
-                yield return null;
-        }
-
-        // 3️⃣ Reactivate guide system
-        guideSystem.guideEnabled = true;
-
-        // 4️⃣ Activate GameObject2 (oxygen) and switch guideMark
-        if (oxygen != null)
-        {
-            oxygen.SetActive(true);
-            guideSystem.guideMark = oxygen.transform;
-        }
-
-        // 5️⃣ Re-enable GameObject1
-        if (dialogueSystem.targetGameObject != null)
-            dialogueSystem.targetGameObject.SetActive(true);
-    }
-    public IEnumerator DialogueSequence2IRBC()
-    {
-        // 1️⃣ Disable GameObject
-        if (dialogueSystem.targetGameObject != null)
-            dialogueSystem.targetGameObject.SetActive(false);
-
-        // 2️⃣ Play the THIRD dialogue set
-        if (dialogueSystem.dialogueSets.Count > 2)
-        {
-            dialogueSystem.TriggerDialogue(dialogueSystem.dialogueSets[2].setName);
-
-            // 3️⃣ Wait until dialogue finishes
-            yield return new WaitUntil(() => dialogueSystem.dialogueFinished);
-        }
-        else
-        {
-            Debug.LogWarning("Dialogue Set 3 (index 2) not found!");
-        }
-
-        // 4️⃣ Reactivate GameObject
-        if (dialogueSystem.targetGameObject != null)
-            dialogueSystem.targetGameObject.SetActive(true);
-    }
-    public IEnumerator DialogueSequence3IRBC()
-    {
-        // 1️⃣ Disable GameObject
-        if (dialogueSystem.targetGameObject != null)
-            dialogueSystem.targetGameObject.SetActive(false);
-
-        // 2️⃣ Reset dialogue flag
-        dialogueSystem.dialogueFinished = false;
-
-        // 3️⃣ Play the FOURTH dialogue set (index 3)
-        if (dialogueSystem.dialogueSets.Count > 3)
-        {
-            dialogueSystem.TriggerDialogue(dialogueSystem.dialogueSets[3].setName);
-
-            // 4️⃣ Wait until dialogue finishes
-            yield return new WaitUntil(() => dialogueSystem.dialogueFinished);
-        }
-        else
-        {
-            Debug.LogWarning("Dialogue Set 4 (index 3) not found!");
-        }
-
-        // 5️⃣ Reactivate GameObject
-        if (dialogueSystem.targetGameObject != null)
-            dialogueSystem.targetGameObject.SetActive(true);
-    }
-    // Helper coroutine to track when a dialogue finishes
-
-    //-----------CORE SYSTEM for WBC----------------
-    public IEnumerator DialogueSequence0IWBC()
-    {
-        // 1️⃣ Disable the assigned GameObject
-        if (dialogueSystem.targetObject != null)
-            dialogueSystem.targetObject.SetActive(false);
-
-        // 2️⃣ Reactivate the dialogue button and panel right away
-        if (dialogueSystem.dialoguePanel != null)
-            dialogueSystem.dialoguePanel.SetActive(true);
-
-        if (dialogueSystem.nextButton != null) // assuming you have a button reference
-            dialogueSystem.nextButton.gameObject.SetActive(true);
-
-
-        // 3️⃣ Play the first dialogue set (index 0)
-        if (dialogueSystem != null && dialogueSystem.dialogueSets.Count > 0)
-        {
-            dialogueSystem.dialogueFinished = false;
-
-            // Trigger dialogue at index 0
-            dialogueSystem.TriggerDialogue(dialogueSystem.dialogueSets[0].setName);
-
-            // Wait until dialogue finishes
-            yield return new WaitUntil(() => dialogueSystem.dialogueFinished);
-        }
-        else
-        {
-            Debug.LogWarning("Dialogue Set 0 not found or dialogueSystem is null!");
-        }
-
-        // 4️⃣ Reactivate the target object
-        if (dialogueSystem.targetObject != null)
-            dialogueSystem.targetObject.SetActive(true);
-    }
-
-    public IEnumerator DialogueSequence1IWBC()
-    {
-        // 1️⃣ Disable the first object
-        if (dialogueSystem.targetObject != null)
-            dialogueSystem.targetObject.SetActive(false);
-
-        // 2️⃣ Play dialogue at index 1
-        if (dialogueSystem != null && dialogueSystem.dialogueSets.Count > 1)
-        {
-            dialogueSystem.dialogueFinished = false;
-            dialogueSystem.TriggerDialogue(dialogueSystem.dialogueSets[1].setName);
-
-            // Wait until dialogue finishes
-            yield return new WaitUntil(() => dialogueSystem.dialogueFinished);
-        }
-        else
-        {
-            Debug.LogWarning("Dialogue Set 1 not found or dialogueSystem is null!");
-        }
-
-        // 3️⃣ Activate all GameObjects in the enemy layer
-        GameObject[] allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
-        foreach (GameObject obj in allObjects)
-        {
-            if (((1 << obj.layer) & enemyLayer) != 0)
+            if (itemsDelivered >= 1 && !firstDeliveryTriggered)
             {
-                obj.SetActive(true);
-                Debug.Log("Activated enemy: " + obj.name);
+                firstDeliveryTriggered = true;
+                StartCoroutine(dialogueSystem.DialogueSequenceIRB9()); // Replace with your target dialogue
             }
+            if (itemsDelivered >= deliveryThreshold)
+        {
+            hasCapturedTime = true;
+
+            float currentTime = missionTimer.GetCurrentTime();
+            comptTime = missionTimer.missionTime - currentTime; // elapsed time
+
+            Debug.Log("Time elapsed: " + comptTime);
         }
+    }
+}
 
+    // =========================
+    // ⏱ TIMER CHECK (FIXED)
+    // =========================
+    private void LogMissionTimer()
+    {
+        if (missionTimer == null) return;
 
+        float currentTime = missionTimer.GetCurrentTime();
 
-        // 4️⃣ Re‑enable the first object
-        if (dialogueSystem.targetObject != null)
-            dialogueSystem.targetObject.SetActive(true);
+        EvaluateCheckpoint(210, previousTime, currentTime);
+        EvaluateCheckpoint(90, previousTime, currentTime);
+        EvaluateCheckpoint(30, previousTime, currentTime);
+
+        previousTime = currentTime; // 🔥 IMPORTANT
     }
 
+    // =========================
+    // 🧠 CHECKPOINT FIX
+    // =========================
+    private void EvaluateCheckpoint(int triggerTime, float prevTime, float currentTime)
+    {
+        // ❌ OLD: ContainsKey (always true)
+        // ✅ FIX:
+        if (triggeredFlags[triggerTime]) return;
 
+        // 🔥 CROSSING DETECTION (MAIN FIX)
+        if (prevTime > triggerTime && currentTime <= triggerTime)
+        {
+            triggeredFlags[triggerTime] = true;
+
+            float score = EvaluateHeuristic(triggerTime, currentTime, itemsDelivered);
+            int finalScore = Mathf.RoundToInt(score);
+
+            performanceScore += finalScore;
+
+            Debug.Log($"[AI] Triggered {triggerTime} | Score: {finalScore}");
+
+            PlayDialogue(triggerTime, finalScore);
+        }
+    }
+
+    // =========================
+    // 🧠 HEURISTIC FUNCTION
+    // =========================
+    private float EvaluateHeuristic(int triggerTime, float currentTime, int items)
+    {
+        float itemScore = items / 5f; // ✅ was 4f, max deliveries is 5
+
+        float timeError = Mathf.Abs(currentTime - triggerTime);
+        float timeScore = 1f - Mathf.Clamp01(timeError / 2f);
+
+        float result =
+            (itemScore * 0.7f) +
+            (timeScore * 0.3f);
+
+        return result * 5f;
+    }
+    // =========================
+    // 🎭 DIALOGUE SELECTOR
+    // =========================
+    private void PlayDialogue(int triggerTime, int score)
+    {
+        int tier = GetTier(score);
+
+        switch (triggerTime)
+        {
+            case 210:
+                StartCoroutine(Dialogue210(tier));
+                break;
+
+            case 90:
+                StartCoroutine(Dialogue90(tier));
+                break;
+
+            case 30:
+                StartCoroutine(Dialogue30(tier));
+                break;
+        }
+    }
+
+    // =========================
+    // 🧠 SCORE → TIER
+    // =========================
+    private int GetTier(int score)
+    {
+        if (score >= 5) return 5;
+        if (score >= 4) return 4;
+        if (score >= 3) return 3;
+        if (score >= 2) return 2;
+        if (score >= 1) return 1;
+        return 0;
+    }
+
+    // =========================
+    // 🎭 DIALOGUES
+    // =========================
+    private IEnumerator Dialogue210(int tier)
+    {
+        switch (tier)
+        {
+            case 5: yield return dialogueSystem.DialogueSequenceIRBCT2105(); break;
+            case 4: yield return dialogueSystem.DialogueSequenceIRBCT2104(); break;
+            case 3: yield return dialogueSystem.DialogueSequenceIRBCT2103(); break;
+            case 2: yield return dialogueSystem.DialogueSequenceIRBCT2102(); break;
+            case 1: yield return dialogueSystem.DialogueSequenceIRBCT2101(); break;
+            default: yield return dialogueSystem.DialogueSequenceIRBCT2100(); break;
+        }
+    }
+
+    private IEnumerator Dialogue90(int tier)
+    {
+        switch (tier)
+        {
+            case 5: yield return dialogueSystem.DialogueSequenceIRBCT905(); break;
+            case 4: yield return dialogueSystem.DialogueSequenceIRBCT904(); break;
+            case 3: yield return dialogueSystem.DialogueSequenceIRBCT903(); break;
+            case 2: yield return dialogueSystem.DialogueSequenceIRBCT902(); break;
+            case 1: yield return dialogueSystem.DialogueSequenceIRBCT901(); break;
+            default: yield return dialogueSystem.DialogueSequenceIRBCT900(); break;
+        }
+    }
+
+    private IEnumerator Dialogue30(int tier)
+    {
+        switch (tier)
+        {
+            case 5: yield return dialogueSystem.DialogueSequenceIRBCT305(); break;
+            case 4: yield return dialogueSystem.DialogueSequenceIRBCT304(); break;
+            case 3: yield return dialogueSystem.DialogueSequenceIRBCT303(); break;
+            case 2: yield return dialogueSystem.DialogueSequenceIRBCT302(); break;
+            case 1: yield return dialogueSystem.DialogueSequenceIRBCT301(); break;
+            default: yield return dialogueSystem.DialogueSequenceIRBCT300(); break;
+        }
+    }
+
+    
 }

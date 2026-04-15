@@ -1,8 +1,10 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class PauseMenu : MonoBehaviour
 {
+    [SerializeField] private RFadeManager fadeManager; // assign your fade manager in Inspector
     public GameObject pauseMenuUI; // assign your pause menu panel in Inspector
     private bool isPaused = false;
 
@@ -42,6 +44,12 @@ public class PauseMenu : MonoBehaviour
     public void ReturnToMainMenu()
     {
         Time.timeScale = 1f; // reset time before switching
+        StartCoroutine(LoadSceneWithFade());
+    }
+    IEnumerator LoadSceneWithFade()
+    {
+        fadeManager.DoFade(0, 1f, .2f, 0f);
+        yield return new WaitForSeconds(1f);
         SceneManager.LoadScene("MainMenu"); // replace with your main menu scene name
     }
 }

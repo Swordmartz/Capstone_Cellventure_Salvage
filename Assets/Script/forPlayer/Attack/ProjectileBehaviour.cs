@@ -12,9 +12,8 @@ public class ProjectileBehaviour : MonoBehaviour
     private bool reachedMax = false;
     private float lingerTimer = 0f;
 
-    // Slow effect settings
-    public float slowAmount = 0.5f;   // 50% speed reduction
-    public float slowDuration = 2f;   // seconds
+    // Stop effect settings
+    public float stopDuration = 2f;
 
     public void Init(float spd, float life, int dmg, float maxDist, float linger)
     {
@@ -56,7 +55,8 @@ public class ProjectileBehaviour : MonoBehaviour
         if (enemy != null)
         {
             enemy.TakeDamage(damage);
-            enemy.ApplySlow(slowAmount, slowDuration); // 👈 apply slow effect
+            enemy.ApplyStop(stopDuration);
+            enemy.MarkAsHit();        // 👈 mark enemy on hit
             Destroy(gameObject);
         }
     }

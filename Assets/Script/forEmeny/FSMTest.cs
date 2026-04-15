@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
+using Unity.VisualScripting;
 
 public class DetectionFSM : MonoBehaviour
 {
@@ -34,6 +35,9 @@ public class DetectionFSM : MonoBehaviour
     public int maxHealth = 10;
     public int currentHealth;
     public bool isInvincible = false;
+
+    [Header("Attacked")]
+    public bool isMarked { get; private set; } = false;
 
     void Start()
     {
@@ -93,7 +97,7 @@ public class DetectionFSM : MonoBehaviour
 
                 float boostFactor = Mathf.Clamp01(1f - (float)hideCount / maxBoosts);
                 float boostedSpeed = Mathf.Lerp(normalSpeed, maxBoostSpeed, boostFactor);
-                StartCoroutine(ApplyBoostAfterSlow(boostedSpeed));
+                StartCoroutine(ApplyBoostAfterStop(boostedSpeed));
 
                 Debug.Log($"{name} detected player! Moving to hideable: {currentTarget.name}");
             }
@@ -143,7 +147,7 @@ public class DetectionFSM : MonoBehaviour
         }
     }
 
-    private void Die()
+    public void Die()
     {
         Debug.Log($"{name} has died.");
         currentState = EnemyState.Dead;
@@ -153,6 +157,11 @@ public class DetectionFSM : MonoBehaviour
 
         // Do nothing else — leave the GameObject active
         // You could add a death animation or particle effect here if desired
+    }
+    public void ForceKill()
+    {
+        currentHealth = 0;
+        Die(); // calls the existing private Die() method... 
     }
 
     private IEnumerator HideTimer()
@@ -211,17 +220,11 @@ public class DetectionFSM : MonoBehaviour
         return hits[randomIndex].transform;
     }
 
-    private IEnumerator ApplyBoostAfterSlow(float boostedSpeed)
+    private IEnumerator ApplyBoostAfterStop(float boostedSpeed)
     {
-        Pathogen pathogen = GetComponent<Pathogen>();
-        if (pathogen != null)
-        {
-            while (pathogen.isSlowed)
-                yield return null;
-        }
-
         agent.speed = boostedSpeed;
         StartCoroutine(GraduallyReduceSpeed());
+        yield break;
     }
 
     private IEnumerator GraduallyReduceSpeed()
@@ -234,24 +237,37 @@ public class DetectionFSM : MonoBehaviour
             yield return null;
         }
     }
-    public void ApplySlow(float slowFactor, float duration)
+    public void ApplyStop(float duration)
     {
         if (agent == null) return;
 
-        StartCoroutine(SlowCoroutine(slowFactor, duration));
+        StartCoroutine(StopCoroutine(duration));
     }
 
-    private IEnumerator SlowCoroutine(float slowFactor, float duration)
+    private IEnumerator StopCoroutine(float duration)
     {
         float originalSpeed = agent.speed;
-        agent.speed = originalSpeed * slowFactor;
+        agent.isStopped = true;
 
-        Debug.Log($"{name} slowed to {agent.speed} for {duration} seconds.");
+        Debug.Log($"{name} stopped for {duration} seconds.");
 
         yield return new WaitForSeconds(duration);
 
-        agent.speed = normalSpeed; // restore to normal
-        Debug.Log($"{name} speed restored to {agent.speed}.");
+        agent.isStopped = false;
+        agent.speed = normalSpeed;
+        Debug.Log($"{name} resumed movement.");
+    }
+    public void MarkAsHit()
+    {
+        isMarked = true;
+        Debug.Log($"{gameObject.name} has been marked!");
+        // Optional: add a visual cue, e.g. change material tint
+        // GetComponent<Renderer>().material.color = Color.red;
+    }
+
+    public void ClearMark()
+    {
+        isMarked = false;
     }
 
     void OnDrawGizmos()

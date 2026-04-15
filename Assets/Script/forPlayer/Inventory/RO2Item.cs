@@ -9,8 +9,9 @@ public class PickupButton : MonoBehaviour
     public Button pickupButton;          // Button to pick up this item
     public Image inventoryImage;         // UI Image where the icon will appear
     [SerializeField] private AIforGuide guideSystem;
-    [SerializeField] private AI_TestTD AIM;
+    [SerializeField] private AIforDialogue AIM;
 
+    private bool dialogueTriggered = false; // ✅ ensures dialogue runs only once
 
     private void Start()
     {
@@ -30,8 +31,12 @@ public class PickupButton : MonoBehaviour
             guideSystem.guideEnabled = false; // disable guide first
             Debug.Log("Guide system deactivated.");
 
-            // 🔥 START the trigger sequence
-            StartCoroutine(AIM.DialogueSequence2IRBC());
+            // 🔥 Trigger dialogue only once
+            if (!dialogueTriggered)
+            {
+                StartCoroutine(AIM.DialogueSequence2IRBC());
+                dialogueTriggered = true;
+            }
         }
         else
         {
@@ -47,7 +52,7 @@ public class PickupButton : MonoBehaviour
         // Add item to inventory
         playerInventory.AddItem(itemToPickup);
 
-        // Enable the inventory description button
+        // Disable inventory description button (if needed)
         inventoryButton.gameObject.SetActive(false);
 
         // Show the icon automatically in the UI

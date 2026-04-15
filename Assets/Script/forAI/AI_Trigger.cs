@@ -2,8 +2,9 @@ using UnityEngine;
 
 public class AI_Trigger : MonoBehaviour
 {
-    public AI_TestTD MAI;          // Assign AIGuide
+    public AIforDialogue MAI;          // Assign AIGuide
     public AIforGuide AIG;
+            // Assign your AI_TestTD script
     public float newMaxDistance = 5f; // Your custom distance
 
     private bool triggered = false;
@@ -20,7 +21,7 @@ public class AI_Trigger : MonoBehaviour
             AIG.maxDistance = newMaxDistance;
 
             // Start your sequence
-            MAI.StartCoroutine(MAI.DialogueSequence1IRBC());
+            StartCoroutine(MAI.DialogueSequence1IRBC());
         }
     }
 }

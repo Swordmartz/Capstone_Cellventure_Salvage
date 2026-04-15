@@ -6,6 +6,7 @@ public class ItemReceiver : MonoBehaviour
     [Header("UI")]
     public Button useButton; // Button to press
     public AI_TestTD halu;
+
     [Header("Item Requirement")]
     public bool requireItem = true;
     public Inventory playerInventory;
@@ -13,6 +14,9 @@ public class ItemReceiver : MonoBehaviour
 
     [Header("Consume Item")]
     public bool consumeItem = true;
+
+    [Header("Reactivation")]
+    public GameObject objectToReactivate; // ✅ drag the object you want to reactivate here
 
     private bool playerNearby = false;
 
@@ -25,31 +29,26 @@ public class ItemReceiver : MonoBehaviour
         }
     }
 
-    // 🟢 When player enters range
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
             playerNearby = true;
-
             if (useButton != null)
                 useButton.gameObject.SetActive(true); // Show button
         }
     }
 
-    // 🔴 When player leaves range
     private void OnTriggerExit(Collider other)
     {
         if (other.CompareTag("Player"))
         {
             playerNearby = false;
-
             if (useButton != null)
                 useButton.gameObject.SetActive(false); // Hide button
         }
     }
 
-    // 🎯 When button is pressed
     public void Execute()
     {
         if (!playerNearby) return;
@@ -81,11 +80,21 @@ public class ItemReceiver : MonoBehaviour
         if (halu != null)
         {
             halu.itemsDelivered++;
-            halu.UpdateCounterUI(); // ✅ refresh the UI
+            halu.UpdateCounterUI();
             Debug.Log("Items delivered: " + halu.itemsDelivered);
+        }
+
+        // ✅ Reactivate the assigned GameObject
+        if (objectToReactivate != null)
+        {
+            objectToReactivate.SetActive(true);
+            Debug.Log("Reactivated object: " + objectToReactivate.name);
         }
 
         if (useButton != null)
             useButton.gameObject.SetActive(false);
+
+        // ✅ Deactivate this receiver object after successful item delivery
+        gameObject.SetActive(false);
     }
 }

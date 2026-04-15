@@ -1,66 +1,62 @@
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Video;
 
-public class VideoManager : MonoBehaviour
+public class IntroVideoController : MonoBehaviour
 {
     public VideoPlayer videoPlayer;
+    public Button skipButton;
+    public RawImage videoImage;
+    public GameObject mainGameObject;
 
-    [Header("UI")]
-    public GameObject mainUI;     // All other UI
-    public GameObject skipButton; // Skip button only
+    // Static = resets when app fully closes, survives scene reloads
+    private static bool hasPlayedThisSession = false;
 
     void Start()
     {
-        // Disable all UI except skip button
-        if (mainUI != null) mainUI.SetActive(false);
-        if (skipButton != null) skipButton.SetActive(true);
-
-        // Prepare video to avoid delay
-        videoPlayer.Prepare();
-        videoPlayer.prepareCompleted += PlayVideo;
-
-        // Detect when video ends automatically
-        videoPlayer.loopPointReached += OnVideoEnd;
-    }
-
-    void PlayVideo(VideoPlayer vp)
-    {
-        videoPlayer.Play();
-    }
-
-    void OnVideoEnd(VideoPlayer vp)
-    {
-        StopVideo();
-    }
-
-    // Called by Skip Button
-    public void SkipVideo()
-    {
-        // Hide skip button immediately
-        if (skipButton != null) skipButton.SetActive(false);
-
-        StopVideo();
-    }
-
-    void StopVideo()
-    {
-        // Pause first
-        videoPlayer.Pause();
-
-        // Mute all audio tracks
-        for (ushort i = 0; i < videoPlayer.audioTrackCount; i++)
+        if (hasPlayedThisSession)
         {
-            videoPlayer.SetDirectAudioMute(i, true);
-            videoPlayer.SetDirectAudioVolume(i, 0f);
-            videoPlayer.EnableAudioTrack(i, false);
+            SkipToGame();
+            return;
         }
 
-        // Stop video
+        // First time this session — play the video
+        videoPlayer.Play();
+        skipButton.onClick.AddListener(SkipVideo);
+        videoPlayer.loopPointReached += OnVideoFinished;
+    }
+
+    void SkipVideo()
+    {
+        StopVideoAndHideUI();
+    }
+
+    void OnVideoFinished(VideoPlayer vp)
+    {
+        StopVideoAndHideUI();
+    }
+
+    void StopVideoAndHideUI()
+    {
+        hasPlayedThisSession = true;  // Remember for this session only
+
         videoPlayer.Stop();
 
-        // Bring back main UI
-        if (mainUI != null) mainUI.SetActive(true);
+        if (videoImage != null)
+            videoImage.enabled = false;
 
-        Debug.Log("Video stopped/skipped, audio muted, UI restored");
+        skipButton.gameObject.SetActive(false);
+        mainGameObject.gameObject.SetActive(true);
+    }
+
+    void SkipToGame()
+    {
+        videoPlayer.gameObject.SetActive(false);
+
+        if (videoImage != null)
+            videoImage.enabled = false;
+
+        skipButton.gameObject.SetActive(false);
+        mainGameObject.gameObject.SetActive(true);
     }
 }

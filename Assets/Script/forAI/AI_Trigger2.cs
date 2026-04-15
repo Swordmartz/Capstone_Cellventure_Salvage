@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class PlayerTrigger : MonoBehaviour
 {
-    public AI_TestTD aiScript; // assign your AI enemy in Inspector
+    public AIforDialogue aiScript; // assign your AI enemy in Inspector
     private bool triggered = false;
 
     private void OnTriggerEnter(Collider other)

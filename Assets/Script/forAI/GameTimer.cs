@@ -1,63 +1,114 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using TMPro; // Import TextMeshPro namespace
+using TMPro;
 
 public class GameTimer : MonoBehaviour
 {
     [Header("UI References")]
-    public TMP_Text timerText;             // assign a TMP_Text for countdown
-    public GameObject victoryScreenUI;     // assign victory panel
-    public GameObject failScreenUI;        // assign fail panel
+    public TMP_Text timerText;
 
     [Header("Timer Settings")]
-    public float missionTime = 60f;        // total mission time in seconds
+    public float missionTime = 60f;
+
+    [Header("Results Screen")]
+    public GameObject playerUI;           // The player HUD to hide
+    public GameObject resultsScreen;      // The results panel to show
+    public StarRatingManager starRatingManager;
+    public AI_TestTD aiTestTD;            // Your script with comptTime and performanceScore
 
     private float currentTime;
-    private bool missionEnded = false;
+    public bool timerActive = false;
+    private bool resultsShown = false;    // Prevent triggering more than once
 
     void Start()
     {
         currentTime = missionTime;
+        UpdateTimerUI();
+
+        // Make sure results screen is hidden at start
+        if (resultsScreen != null)
+            resultsScreen.SetActive(false);
     }
 
     void Update()
     {
-        if (missionEnded) return;
+        if (!timerActive) return;
 
         currentTime -= Time.deltaTime;
-        timerText.text = Mathf.Ceil(currentTime).ToString();
 
         if (currentTime <= 0f)
         {
-            FailMission();
+            currentTime = 0f;
+            timerActive = false;
+            TriggerResults();
+        }
+
+        UpdateTimerUI();
+    }
+
+    // =========================
+    // 🏆 RESULTS TRIGGER
+    // =========================
+    private void TriggerResults()
+    {
+        if (resultsShown) return;
+        resultsShown = true;
+
+        // Hide player UI
+        if (playerUI != null)
+            playerUI.SetActive(false);
+
+        // Show results screen
+        if (resultsScreen != null)
+            resultsScreen.SetActive(true);
+
+        // Evaluate and display star rating
+        if (starRatingManager != null && aiTestTD != null)
+            starRatingManager.EvaluateScore(aiTestTD.comptTime, aiTestTD.performanceScore);
+        
+
+    }
+
+    // =========================
+    // ⏱ UI DISPLAY
+    // =========================
+    void UpdateTimerUI()
+    {
+        if (timerText != null)
+        {
+            int minutes = Mathf.FloorToInt(currentTime / 60f);
+            int seconds = Mathf.FloorToInt(currentTime % 60f);
+            timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
         }
     }
 
-    // Call this when mission objectives are completed
-    public void FulfillMission()
+    // =========================
+    // 🔓 ACCESS FOR AI SYSTEM
+    // =========================
+    public float GetCurrentTime()
     {
-        missionEnded = true;
-        Time.timeScale = 0f; // freeze gameplay
-        victoryScreenUI.SetActive(true);
+        return currentTime;
     }
 
-    void FailMission()
+    // =========================
+    // ▶ CONTROL
+    // =========================
+    public void ActivateTimer()
     {
-        missionEnded = true;
-        Time.timeScale = 0f; // freeze gameplay
-        failScreenUI.SetActive(true);
+        timerActive = true;
+        currentTime = missionTime;
+        resultsShown = false;
+        UpdateTimerUI();
     }
 
-    // Optional: buttons on victory/fail screens
-    public void RestartLevel()
+    public void StopTimer()
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        timerActive = false;
     }
 
-    public void ReturnToMainMenu()
+    public void ResetTimer()
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene("MainMenu"); // replace with your main menu scene name
+        currentTime = missionTime;
+        resultsShown = false;
+        UpdateTimerUI();
     }
 }
