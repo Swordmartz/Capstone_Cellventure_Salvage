@@ -21,6 +21,8 @@ public class AIforDialogue : MonoBehaviour
     [Header("Intro Teleport")]
     public Transform introTeleportTarget;
 
+    [Header("Layers To Hide (MULTI-SELECT IN INSPECTOR)")]
+    public LayerMask layersToHide;
 
     [Header("Dialogue Settings")]
     public float lettersPerSecond = 30f;
@@ -219,8 +221,8 @@ public class AIforDialogue : MonoBehaviour
         if (line != null) line.SetActive(true);
 
         // Step 5: Activate mission timer
-        if (missionTimer != null) 
-            missionTimer.ActivateTimer();
+        if (missionTimer != null)
+            missionTimer.ResumeTimer();
     }
 
        
@@ -271,8 +273,8 @@ public class AIforDialogue : MonoBehaviour
         if (targetGameObject != null)
             targetGameObject.SetActive(true);
 
-        if (missionTimer != null) 
-            missionTimer.ActivateTimer();
+        if (missionTimer != null)
+            missionTimer.ResumeTimer();
     }
     public IEnumerator DialogueSequence2IRBC()
     {
@@ -300,7 +302,7 @@ public class AIforDialogue : MonoBehaviour
             targetGameObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
     }
     public IEnumerator DialogueSequence3IRBC()
     {
@@ -331,7 +333,7 @@ public class AIforDialogue : MonoBehaviour
             targetGameObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
     }
     // Helper coroutine to track when a dialogue finishes
 
@@ -371,7 +373,7 @@ public class AIforDialogue : MonoBehaviour
 
         // 5 Activate the mission timer
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
     }
 
     public IEnumerator DialogueSequence1IWBC()
@@ -414,7 +416,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
     }
 
     public IEnumerator DialogueSequenceIRBCT2105()
@@ -458,8 +460,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
-
+            missionTimer.ResumeTimer();
     }
 
     public IEnumerator DialogueSequenceIRBCT2104()
@@ -504,7 +505,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRBCT2103()
@@ -546,7 +547,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRBCT2102()
@@ -589,7 +590,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRBCT2101()
@@ -632,7 +633,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRBCT2100()
@@ -675,7 +676,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRBCT905()
@@ -719,7 +720,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
 
@@ -763,7 +764,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRBCT903()
@@ -806,7 +807,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRBCT902()
@@ -849,7 +850,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRBCT901()
@@ -892,7 +893,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRBCT900()
@@ -935,7 +936,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
 
     }
@@ -980,7 +981,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRBCT304()
@@ -1023,7 +1024,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRBCT303()
@@ -1066,7 +1067,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRBCT302()
@@ -1109,7 +1110,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRBCT301()
@@ -1152,7 +1153,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRBCT300()
@@ -1195,7 +1196,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
 
     }
@@ -1238,7 +1239,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRBC05()
@@ -1281,7 +1282,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
 
     }
     public IEnumerator DialogueSequenceIRB5()
@@ -1323,7 +1324,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
     }
 
     public IEnumerator DialogueSequenceIRB66()
@@ -1365,7 +1366,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
     }
 
     public IEnumerator DialogueSequenceIRB7()
@@ -1409,7 +1410,7 @@ public class AIforDialogue : MonoBehaviour
             Debug.LogWarning("menuGameObject is not assigned!");
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
     }
 
     public IEnumerator DialogueSequenceIRB8()
@@ -1451,7 +1452,7 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
     }
 
     public IEnumerator DialogueSequenceIRB9()
@@ -1493,8 +1494,55 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ActivateTimer();
+            missionTimer.ResumeTimer();
     }
-    
+    public IEnumerator DialogueSequence0IWBCE()
+    {
+        Camera cam = Camera.main;
+        if (cam == null)
+            yield break;
+
+        // 1️⃣ Hide MULTIPLE layers at once (Inspector controlled)
+        cam.cullingMask = cam.cullingMask & ~layersToHide.value;
+
+        // 2️⃣ Disable target object
+        if (targetObject != null)
+        {
+            targetObject.SetActive(false);
+            yield return null;
+        }
+
+        yield return new WaitForEndOfFrame();
+
+        // 3️⃣ Play dialogue index 0
+        if (dialogueSets != null && dialogueSets.Count > 0)
+        {
+            dialogueFinished = false;
+
+            TriggerDialogue(dialogueSets[0].setName);
+
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+
+        // 4️⃣ Re-enable target object
+        if (targetObject != null)
+            targetObject.SetActive(true);
+
+        // 5️⃣ 🔥 ACTIVATE ALL ENEMIES (WORKS EVEN IF INACTIVE)
+        EnemyFSM[] enemies = Resources.FindObjectsOfTypeAll<EnemyFSM>();
+
+        foreach (EnemyFSM enemy in enemies)
+        {
+            if (enemy == null) continue;
+
+            // optional safety: avoid prefab assets
+            if (enemy.gameObject.scene.IsValid())
+            {
+                enemy.gameObject.SetActive(true);
+                Debug.Log("Activated enemy: " + enemy.name);
+            }
+        }
+    }
+
 }
 

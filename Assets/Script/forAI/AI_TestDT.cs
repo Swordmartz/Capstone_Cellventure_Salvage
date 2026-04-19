@@ -58,9 +58,13 @@ public class AI_TestTD : MonoBehaviour
         {
             StartCoroutine(dialogueSystem.DialogueSequence0IRBC());
         }
-        else if (sceneName == "Chapter1 - IWBC")
+        else if (sceneName == "Chapter1 - IWBCNM")
         {
             StartCoroutine(dialogueSystem.DialogueSequence0IWBC());
+        }
+        else if (sceneName == "Chapter1 - IWBCE")
+        {
+            StartCoroutine(dialogueSystem.DialogueSequence0IWBCE());
         }
 
         UpdateCounterUI();
@@ -80,9 +84,13 @@ public class AI_TestTD : MonoBehaviour
             
                 StartCoroutine(dialogueSystem.DialogueSequence0IRBC());
             
-            else if (sceneName == "Chapter1 - IWBC")
+            else if (sceneName == "Chapter1 - IWBCNM")
             
                 StartCoroutine(dialogueSystem.DialogueSequence0IWBC());
+
+            else if (sceneName == "Chapter1 - IWBCE")
+            
+                StartCoroutine(dialogueSystem.DialogueSequence0IWBCE());
 
             playerInTrigger = false;
         }

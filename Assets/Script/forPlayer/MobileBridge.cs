@@ -12,11 +12,22 @@ public class MobileInputBridge : MonoBehaviour
 
     void Awake()
     {
-        instance = this;
         playerMovement = GetComponent<PlayerMovementTry>();
 
         if (joystick == null)
             Debug.LogWarning("[MobileInputBridge] FloatingJoystick reference is not assigned!");
+    }
+
+    void OnEnable()
+    {
+        instance = this; // 👈 moved here so it updates when character switches
+        playerMovement.SetMovementInput(Vector2.zero); // 👈 clear any leftover input
+    }
+
+    void OnDisable()
+    {
+        // 👈 clear input when this character gets disabled
+        playerMovement.SetMovementInput(Vector2.zero);
     }
 
     void Update()
@@ -29,7 +40,6 @@ public class MobileInputBridge : MonoBehaviour
             return;
         }
 
-        // ✅ Clear input if joystick just became active
         if (joystick.Horizontal == 0 && joystick.Vertical == 0)
         {
             playerMovement.SetMovementInput(Vector2.zero);
@@ -43,12 +53,10 @@ public class MobileInputBridge : MonoBehaviour
     {
         inputLocked = locked;
 
-        // Always zero out when locking
         if (locked && instance != null)
             instance.playerMovement.SetMovementInput(Vector2.zero);
     }
 
-    // Call this after dialogue ends to force clear any stored input
     public static void ForceZero()
     {
         if (instance != null)

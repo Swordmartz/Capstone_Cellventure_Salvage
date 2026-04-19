@@ -6,6 +6,8 @@ TagManager:
   tags:
   - IgnoreBillboard
   - Enemy
+  - Teleport
+  - Attackable
   layers:
   - Default
   - TransparentFX
@@ -21,12 +23,12 @@ TagManager:
   - Projectile
   - Hideable2
   - Meele
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Floors1
+  - Floors2
+  - Floors3
+  - Wall1
+  - Wall2
+  - Wall3
   - 
   - 
   - 

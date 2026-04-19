@@ -19,21 +19,29 @@ public class Item : MonoBehaviour
     public GameObject optionalObjectToDisable;
 
     [Header("Mini‑Screen Teleport")]
-    public GameObject miniScreen;          // ✅ assign your mini‑screen panel
-    public Button brainButton;             // ✅ teleport to brain
-    public Button muscleButton;            // ✅ teleport to muscle
-    public Button heartButton;             // ✅ teleport to heart
-    public Transform player;               // ✅ player transform
-    public Transform brainTarget;          // ✅ destination for brain
-    public Transform muscleTarget;         // ✅ destination for muscle
-    public Transform heartTarget;          // ✅ destination for heart
+    public GameObject miniScreen;
+    public Button brainButton;
+    public Button muscleButton;
+    public Button heartButton;
+    public Transform player;
+    public Transform brainTarget;
+    public Transform muscleTarget;
+    public Transform heartTarget;
+
+    [Header("Floor Visibility")]
+    public bool enableFloorVisibility = false;
+    public string[] layersToHide;          // manually type layer names to hide on teleport
+
+    private int originalCullingMask;
 
     private void Start()
     {
+        // Save original culling mask
+        originalCullingMask = Camera.main.cullingMask;
+
         if (miniScreen != null)
             miniScreen.SetActive(false);
 
-        // Hook up teleport buttons
         if (brainButton != null) brainButton.onClick.AddListener(() => TeleportPlayer(brainTarget));
         if (muscleButton != null) muscleButton.onClick.AddListener(() => TeleportPlayer(muscleTarget));
         if (heartButton != null) heartButton.onClick.AddListener(() => TeleportPlayer(heartTarget));
@@ -41,7 +49,6 @@ public class Item : MonoBehaviour
 
     public void Execute()
     {
-        // 🧠 STEP 0: Check if item is required
         if (requireItem)
         {
             if (playerInventory == null)
@@ -53,28 +60,20 @@ public class Item : MonoBehaviour
             if (!playerInventory.HasItem || playerInventory.currentItem != requiredItem)
             {
                 StartCoroutine(AI_Test.DialogueSequence3IRBC());
-                Debug.Log("Required item not found. Cannot execute.");
                 return;
             }
-
-            Debug.Log("Required item found. Proceeding...");
         }
 
-        // Step 1: Disable guide system
         if (AI_Test != null && guideSystem != null)
-        {
             guideSystem.guideEnabled = false;
-            Debug.Log("Guide system deactivated.");
-        }
 
-        // Step 1.5: Disable optional object if assigned
         if (optionalObjectToDisable != null)
-        {
             optionalObjectToDisable.SetActive(false);
-            Debug.Log(optionalObjectToDisable.name + " disabled.");
-        }
 
-        // Step 2: Teleport the player (default target)
+        // ✅ Hide layers BEFORE teleporting
+        if (enableFloorVisibility)
+            ApplyLayerVisibility();
+
         if (teleportTarget != null)
         {
             GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
@@ -93,24 +92,13 @@ public class Item : MonoBehaviour
                 {
                     playerObj.transform.position = teleportTarget.position;
                 }
-
-                Debug.Log("Player teleported to " + teleportTarget.name);
-            }
-            else
-            {
-                Debug.LogWarning("Player not found for teleport.");
             }
         }
 
-        // ✅ Step 3: Activate mini‑screen for teleport choices
         if (miniScreen != null)
-        {
             miniScreen.SetActive(true);
-            Debug.Log("Mini‑screen activated!");
-        }
     }
 
-    // ✅ Teleport player to chosen destination and hide mini‑screen
     private void TeleportPlayer(Transform destination)
     {
         if (destination == null)
@@ -127,26 +115,45 @@ public class Item : MonoBehaviour
 
             if (rb != null)
             {
-                // Reset physics before teleport
                 rb.linearVelocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
                 rb.position = destination.position;
             }
             else
             {
-                // Fallback if no Rigidbody
                 playerObj.transform.position = destination.position;
             }
+        }
 
-            Debug.Log("Player teleported safely to " + destination.name);
-        }
-        else
-        {
-            Debug.LogWarning("Player not found for teleport.");
-        }
+        if (enableFloorVisibility)
+            ApplyLayerVisibility();
 
         if (miniScreen != null)
             miniScreen.SetActive(false);
     }
 
+    private void ApplyLayerVisibility()
+    {
+        int newMask = originalCullingMask;
+
+        foreach (string layerName in layersToHide)
+        {
+            int layer = LayerMask.NameToLayer(layerName);
+            Debug.Log($"Hiding layer: '{layerName}' = index {layer}");
+            if (layer == -1)
+            {
+                Debug.LogWarning($"Layer '{layerName}' not found!");
+                continue;
+            }
+            newMask &= ~(1 << layer);
+        }
+
+        Debug.Log($"Old mask: {originalCullingMask} | New mask: {newMask}");
+        Camera.main.cullingMask = newMask;
+    }
+
+    public void RestoreCullingMask()
+    {
+        Camera.main.cullingMask = originalCullingMask;
+    }
 }

@@ -6,7 +6,7 @@ using Unity.VisualScripting;
 public class DetectionFSM : MonoBehaviour
 {
     public enum EnemyState { Idle, Detecting, Hiding, Returning, Dead }
-    private EnemyState currentState = EnemyState.Idle;
+    public EnemyState currentState = EnemyState.Idle;
 
     private NavMeshAgent agent;
     public Transform player;
@@ -53,6 +53,14 @@ public class DetectionFSM : MonoBehaviour
 
     void Update()
     {
+        // Always track the currently active player
+        if (player == null || !player.gameObject.activeInHierarchy)
+        {
+            GameObject activePlayer = GameObject.FindGameObjectWithTag("Player");
+            if (activePlayer != null)
+                player = activePlayer.transform;
+        }
+
         switch (currentState)
         {
             case EnemyState.Idle:
@@ -152,11 +160,14 @@ public class DetectionFSM : MonoBehaviour
         Debug.Log($"{name} has died.");
         currentState = EnemyState.Dead;
 
-        if (agent != null)
-            agent.isStopped = true;
+        currentHealth = 0; // 👈 zero out HP
 
-        // Do nothing else — leave the GameObject active
-        // You could add a death animation or particle effect here if desired
+        if (agent != null)
+        {
+            agent.isStopped = true;
+            agent.velocity = Vector3.zero;  // 👈 kill any remaining momentum
+            agent.ResetPath();              // 👈 clear any active path
+        }
     }
     public void ForceKill()
     {
@@ -222,6 +233,8 @@ public class DetectionFSM : MonoBehaviour
 
     private IEnumerator ApplyBoostAfterStop(float boostedSpeed)
     {
+        if (currentState == EnemyState.Dead) yield break; // 👈 don't boost if dead
+
         agent.speed = boostedSpeed;
         StartCoroutine(GraduallyReduceSpeed());
         yield break;
@@ -240,6 +253,7 @@ public class DetectionFSM : MonoBehaviour
     public void ApplyStop(float duration)
     {
         if (agent == null) return;
+        if (currentState == EnemyState.Dead) return; // 👈 don't apply stop if dead
 
         StartCoroutine(StopCoroutine(duration));
     }
@@ -249,9 +263,9 @@ public class DetectionFSM : MonoBehaviour
         float originalSpeed = agent.speed;
         agent.isStopped = true;
 
-        Debug.Log($"{name} stopped for {duration} seconds.");
-
         yield return new WaitForSeconds(duration);
+
+        if (currentState == EnemyState.Dead) yield break; // 👈 don't resume if died during stop
 
         agent.isStopped = false;
         agent.speed = normalSpeed;

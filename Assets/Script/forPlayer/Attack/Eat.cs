@@ -1,29 +1,29 @@
 using UnityEngine;
 
-public class MeleeAttack : MonoBehaviour
+public class MeleeAttack2 : MonoBehaviour
 {
-    public int damage = 2;
+    [Header("Attack Settings")]
     public float attackRange = 1.5f;
     public float attackRadius = 1f;
     public LayerMask enemyLayer;
 
-    public float meleeCooldown = 1f; // seconds between attacks
-    private float lastMeleeTime = -999f;
+    [Header("Cooldown")]
+    public float meleeCooldown = 1f;
 
+    private float lastMeleeTime = -999f;
     private PlayerMovementTry playerMovement;
 
     void Start()
     {
         playerMovement = GetComponent<PlayerMovementTry>();
+
+        if (playerMovement == null)
+            Debug.LogError($"[MeleeAttack2] PlayerMovementTry not found on {gameObject.name}!");
     }
 
     public void PerformAttack()
     {
-        if (Time.time < lastMeleeTime + meleeCooldown)
-        {
-            Debug.Log("Melee attack on cooldown!");
-            return;
-        }
+        if (Time.time < lastMeleeTime + meleeCooldown) return;
 
         lastMeleeTime = Time.time;
 
@@ -38,17 +38,16 @@ public class MeleeAttack : MonoBehaviour
         foreach (Collider hit in hits)
         {
             DetectionFSM enemy = hit.GetComponent<DetectionFSM>();
-            if (enemy != null)
-            {
-                enemy.TakeDamage(damage);
-                Debug.Log($"Hit {enemy.name} with melee attack!");
-            }
+            if (enemy == null) continue;
+
+            if (enemy.currentHealth <= 0 || enemy.currentState == DetectionFSM.EnemyState.Dead)
+                hit.gameObject.SetActive(false);
         }
     }
 
     void OnDrawGizmosSelected()
     {
-        Gizmos.color = Color.red;
+        Gizmos.color = Color.blue;
         Vector3 dir = Application.isPlaying
             ? (playerMovement?.lastInputDirection.sqrMagnitude > 0.01f == true
                 ? playerMovement.lastInputDirection

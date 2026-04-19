@@ -104,7 +104,10 @@ public class GameTimer : MonoBehaviour
     {
         timerActive = false;
     }
-
+    public void ResumeTimer()
+    {
+        timerActive = true;
+    }
     public void ResetTimer()
     {
         currentTime = missionTime;
