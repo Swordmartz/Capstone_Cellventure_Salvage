@@ -2,15 +2,18 @@ using UnityEngine;
 
 public class SpriteLooksCamera : MonoBehaviour
 {
-    private Camera cam;
+    public Camera targetCamera;
 
     void Start()
     {
-        cam = Camera.main;
-    }
-    void LateUpdate()
-    { 
-        transform.LookAt(transform.position + Camera.main.transform.forward);
+        // Fallback to main camera if none assigned
+        if (targetCamera == null)
+            targetCamera = Camera.main;
     }
 
+    void LateUpdate()
+    {
+        if (targetCamera == null) return;
+        transform.LookAt(transform.position + targetCamera.transform.forward);
+    }
 }
