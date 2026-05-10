@@ -1543,6 +1543,36 @@ public class AIforDialogue : MonoBehaviour
             }
         }
     }
+    public IEnumerator DialogueSequenceIPI()
+    {
+        if (missionTimer != null)
+            missionTimer.StopTimer();
+
+        // 1️⃣ Disable the targetObject
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 2️⃣ Play dialogue
+        if (dialogueSets.Count > 0)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[0].setName);
+
+            // 3️⃣ Wait until dialogue finishes
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("DialogueSystem is not assigned!");
+        }
+
+        // 4️⃣ Re‑enable the targetObject
+        if (targetObject != null)
+            targetObject.SetActive(true);
+
+        if (missionTimer != null)
+            missionTimer.ResumeTimer();
+    }
 
 }
 

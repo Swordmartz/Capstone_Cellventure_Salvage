@@ -30,21 +30,33 @@ public class Item : MonoBehaviour
 
     [Header("Floor Visibility")]
     public bool enableFloorVisibility = false;
-    public string[] layersToHide;          // manually type layer names to hide on teleport
+    public string[] layersToHide;
+
+    [Header("Secondary Camera Teleport")]
+    public bool teleportSecondaryCamera = false;
+    public Camera secondaryCamera;
+    public Transform cameraLocationA;
+    public Transform cameraLocationB;
+    public Transform cameraLocationC;
 
     private int originalCullingMask;
 
     private void Start()
     {
-        // Save original culling mask
         originalCullingMask = Camera.main.cullingMask;
 
         if (miniScreen != null)
             miniScreen.SetActive(false);
 
+        // ✅ Player teleport buttons
         if (brainButton != null) brainButton.onClick.AddListener(() => TeleportPlayer(brainTarget));
         if (muscleButton != null) muscleButton.onClick.AddListener(() => TeleportPlayer(muscleTarget));
         if (heartButton != null) heartButton.onClick.AddListener(() => TeleportPlayer(heartTarget));
+
+        // ✅ Camera teleport tied to player teleport buttons
+        if (brainButton != null) brainButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationA));
+        if (muscleButton != null) muscleButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationB));
+        if (heartButton != null) heartButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationC));
     }
 
     public void Execute()
@@ -70,7 +82,6 @@ public class Item : MonoBehaviour
         if (optionalObjectToDisable != null)
             optionalObjectToDisable.SetActive(false);
 
-        // ✅ Hide layers BEFORE teleporting
         if (enableFloorVisibility)
             ApplyLayerVisibility();
 
@@ -95,8 +106,32 @@ public class Item : MonoBehaviour
             }
         }
 
+        // ✅ Default to Location A on Execute
+        if (teleportSecondaryCamera)
+            TeleportSecondaryCamera(cameraLocationA);
+
         if (miniScreen != null)
             miniScreen.SetActive(true);
+    }
+
+    private void TeleportSecondaryCamera(Transform destination)
+    {
+        if (!teleportSecondaryCamera) return;
+
+        if (secondaryCamera == null)
+        {
+            Debug.LogWarning("Secondary camera not assigned!");
+            return;
+        }
+
+        if (destination == null)
+        {
+            Debug.LogWarning("Camera destination not assigned!");
+            return;
+        }
+
+        secondaryCamera.transform.position = destination.position; // ✅ Position only
+        Debug.Log("Secondary camera teleported to: " + destination.name);
     }
 
     private void TeleportPlayer(Transform destination)

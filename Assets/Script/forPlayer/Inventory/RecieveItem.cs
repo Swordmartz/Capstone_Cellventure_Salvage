@@ -1,22 +1,26 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class ItemReceiver : MonoBehaviour
+public class ItemReceiverIncrement : MonoBehaviour
 {
     [Header("UI")]
-    public Button useButton; // Button to press
+    public Button useButton;
     public AI_TestTD halu;
 
     [Header("Item Requirement")]
     public bool requireItem = true;
     public Inventory playerInventory;
     public O2Item requiredItem;
+    public bool correctDelivery = true;
 
     [Header("Consume Item")]
     public bool consumeItem = true;
 
     [Header("Reactivation")]
-    public GameObject objectToReactivate; // ✅ drag the object you want to reactivate here
+    public GameObject objectToReactivate;
+
+    [Header("Increment Settings")]
+    public int deliveryIncrementAmount = 1;
 
     private bool playerNearby = false;
 
@@ -24,7 +28,7 @@ public class ItemReceiver : MonoBehaviour
     {
         if (useButton != null)
         {
-            useButton.gameObject.SetActive(false); // Start hidden
+            useButton.gameObject.SetActive(false);
             useButton.onClick.AddListener(Execute);
         }
     }
@@ -35,7 +39,7 @@ public class ItemReceiver : MonoBehaviour
         {
             playerNearby = true;
             if (useButton != null)
-                useButton.gameObject.SetActive(true); // Show button
+                useButton.gameObject.SetActive(true);
         }
     }
 
@@ -45,7 +49,7 @@ public class ItemReceiver : MonoBehaviour
         {
             playerNearby = false;
             if (useButton != null)
-                useButton.gameObject.SetActive(false); // Hide button
+                useButton.gameObject.SetActive(false);
         }
     }
 
@@ -63,7 +67,7 @@ public class ItemReceiver : MonoBehaviour
 
             if (!playerInventory.HasItem || playerInventory.currentItem != requiredItem)
             {
-                Debug.Log("You don’t have the required item!");
+                Debug.Log("You don't have the required item!");
                 return;
             }
 
@@ -76,15 +80,16 @@ public class ItemReceiver : MonoBehaviour
             }
         }
 
-        // ✅ Increment the counter safely
-        if (halu != null)
+        if (requireItem && correctDelivery)
         {
-            halu.itemsDelivered++;
-            halu.UpdateCounterUI();
-            Debug.Log("Items delivered: " + halu.itemsDelivered);
+            if (halu != null)
+            {
+                halu.itemsDelivered += deliveryIncrementAmount;
+                halu.UpdateCounterUI();
+                Debug.Log("Items delivered: " + halu.itemsDelivered);
+            }
         }
 
-        // ✅ Reactivate the assigned GameObject
         if (objectToReactivate != null)
         {
             objectToReactivate.SetActive(true);
@@ -94,7 +99,6 @@ public class ItemReceiver : MonoBehaviour
         if (useButton != null)
             useButton.gameObject.SetActive(false);
 
-        // ✅ Deactivate this receiver object after successful item delivery
         gameObject.SetActive(false);
     }
 }

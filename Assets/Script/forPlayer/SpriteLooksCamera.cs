@@ -13,7 +13,8 @@ public class SpriteLooksCamera : MonoBehaviour
 
     void LateUpdate()
     {
-        if (targetCamera == null) return;
-        transform.LookAt(transform.position + targetCamera.transform.forward);
+        if (Camera.main == null) return;
+
+        transform.forward = Camera.main.transform.forward;
     }
 }

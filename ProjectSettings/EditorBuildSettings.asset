@@ -26,6 +26,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Chapter1 - Platelets.unity
     guid: 5bd88b2588ff14e4085c524a6e214272
+  - enabled: 1
+    path: Assets/Scenes/Chapter 1 - IICE.unity
+    guid: cce53a9aacbb0c845b6004157138437b
   m_configObjects:
     com.unity.adaptivePerformance.basic.provider_settings: {fileID: 11400000, guid: 0d3f4e05340d6274ab04857f14418b92, type: 2}
     com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: 0b278d173b927f741a3930f64bcbea4a, type: 2}

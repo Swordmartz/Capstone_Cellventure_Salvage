@@ -1,10 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.ProBuilder.MeshOperations;
-using UnityEngine.Rendering.Universal.Internal;
 using UnityEngine.SceneManagement;
 
 public class AI_TestTD : MonoBehaviour
@@ -27,9 +24,10 @@ public class AI_TestTD : MonoBehaviour
     public GameTimer MissionManager;
 
     [Header("Player score")]
-    public float comptTime = 0;
-    public int performanceScore = 0;
-    public int quizScore = 0;
+    public float comptTime = 0;//When the goal is reached, the time is captured and stored in this variable
+    public int performanceScore = 0;//For Tracking of Performance Score(The score is get by the decision tree)
+    public int idleTime = 0; //For Tracking of Idle time
+    public int FailedDelivery = 0; //For Tracking of Failed Delivery
 
     [Header("Triggers")]
     public bool playerInTrigger = false;
@@ -45,7 +43,7 @@ public class AI_TestTD : MonoBehaviour
     public GameTimer missionTimer;
     public bool hasCapturedTime = false;
 
- 
+
 
     // 🔥 NEW (for proper checkpoint detection)
     private float previousTime;
@@ -66,6 +64,12 @@ public class AI_TestTD : MonoBehaviour
         {
             StartCoroutine(dialogueSystem.DialogueSequence0IWBCE());
         }
+        else if (sceneName == "Chapter1 - Platelets")
+        {
+            StartCoroutine(dialogueSystem.DialogueSequenceIPI());
+        }
+
+
 
         UpdateCounterUI();
 
@@ -81,16 +85,20 @@ public class AI_TestTD : MonoBehaviour
             string sceneName = SceneManager.GetActiveScene().name;
 
             if (sceneName == "Chapter1 - IRBC")
-            
+
                 StartCoroutine(dialogueSystem.DialogueSequence0IRBC());
-            
+
             else if (sceneName == "Chapter1 - IWBCNM")
-            
+
                 StartCoroutine(dialogueSystem.DialogueSequence0IWBC());
 
             else if (sceneName == "Chapter1 - IWBCE")
-            
+
                 StartCoroutine(dialogueSystem.DialogueSequence0IWBCE());
+            else if (sceneName == "Chapter1 - Platelets")
+
+                StartCoroutine(dialogueSystem.DialogueSequenceIPI());
+
 
             playerInTrigger = false;
         }
@@ -120,25 +128,25 @@ public class AI_TestTD : MonoBehaviour
     }
 
     public void ItemTimeChecker()
-{
-    if (missionTimer != null && !hasCapturedTime)
     {
+        if (missionTimer != null && !hasCapturedTime)
+        {
             if (itemsDelivered >= 1 && !firstDeliveryTriggered)
             {
                 firstDeliveryTriggered = true;
                 StartCoroutine(dialogueSystem.DialogueSequenceIRB9()); // Replace with your target dialogue
             }
             if (itemsDelivered >= deliveryThreshold)
-        {
-            hasCapturedTime = true;
+            {
+                hasCapturedTime = true;
 
-            float currentTime = missionTimer.GetCurrentTime();
-            comptTime = missionTimer.missionTime - currentTime; // elapsed time
+                float currentTime = missionTimer.GetCurrentTime();
+                comptTime = missionTimer.missionTime - currentTime; // elapsed time
 
-            Debug.Log("Time elapsed: " + comptTime);
+                Debug.Log("Time elapsed: " + comptTime);
+            }
         }
     }
-}
 
     // =========================
     // ⏱ TIMER CHECK (FIXED)
@@ -275,5 +283,4 @@ public class AI_TestTD : MonoBehaviour
         }
     }
 
-    
 }
