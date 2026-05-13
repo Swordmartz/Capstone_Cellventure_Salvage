@@ -31,6 +31,9 @@ public class EnemyFSM : MonoBehaviour
     [Header("Wall Check")]
     [SerializeField] private LayerMask wallMask;
 
+    [Header("Teleport Axis Threshold")]
+    [SerializeField] private float axisThreshold = 2f;
+
     private enum State
     {
         MoveToTarget,
@@ -43,7 +46,8 @@ public class EnemyFSM : MonoBehaviour
 
     private NavMeshAgent agent;
     private Attackable currentTarget;
-    private Transform currentTeleport;
+    private Transform currentTeleport; // the point we are currently walking TOWARD
+    private Transform lastTeleport;    // the point we are physically STANDING ON
 
     private float attackTimer;
     private bool isDead;
@@ -101,13 +105,14 @@ public class EnemyFSM : MonoBehaviour
 
         agent.isStopped = false;
         agent.SetDestination(currentTarget.transform.position);
+        state = State.MoveToTarget;
     }
 
     void HandleMoveToTarget()
     {
         if (currentTarget == null || currentTarget.IsDead)
         {
-            PickRandomTarget();
+            PickTeleport();
             return;
         }
 
@@ -121,7 +126,7 @@ public class EnemyFSM : MonoBehaviour
     {
         if (currentTarget == null || currentTarget.IsDead)
         {
-            PickRandomTarget();
+            PickTeleport();
             return;
         }
 
@@ -140,7 +145,7 @@ public class EnemyFSM : MonoBehaviour
 
             if (currentTarget.IsDead)
             {
-                PickRandomTarget();
+                PickTeleport();
                 yield break;
             }
         }
@@ -149,7 +154,7 @@ public class EnemyFSM : MonoBehaviour
     }
 
     // ─────────────────────────────
-    // 💥 TAKE DAMAGE → TELEPORT + SPEED BOOST
+    // TAKE DAMAGE -> TELEPORT + SPEED BOOST
     // ─────────────────────────────
     public void TakeDamage(int dmg)
     {
@@ -168,7 +173,7 @@ public class EnemyFSM : MonoBehaviour
     }
 
     // ─────────────────────────────
-    // 🔥 SPEED BOOST SYSTEM
+    // SPEED BOOST SYSTEM
     // ─────────────────────────────
     void ApplySpeedBoost()
     {
@@ -188,9 +193,68 @@ public class EnemyFSM : MonoBehaviour
     }
 
     // ─────────────────────────────
-    // TELEPORT
+    // TELEPORT - nearest point on same axis, never the one we are standing on
     // ─────────────────────────────
     void PickTeleport()
+    {
+        List<Transform> sameAxisPoints = new List<Transform>();
+
+        foreach (Transform tp in teleportPoints)
+        {
+            if (tp == null) continue;
+
+            // Skip the point we physically landed on last time
+            if (tp == lastTeleport) continue;
+
+            bool sameX = Mathf.Abs(tp.position.x - transform.position.x) <= axisThreshold;
+            bool sameZ = Mathf.Abs(tp.position.z - transform.position.z) <= axisThreshold;
+
+            if (!sameX && !sameZ) continue;
+
+            // Wall-visibility check
+            Vector3 origin = transform.position + Vector3.up * 1f;
+            Vector3 target = tp.position + Vector3.up * 1f;
+            float dist = Vector3.Distance(origin, target);
+
+            if (Physics.Raycast(origin, (target - origin).normalized, dist, wallMask))
+                continue;
+
+            sameAxisPoints.Add(tp);
+        }
+
+        // Fall back to ALL visible points if nothing shares an axis
+        List<Transform> candidates = sameAxisPoints.Count > 0
+            ? sameAxisPoints
+            : GetAllVisibleTeleports();
+
+        if (candidates.Count == 0)
+        {
+            state = State.MoveToTarget;
+            PickRandomTarget();
+            return;
+        }
+
+        // Pick the NEAREST among candidates
+        Transform nearest = null;
+        float nearestDist = float.MaxValue;
+
+        foreach (Transform tp in candidates)
+        {
+            float d = Vector3.Distance(transform.position, tp.position);
+            if (d < nearestDist)
+            {
+                nearestDist = d;
+                nearest = tp;
+            }
+        }
+
+        currentTeleport = nearest;
+        agent.isStopped = false;
+        agent.SetDestination(currentTeleport.position);
+        state = State.MoveToTeleport;
+    }
+
+    List<Transform> GetAllVisibleTeleports()
     {
         List<Transform> valid = new List<Transform>();
 
@@ -198,30 +262,18 @@ public class EnemyFSM : MonoBehaviour
         {
             if (tp == null) continue;
 
+            // Skip the point we physically landed on last time
+            if (tp == lastTeleport) continue;
+
             Vector3 origin = transform.position + Vector3.up * 1f;
             Vector3 target = tp.position + Vector3.up * 1f;
-
-            Vector3 dir = (target - origin).normalized;
             float dist = Vector3.Distance(origin, target);
 
-            if (Physics.Raycast(origin, dir, dist, wallMask))
-                continue;
-
-            valid.Add(tp);
+            if (!Physics.Raycast(origin, (target - origin).normalized, dist, wallMask))
+                valid.Add(tp);
         }
 
-        if (valid.Count == 0)
-        {
-            PickRandomTarget();
-            return;
-        }
-
-        currentTeleport = valid[Random.Range(0, valid.Count)];
-
-        agent.isStopped = false;
-        agent.SetDestination(currentTeleport.position);
-
-        state = State.MoveToTeleport;
+        return valid;
     }
 
     void HandleMoveToTeleport()
@@ -236,11 +288,18 @@ public class EnemyFSM : MonoBehaviour
         {
             agent.Warp(currentTeleport.position);
 
+            // Record where we physically landed so PickTeleport excludes it next call
+            lastTeleport = currentTeleport;
+            currentTeleport = null;
+
             state = State.MoveToTarget;
             PickRandomTarget();
         }
     }
 
+    // ─────────────────────────────
+    // DEATH
+    // ─────────────────────────────
     void Die()
     {
         isDead = true;

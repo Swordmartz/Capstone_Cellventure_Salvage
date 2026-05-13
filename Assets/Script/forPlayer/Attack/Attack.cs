@@ -10,11 +10,14 @@ public class MeleeAttack : MonoBehaviour
     public float meleeCooldown = 1f; // seconds between attacks
     private float lastMeleeTime = -999f;
 
+    public Animator anim;
+
     private PlayerMovementTry playerMovement;
 
     void Start()
     {
         playerMovement = GetComponent<PlayerMovementTry>();
+        anim = GetComponent<Animator>();
     }
 
     public void PerformAttack()
@@ -24,6 +27,8 @@ public class MeleeAttack : MonoBehaviour
             Debug.Log("Melee attack on cooldown!");
             return;
         }
+
+        anim.SetBool("IsAttacking", true);
 
         lastMeleeTime = Time.time;
 
@@ -44,6 +49,11 @@ public class MeleeAttack : MonoBehaviour
                 Debug.Log($"Hit {enemy.name} with melee attack!");
             }
         }
+    }
+
+    public void FinishAttack()
+    {
+        anim.SetBool("IsAttacking", false);
     }
 
     void OnDrawGizmosSelected()

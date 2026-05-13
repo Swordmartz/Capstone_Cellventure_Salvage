@@ -39,6 +39,14 @@ public class Item : MonoBehaviour
     public Transform cameraLocationB;
     public Transform cameraLocationC;
 
+    [Header("Secondary Camera Orthographic Sizes")]
+    [Tooltip("Orthographic size when secondary camera teleports to Location A (Brain).")]
+    public float cameraOrthoSizeA = 5f;
+    [Tooltip("Orthographic size when secondary camera teleports to Location B (Muscle).")]
+    public float cameraOrthoSizeB = 5f;
+    [Tooltip("Orthographic size when secondary camera teleports to Location C (Heart).")]
+    public float cameraOrthoSizeC = 5f;
+
     private int originalCullingMask;
 
     private void Start()
@@ -53,10 +61,10 @@ public class Item : MonoBehaviour
         if (muscleButton != null) muscleButton.onClick.AddListener(() => TeleportPlayer(muscleTarget));
         if (heartButton != null) heartButton.onClick.AddListener(() => TeleportPlayer(heartTarget));
 
-        // ✅ Camera teleport tied to player teleport buttons
-        if (brainButton != null) brainButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationA));
-        if (muscleButton != null) muscleButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationB));
-        if (heartButton != null) heartButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationC));
+        // ✅ Camera teleport tied to player teleport buttons, each with its own ortho size
+        if (brainButton != null) brainButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationA, cameraOrthoSizeA));
+        if (muscleButton != null) muscleButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationB, cameraOrthoSizeB));
+        if (heartButton != null) heartButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationC, cameraOrthoSizeC));
     }
 
     public void Execute()
@@ -106,15 +114,15 @@ public class Item : MonoBehaviour
             }
         }
 
-        // ✅ Default to Location A on Execute
+        // ✅ Default to Location A (with its size) on Execute
         if (teleportSecondaryCamera)
-            TeleportSecondaryCamera(cameraLocationA);
+            TeleportSecondaryCamera(cameraLocationA, cameraOrthoSizeA);
 
         if (miniScreen != null)
             miniScreen.SetActive(true);
     }
 
-    private void TeleportSecondaryCamera(Transform destination)
+    private void TeleportSecondaryCamera(Transform destination, float orthoSize)
     {
         if (!teleportSecondaryCamera) return;
 
@@ -130,8 +138,17 @@ public class Item : MonoBehaviour
             return;
         }
 
-        secondaryCamera.transform.position = destination.position; // ✅ Position only
-        Debug.Log("Secondary camera teleported to: " + destination.name);
+        secondaryCamera.transform.position = destination.position;
+
+        if (secondaryCamera.orthographic)
+        {
+            secondaryCamera.orthographicSize = orthoSize;
+            Debug.Log($"Secondary camera teleported to '{destination.name}' with orthographic size {orthoSize}.");
+        }
+        else
+        {
+            Debug.LogWarning($"Secondary camera is not Orthographic — size not applied.");
+        }
     }
 
     private void TeleportPlayer(Transform destination)
