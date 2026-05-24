@@ -2,8 +2,9 @@ using UnityEngine;
 
 public class Trigger5 : MonoBehaviour
 {
-    public AIforDialogue MAI; // Assign AIGuide
-    public Inventory playerInventory; // Assign player's inventory
+    public AIforDialogue MAI;
+    public Inventory playerInventory;
+    public O2Item requiredItem;
 
     private bool triggered = false;
 
@@ -13,15 +14,32 @@ public class Trigger5 : MonoBehaviour
 
         if (other.CompareTag("Player"))
         {
-            Inventory playerInventory = other.GetComponentInParent<Inventory>();
-            if (playerInventory != null && playerInventory.HasItem)
+            Inventory inv = other.GetComponentInParent<Inventory>();
+
+            if (inv == null)
+            {
+                Debug.LogWarning("No Inventory found on Player!");
+                return;
+            }
+
+            if (!inv.HasItem)
+            {
+                Debug.Log("Player has no item.");
+                return;
+            }
+
+            triggered = true;
+
+            if (inv.currentItem == requiredItem)
             {
                 triggered = true;
                 StartCoroutine(MAI.DialogueSequenceIRB5());
             }
             else
             {
-                Debug.Log("Inventory null: " + (playerInventory == null) + " | HasItem: " + (playerInventory != null && playerInventory.HasItem));
+                // Wrong item
+                Debug.Log("Wrong item: " + inv.currentItem.itemName + " — Playing wrong dialogue.");
+                // TODO: StartCoroutine(MAI.WrongItemDialogue());
             }
         }
     }

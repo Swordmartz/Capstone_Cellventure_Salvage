@@ -4,80 +4,73 @@ using UnityEngine.UI;
 public class PickupButton : MonoBehaviour
 {
     public Inventory playerInventory;    // Player's inventory
-    public O2Item itemToPickup;          // The ScriptableObject data
+    public O2Item itemToPickup;          // Any item that extends O2Item
     public Button inventoryButton;       // Button to show item description
-    public Button pickupButton;          // Button to pick up this item
     public Image inventoryImage;         // UI Image where the icon will appear
     [SerializeField] private AIforGuide guideSystem;
     [SerializeField] private AIforDialogue AIM;
 
-    private bool dialogueTriggered = false; // ✅ ensures dialogue runs only once
+    private bool dialogueTriggered = false;
 
     private void Start()
     {
-        pickupButton.gameObject.SetActive(false); // Start inactive
-        pickupButton.onClick.AddListener(PickupItem);
-
         if (inventoryImage != null)
-        {
-            inventoryImage.enabled = false; // Start hidden
-        }
+            inventoryImage.enabled = false;
     }
 
     void PickupItem()
     {
-        if (guideSystem != null)
+        if (playerInventory == null)
         {
-            guideSystem.guideEnabled = false; // disable guide first
-            Debug.Log("Guide system deactivated.");
-
-            // 🔥 Trigger dialogue only once
-            if (!dialogueTriggered)
-            {
-                StartCoroutine(AIM.DialogueSequence2IRBC());
-                dialogueTriggered = true;
-            }
+            Debug.LogError("playerInventory not assigned on: " + gameObject.name);
+            return;
         }
-        else
+
+        if (itemToPickup == null)
         {
-            Debug.LogWarning("GuideSystem reference not assigned.");
+            Debug.LogError("itemToPickup not assigned on: " + gameObject.name);
+            return;
         }
 
         if (playerInventory.HasItem)
         {
-            Debug.Log("Inventory full! You already have an item.");
+            Debug.Log("Inventory full!");
             return;
         }
 
-        // Add item to inventory
+        if (guideSystem != null)
+        {
+            guideSystem.guideEnabled = false;
+            if (!dialogueTriggered && AIM != null)
+            {
+                if (itemToPickup.itemName == "Oxxygen")
+                    StartCoroutine(AIM.DialogueSequence2IRBC());
+                dialogueTriggered = true;
+            }
+        }
+        
+        else
+        {
+            Debug.LogWarning("GuideSystem not assigned on: " + gameObject.name);
+        }
+
         playerInventory.AddItem(itemToPickup);
 
-        // Disable inventory description button (if needed)
-        inventoryButton.gameObject.SetActive(false);
+        if (inventoryButton != null)
+            inventoryButton.gameObject.SetActive(false);
 
-        // Show the icon automatically in the UI
         if (inventoryImage != null && itemToPickup.icon != null)
         {
             inventoryImage.sprite = itemToPickup.icon;
             inventoryImage.enabled = true;
         }
 
-        // Hide the pickup button
-        pickupButton.gameObject.SetActive(false);
-
-        // Disable the scene object so it disappears
         gameObject.SetActive(false);
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
-            pickupButton.gameObject.SetActive(true);
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.CompareTag("Player"))
-            pickupButton.gameObject.SetActive(false);
+            PickupItem();
     }
 }

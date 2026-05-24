@@ -5,9 +5,8 @@ public class SpearMeleeAttack : MonoBehaviour
     [Header("Attack Settings")]
     public float attackRange = 2f;
     public float capsuleRadius = 0.3f;
-    public float capsuleHeight = 2f;
     public LayerMask enemyLayer;
-    public int attackDamage = 1; // ✅ Add this
+    public int attackDamage = 1;
 
     [Header("Cooldown")]
     public float meleeCooldown = 1f;
@@ -23,52 +22,76 @@ public class SpearMeleeAttack : MonoBehaviour
             Debug.LogError($"[SpearMeleeAttack] PlayerMovementTry not found on {gameObject.name}!");
     }
 
+    // Returns the direction the player is facing/moving — never zero
+    Vector3 GetAttackDirection()
+    {
+        if (playerMovement != null && playerMovement.lastInputDirection.sqrMagnitude > 0.01f)
+            return playerMovement.lastInputDirection.normalized;
+
+        // Fallback 1: use the transform's own forward
+        if (transform.forward.sqrMagnitude > 0.01f)
+            return transform.forward;
+
+        // Fallback 2: just go positive Z
+        return Vector3.forward;
+    }
+
     public void PerformAttack()
     {
         if (Time.time < lastMeleeTime + meleeCooldown) return;
-
         lastMeleeTime = Time.time;
 
-        Vector3 attackDir = (playerMovement != null && playerMovement.lastInputDirection.sqrMagnitude > 0.01f)
-            ? playerMovement.lastInputDirection
-            : transform.forward;
-
+        Vector3 attackDir = GetAttackDirection();
         Vector3 capsuleStart = transform.position;
         Vector3 capsuleEnd = transform.position + attackDir * attackRange;
 
+        Debug.Log($"[SpearMeleeAttack] Attacking — dir={attackDir}, start={capsuleStart}, end={capsuleEnd}");
+
         Collider[] hits = Physics.OverlapCapsule(capsuleStart, capsuleEnd, capsuleRadius, enemyLayer);
+
+        Debug.Log($"[SpearMeleeAttack] Hits found: {hits.Length}");
 
         foreach (Collider hit in hits)
         {
-            EnemyFSM enemy = hit.GetComponent<EnemyFSM>();
-            if (enemy == null) continue;
+            // GetComponentInParent handles colliders on child objects
+            EnemyFSM enemy = hit.GetComponentInParent<EnemyFSM>();
+            if (enemy == null)
+            {
+                Debug.Log($"[SpearMeleeAttack] Hit {hit.name} but no EnemyFSM found in parent chain.");
+                continue;
+            }
 
-            // ✅ Actually deal damage first
+            Debug.Log($"[SpearMeleeAttack] Dealing {attackDamage} damage to {enemy.name}");
             enemy.TakeDamage(attackDamage);
-
-            // ✅ Then disable if dead
-            if (enemy.currentHealth <= 0)
-                hit.gameObject.SetActive(false);
         }
     }
 
     void OnDrawGizmosSelected()
     {
-        Gizmos.color = Color.cyan;
-
         Vector3 dir = Application.isPlaying
-            ? (playerMovement?.lastInputDirection.sqrMagnitude > 0.01f == true
-                ? playerMovement.lastInputDirection
-                : transform.forward)
+            ? GetAttackDirection()
             : transform.forward;
 
         Vector3 capsuleStart = transform.position;
         Vector3 capsuleEnd = transform.position + dir * attackRange;
 
-        // Draw the capsule as two spheres + a line for editor visualization
+        Gizmos.color = Color.cyan;
+
+        // Draw the full capsule length so you can see it is NOT a sphere
         Gizmos.DrawWireSphere(capsuleStart, capsuleRadius);
         Gizmos.DrawWireSphere(capsuleEnd, capsuleRadius);
-        Gizmos.DrawLine(capsuleStart + Vector3.up * capsuleRadius, capsuleEnd + Vector3.up * capsuleRadius);
-        Gizmos.DrawLine(capsuleStart - Vector3.up * capsuleRadius, capsuleEnd - Vector3.up * capsuleRadius);
+
+        // Side lines connecting the two spheres — makes the capsule shape obvious
+        Vector3 right = Vector3.Cross(dir, Vector3.up).normalized * capsuleRadius;
+        Vector3 up = Vector3.up * capsuleRadius;
+
+        Gizmos.DrawLine(capsuleStart + right, capsuleEnd + right);
+        Gizmos.DrawLine(capsuleStart - right, capsuleEnd - right);
+        Gizmos.DrawLine(capsuleStart + up, capsuleEnd + up);
+        Gizmos.DrawLine(capsuleStart - up, capsuleEnd - up);
+
+        // Center line showing attack direction
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawLine(capsuleStart, capsuleEnd);
     }
 }

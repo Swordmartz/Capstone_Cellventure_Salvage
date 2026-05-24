@@ -8,6 +8,7 @@ TagManager:
   - Enemy
   - Teleport
   - Attackable
+  - ICEVIT
   layers:
   - Default
   - TransparentFX

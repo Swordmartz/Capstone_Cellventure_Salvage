@@ -13,10 +13,13 @@ public class AIforDialogue : MonoBehaviour
     public Animator characterAnimator;
     public TMP_Text dialogueText;
     public Button nextButton;
-    public GameTimer missionTimer; // ✅ drag your GameTimer object here
-    public GameObject oxygen;
+    public GameTimer missionTimer;
+    public GameObject[] oxygen;
     public LayerMask enemyLayer;
     public GameObject CL;
+
+    [Header("Audio")]
+    public AudioSource dialogueAudioSource;
 
     [Header("Intro Teleport")]
     public Transform introTeleportTarget;
@@ -38,6 +41,7 @@ public class AIforDialogue : MonoBehaviour
     {
         public string message;
         public Animator characterAnimator;
+        public AudioClip audioClip; // 🔊 Per-line audio
     }
 
     [System.Serializable]
@@ -56,8 +60,6 @@ public class AIforDialogue : MonoBehaviour
 
     [Header("Sequence Target")]
     public GameObject targetGameObject;
-
-    // ------------------ Setup ------------------
 
     // ------------------ Dialogue Core ------------------
 
@@ -85,12 +87,23 @@ public class AIforDialogue : MonoBehaviour
         if (typingCoroutine != null)
             StopCoroutine(typingCoroutine);
 
+        // Stop any playing audio when moving to next line
+        if (dialogueAudioSource != null && dialogueAudioSource.isPlaying)
+            dialogueAudioSource.Stop();
+
         if (activeDialogueSet != null && currentMessage < activeDialogueSet.lines.Count)
         {
             DialogueLine line = activeDialogueSet.lines[currentMessage];
 
             if (line.characterAnimator != null && characterAnimator != null)
                 characterAnimator.runtimeAnimatorController = line.characterAnimator.runtimeAnimatorController;
+
+            // 🔊 Play the audio clip for this line
+            if (dialogueAudioSource != null && line.audioClip != null)
+            {
+                dialogueAudioSource.clip = line.audioClip;
+                dialogueAudioSource.Play();
+            }
 
             typingCoroutine = StartCoroutine(TypeText(line.message));
             currentMessage++;
@@ -100,12 +113,15 @@ public class AIforDialogue : MonoBehaviour
         }
         else
         {
-            // ✅ Dialogue finished
             if (dialoguePanel != null)
                 dialoguePanel.SetActive(false);
 
             if (nextButton != null)
                 nextButton.gameObject.SetActive(false);
+
+            // Stop audio when dialogue ends
+            if (dialogueAudioSource != null && dialogueAudioSource.isPlaying)
+                dialogueAudioSource.Stop();
 
             activeDialogueSet = null;
             dialogueFinished = true;
@@ -134,18 +150,23 @@ public class AIforDialogue : MonoBehaviour
     {
         if (typingCoroutine != null)
         {
+            // Skip typing — stop audio immediately
             StopCoroutine(typingCoroutine);
-            dialogueText.text = activeDialogueSet.lines[currentMessage - 1].message;
             typingCoroutine = null;
+
+            if (dialogueAudioSource != null && dialogueAudioSource.isPlaying)
+                dialogueAudioSource.Stop();
+
+            dialogueText.text = activeDialogueSet.lines[currentMessage - 1].message;
         }
         else
         {
             ShowNextMessage();
         }
     }
+
     public IEnumerator WaitForDialogue(System.Action onFinished)
     {
-        // Wait until the current dialogue set is done
         while (activeDialogueSet != null)
             yield return null;
 
@@ -263,12 +284,15 @@ public class AIforDialogue : MonoBehaviour
         guideSystem.guideEnabled = true;
 
         // 4️⃣ Activate GameObject2 (oxygen) and switch guideMark
-        if (oxygen != null)
+        if (oxygen != null && oxygen.Length > 0)
         {
-            oxygen.SetActive(true);
-            guideSystem.guideMark = oxygen.transform;
+            foreach (GameObject obj in oxygen)
+            {
+                if (obj != null)
+                    obj.SetActive(true);
+            }
+            guideSystem.guideMark = oxygen[0].transform;
         }
-
         // 5️⃣ Re-enable GameObject1
         if (targetGameObject != null)
             targetGameObject.SetActive(true);
@@ -340,38 +364,85 @@ public class AIforDialogue : MonoBehaviour
     //-----------CORE SYSTEM for WBC----------------
     public IEnumerator DialogueSequence0IWBC()
     {
-        // 1️⃣ Disable the assigned GameObject
+        // 1. Disable the assigned GameObject
         if (targetObject != null)
             targetObject.SetActive(false);
+        if (MB != null)
+        {
+            MB.SetActive(true); dialoguePanel.SetActive(false);
+        }
+        if (line != null)
+            line.SetActive(false);
 
-        // 2️⃣ Reactivate the dialogue button and panel right away
+        yield return new WaitForSeconds(5f);
+
+        if (MB != null)
+            MB.SetActive(false);
+
+        // 2. Activate the dialogue panel and next button
         if (dialoguePanel != null)
             dialoguePanel.SetActive(true);
 
         if (nextButton != null)
             nextButton.gameObject.SetActive(true);
 
-        // 3️⃣ Play the first dialogue set (index 0)
+        // 3. Play the first dialogue set, index 0
         if (dialogueSets.Count > 0)
         {
             dialogueFinished = false;
 
-            // Trigger dialogue at index 0
             TriggerDialogue(dialogueSets[0].setName);
 
-            // Wait until dialogue finishes
             yield return new WaitUntil(() => dialogueFinished);
         }
         else
         {
-            Debug.LogWarning("Dialogue Set 0 not found or dialogueSystem is null!");
+            Debug.LogWarning("Dialogue Set 0 not found!");
         }
 
-        // 4️⃣ Reactivate the target object
+        // 4. Wait before teleport
+        yield return null;
+        yield return new WaitForFixedUpdate();
+
+        // 5. Teleport player using Transform only
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+
+        if (playerObj != null && introTeleportTarget != null)
+        {
+            playerObj.transform.position = introTeleportTarget.position;
+
+            Debug.Log("Player teleported to " + introTeleportTarget.position);
+        }
+        else
+        {
+            Debug.LogWarning("Player or Intro Teleport Target is missing!");
+        }
+
+        // 6. Play dialogue set index 2 after teleport
+        if (dialogueSets.Count > 2)
+        {
+            if (dialoguePanel != null)
+                dialoguePanel.SetActive(true);
+
+            if (nextButton != null)
+                nextButton.gameObject.SetActive(true);
+
+            dialogueFinished = false;
+
+            TriggerDialogue(dialogueSets[2].setName);
+
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 2 not found!");
+        }
+
+        // 7. Only reactivate target object after ALL dialogues are finished
         if (targetObject != null)
             targetObject.SetActive(true);
 
-        // 5 Activate the mission timer
+        // 8. Only resume mission timer after ALL dialogues are finished
         if (missionTimer != null)
             missionTimer.ResumeTimer();
     }
@@ -1512,6 +1583,18 @@ public class AIforDialogue : MonoBehaviour
             yield return null;
         }
 
+        if (MB != null)
+        {
+            MB.SetActive(true); dialoguePanel.SetActive(false);
+        }
+        if (line != null)
+            line.SetActive(false);
+
+        yield return new WaitForSeconds(5f);
+
+        if (MB != null)
+            MB.SetActive(false);
+
         yield return new WaitForEndOfFrame();
 
         // 3️⃣ Play dialogue index 0
@@ -1542,6 +1625,8 @@ public class AIforDialogue : MonoBehaviour
                 Debug.Log("Activated enemy: " + enemy.name);
             }
         }
+        if (missionTimer != null)
+            missionTimer.ActivateTimer();
     }
     public IEnumerator DialogueSequenceIPI()
     {
@@ -1551,6 +1636,18 @@ public class AIforDialogue : MonoBehaviour
         // 1️⃣ Disable the targetObject
         if (targetObject != null)
             targetObject.SetActive(false);
+
+        if (MB != null)
+        {
+            MB.SetActive(true); dialoguePanel.SetActive(false);
+        }
+        if (line != null)
+            line.SetActive(false);
+
+        yield return new WaitForSeconds(5f);
+
+        if (MB != null)
+            MB.SetActive(false);
 
         // 2️⃣ Play dialogue
         if (dialogueSets.Count > 0)
@@ -1571,8 +1668,52 @@ public class AIforDialogue : MonoBehaviour
             targetObject.SetActive(true);
 
         if (missionTimer != null)
-            missionTimer.ResumeTimer();
+            missionTimer.ActivateTimer();
     }
 
+    public IEnumerator DialogueSequenceIICE0()
+    {
+        if (missionTimer != null)
+            missionTimer.StopTimer();
+
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        if (dialoguePanel != null)
+            dialoguePanel.SetActive(true);
+
+        if (nextButton != null)
+            nextButton.gameObject.SetActive(true);
+
+        if (dialogueSets.Count > 0)
+        {
+            dialogueFinished = false;
+
+            TriggerDialogue(dialogueSets[0].setName);
+
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 0 not found!");
+        }
+
+        // Local search for inactive GameObjects with tag ICEVIT
+        GameObject[] allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+
+        foreach (GameObject obj in allObjects)
+        {
+            if (obj.CompareTag("ICEVIT") && obj.scene.IsValid())
+            {
+                obj.SetActive(true);
+            }
+        }
+
+        if (targetObject != null)
+            targetObject.SetActive(true);
+
+        if (missionTimer != null)
+            missionTimer.ActivateTimer();
+    }
 }
 

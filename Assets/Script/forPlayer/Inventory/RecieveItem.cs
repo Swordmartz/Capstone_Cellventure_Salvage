@@ -17,7 +17,7 @@ public class ItemReceiverIncrement : MonoBehaviour
     public bool consumeItem = true;
 
     [Header("Reactivation")]
-    public GameObject objectToReactivate;
+    public GameObject[] objectToReactivate;
 
     [Header("Increment Settings")]
     public int deliveryIncrementAmount = 1;
@@ -65,13 +65,35 @@ public class ItemReceiverIncrement : MonoBehaviour
                 return;
             }
 
-            if (!playerInventory.HasItem || playerInventory.currentItem != requiredItem)
+            // Player has no item at all
+            if (!playerInventory.HasItem)
             {
-                Debug.Log("You don't have the required item!");
+                Debug.Log("No item in inventory!");
                 return;
             }
 
-            Debug.Log("Item received!");
+            // Player has wrong item — count as failed delivery
+            if (playerInventory.currentItem != requiredItem)
+            {
+                Debug.Log("Wrong item delivered: " + playerInventory.currentItem.itemName);
+
+                if (halu != null)
+                {
+                    halu.FailedDelivery += deliveryIncrementAmount;
+                    Debug.Log("Failed deliveries: " + halu.FailedDelivery);
+                }
+
+                if (consumeItem)
+                {
+                    playerInventory.ClearItem();
+                    Debug.Log("Wrong item consumed.");
+                }
+
+                return;
+            }
+
+            // Correct item!
+            Debug.Log("Correct item received: " + playerInventory.currentItem.itemName);
 
             if (consumeItem)
             {
@@ -80,6 +102,7 @@ public class ItemReceiverIncrement : MonoBehaviour
             }
         }
 
+        // Increment correct delivery count
         if (requireItem && correctDelivery)
         {
             if (halu != null)
@@ -90,10 +113,17 @@ public class ItemReceiverIncrement : MonoBehaviour
             }
         }
 
-        if (objectToReactivate != null)
+        // Reactivate multiple objects
+        if (objectToReactivate != null && objectToReactivate.Length > 0)
         {
-            objectToReactivate.SetActive(true);
-            Debug.Log("Reactivated object: " + objectToReactivate.name);
+            foreach (GameObject obj in objectToReactivate)
+            {
+                if (obj != null)
+                {
+                    obj.SetActive(true);
+                    Debug.Log("Reactivated: " + obj.name);
+                }
+            }
         }
 
         if (useButton != null)

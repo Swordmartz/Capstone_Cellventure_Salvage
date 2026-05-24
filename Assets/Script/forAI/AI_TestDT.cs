@@ -68,8 +68,10 @@ public class AI_TestTD : MonoBehaviour
         {
             StartCoroutine(dialogueSystem.DialogueSequenceIPI());
         }
-
-
+        else if (sceneName == "Chapter 1 - IICE")
+        {
+            StartCoroutine(dialogueSystem.DialogueSequenceIICE0());
+        }
 
         UpdateCounterUI();
 
@@ -98,6 +100,9 @@ public class AI_TestTD : MonoBehaviour
             else if (sceneName == "Chapter1 - Platelets")
 
                 StartCoroutine(dialogueSystem.DialogueSequenceIPI());
+
+            else if (sceneName == "Chapter 1 - IICE")
+                StartCoroutine(dialogueSystem.DialogueSequenceIICE0()); 
 
 
             playerInTrigger = false;

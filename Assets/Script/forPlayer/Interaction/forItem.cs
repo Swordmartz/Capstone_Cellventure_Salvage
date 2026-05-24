@@ -18,12 +18,19 @@ public class Item : MonoBehaviour
     [Header("Optional Object to Disable")]
     public GameObject optionalObjectToDisable;
 
-    [Header("Mini‑Screen Teleport")]
+    [Header("Mini-Screen Teleport")]
     public GameObject miniScreen;
     public Button brainButton;
     public Button muscleButton;
     public Button heartButton;
+
+    [Tooltip("Assign the Player root or the Player object with the Player tag.")]
     public Transform player;
+
+    [Header("Player Root Movement")]
+    [Tooltip("Assign the top/root player object here. This is the object that will be moved so the Rigidbody child reaches the target.")]
+    public Transform playerRootToMove;
+
     public Transform brainTarget;
     public Transform muscleTarget;
     public Transform heartTarget;
@@ -40,31 +47,46 @@ public class Item : MonoBehaviour
     public Transform cameraLocationC;
 
     [Header("Secondary Camera Orthographic Sizes")]
-    [Tooltip("Orthographic size when secondary camera teleports to Location A (Brain).")]
+    [Tooltip("Orthographic size when secondary camera teleports to Location A / Brain.")]
     public float cameraOrthoSizeA = 5f;
-    [Tooltip("Orthographic size when secondary camera teleports to Location B (Muscle).")]
+
+    [Tooltip("Orthographic size when secondary camera teleports to Location B / Muscle.")]
     public float cameraOrthoSizeB = 5f;
-    [Tooltip("Orthographic size when secondary camera teleports to Location C (Heart).")]
+
+    [Tooltip("Orthographic size when secondary camera teleports to Location C / Heart.")]
     public float cameraOrthoSizeC = 5f;
 
     private int originalCullingMask;
 
     private void Start()
     {
-        originalCullingMask = Camera.main.cullingMask;
+        if (Camera.main != null)
+        {
+            originalCullingMask = Camera.main.cullingMask;
+        }
 
         if (miniScreen != null)
+        {
             miniScreen.SetActive(false);
+        }
 
-        // ✅ Player teleport buttons
-        if (brainButton != null) brainButton.onClick.AddListener(() => TeleportPlayer(brainTarget));
-        if (muscleButton != null) muscleButton.onClick.AddListener(() => TeleportPlayer(muscleTarget));
-        if (heartButton != null) heartButton.onClick.AddListener(() => TeleportPlayer(heartTarget));
+        if (brainButton != null)
+        {
+            brainButton.onClick.AddListener(() => TeleportPlayer(brainTarget));
+            brainButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationA, cameraOrthoSizeA));
+        }
 
-        // ✅ Camera teleport tied to player teleport buttons, each with its own ortho size
-        if (brainButton != null) brainButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationA, cameraOrthoSizeA));
-        if (muscleButton != null) muscleButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationB, cameraOrthoSizeB));
-        if (heartButton != null) heartButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationC, cameraOrthoSizeC));
+        if (muscleButton != null)
+        {
+            muscleButton.onClick.AddListener(() => TeleportPlayer(muscleTarget));
+            muscleButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationB, cameraOrthoSizeB));
+        }
+
+        if (heartButton != null)
+        {
+            heartButton.onClick.AddListener(() => TeleportPlayer(heartTarget));
+            heartButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationC, cameraOrthoSizeC));
+        }
     }
 
     public void Execute()
@@ -77,54 +99,174 @@ public class Item : MonoBehaviour
                 return;
             }
 
-            if (!playerInventory.HasItem || playerInventory.currentItem != requiredItem)
+            if (!playerInventory.HasItem)
             {
-                StartCoroutine(AI_Test.DialogueSequence3IRBC());
+                Debug.Log("No item in inventory — playing dialogue.");
+                if (AI_Test != null)
+                    StartCoroutine(AI_Test.DialogueSequence3IRBC());
                 return;
             }
         }
 
         if (AI_Test != null && guideSystem != null)
+        {
             guideSystem.guideEnabled = false;
+        }
 
         if (optionalObjectToDisable != null)
+        {
             optionalObjectToDisable.SetActive(false);
+        }
 
         if (enableFloorVisibility)
+        {
             ApplyLayerVisibility();
+        }
 
         if (teleportTarget != null)
         {
-            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-
-            if (playerObj != null)
-            {
-                Rigidbody rb = playerObj.GetComponent<Rigidbody>();
-
-                if (rb != null)
-                {
-                    rb.linearVelocity = Vector3.zero;
-                    rb.angularVelocity = Vector3.zero;
-                    rb.position = teleportTarget.position;
-                }
-                else
-                {
-                    playerObj.transform.position = teleportTarget.position;
-                }
-            }
+            TeleportPlayerToPosition(teleportTarget);
         }
 
-        // ✅ Default to Location A (with its size) on Execute
         if (teleportSecondaryCamera)
+        {
             TeleportSecondaryCamera(cameraLocationA, cameraOrthoSizeA);
+        }
 
         if (miniScreen != null)
+        {
             miniScreen.SetActive(true);
+        }
+    }
+
+    private Transform GetPlayerToTeleport()
+    {
+        // First choice: manually assigned player.
+        if (player != null && player.gameObject.activeInHierarchy)
+        {
+            Rigidbody assignedRb = FindRigidbodyForPlayer(player);
+
+            if (assignedRb != null)
+            {
+                Debug.Log("Using assigned active player: " + player.name + " | Rigidbody: " + assignedRb.name);
+                return player;
+            }
+
+            Debug.LogWarning("Assigned player is active but has no Rigidbody on itself, child, or parent: " + player.name);
+        }
+
+        // Fallback: find active tagged Player objects.
+        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+
+        foreach (GameObject playerObj in players)
+        {
+            if (playerObj == null || !playerObj.activeInHierarchy)
+                continue;
+
+            Rigidbody rb = FindRigidbodyForPlayer(playerObj.transform);
+
+            if (rb != null)
+            {
+                Debug.Log("Using active Player tag object: " + playerObj.name + " | Rigidbody: " + rb.name);
+                return playerObj.transform;
+            }
+
+            Debug.LogWarning("Skipping Player-tagged object with no Rigidbody on itself, child, or parent: " + playerObj.name);
+        }
+
+        Debug.LogWarning("No active Player object with Rigidbody found.");
+        return null;
+    }
+
+    private Rigidbody FindRigidbodyForPlayer(Transform selectedPlayer)
+    {
+        if (selectedPlayer == null)
+            return null;
+
+        Rigidbody rb = selectedPlayer.GetComponent<Rigidbody>();
+
+        if (rb == null)
+            rb = selectedPlayer.GetComponentInChildren<Rigidbody>();
+
+        if (rb == null)
+            rb = selectedPlayer.GetComponentInParent<Rigidbody>();
+
+        return rb;
+    }
+
+    private void TeleportPlayerToPosition(Transform destination)
+    {
+        if (destination == null)
+        {
+            Debug.LogWarning("Teleport destination not assigned.");
+            return;
+        }
+
+        Transform selectedPlayer = GetPlayerToTeleport();
+
+        if (selectedPlayer == null)
+            return;
+
+        Rigidbody rb = FindRigidbodyForPlayer(selectedPlayer);
+
+        if (rb == null)
+        {
+            Debug.LogWarning("No Rigidbody found for selected player: " + selectedPlayer.name);
+            return;
+        }
+
+        /*
+         * Important:
+         * The Rigidbody is on a child, so moving only the Rigidbody can make the full player look offset.
+         * This moves the player root by the exact difference needed so the Rigidbody child reaches the destination.
+         */
+        Transform rootToMove = playerRootToMove != null ? playerRootToMove : selectedPlayer;
+
+        Vector3 targetPosition = destination.position;
+        Vector3 offsetNeeded = targetPosition - rb.transform.position;
+
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        // Move the root so the Rigidbody child lines up with the teleport target.
+        rootToMove.position += offsetNeeded;
+
+        // Force the Rigidbody child to the exact target position after moving the root.
+        rb.position = targetPosition;
+        rb.transform.position = targetPosition;
+
+        Physics.SyncTransforms();
+
+        Debug.Log(
+            "Teleported root: " + rootToMove.name +
+            " | Rigidbody: " + rb.name +
+            " | Target: " + destination.name +
+            " at " + targetPosition +
+            " | Offset applied: " + offsetNeeded
+        );
+    }
+
+    private void TeleportPlayer(Transform destination)
+    {
+        TeleportPlayerToPosition(destination);
+
+        if (enableFloorVisibility)
+        {
+            ApplyLayerVisibility();
+        }
+
+        if (miniScreen != null)
+        {
+            miniScreen.SetActive(false);
+        }
     }
 
     private void TeleportSecondaryCamera(Transform destination, float orthoSize)
     {
-        if (!teleportSecondaryCamera) return;
+        if (!teleportSecondaryCamera)
+        {
+            return;
+        }
 
         if (secondaryCamera == null)
         {
@@ -143,69 +285,49 @@ public class Item : MonoBehaviour
         if (secondaryCamera.orthographic)
         {
             secondaryCamera.orthographicSize = orthoSize;
-            Debug.Log($"Secondary camera teleported to '{destination.name}' with orthographic size {orthoSize}.");
+            Debug.Log("Secondary camera teleported to " + destination.name + " with orthographic size " + orthoSize);
         }
         else
         {
-            Debug.LogWarning($"Secondary camera is not Orthographic — size not applied.");
+            Debug.LogWarning("Secondary camera is not Orthographic. Size not applied.");
         }
-    }
-
-    private void TeleportPlayer(Transform destination)
-    {
-        if (destination == null)
-        {
-            Debug.LogWarning("Teleport destination not assigned.");
-            return;
-        }
-
-        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-
-        if (playerObj != null)
-        {
-            Rigidbody rb = playerObj.GetComponent<Rigidbody>();
-
-            if (rb != null)
-            {
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-                rb.position = destination.position;
-            }
-            else
-            {
-                playerObj.transform.position = destination.position;
-            }
-        }
-
-        if (enableFloorVisibility)
-            ApplyLayerVisibility();
-
-        if (miniScreen != null)
-            miniScreen.SetActive(false);
     }
 
     private void ApplyLayerVisibility()
     {
+        if (Camera.main == null)
+        {
+            Debug.LogWarning("Main Camera not found.");
+            return;
+        }
+
         int newMask = originalCullingMask;
 
         foreach (string layerName in layersToHide)
         {
             int layer = LayerMask.NameToLayer(layerName);
-            Debug.Log($"Hiding layer: '{layerName}' = index {layer}");
+
+            Debug.Log("Hiding layer: " + layerName + " = index " + layer);
+
             if (layer == -1)
             {
-                Debug.LogWarning($"Layer '{layerName}' not found!");
+                Debug.LogWarning("Layer '" + layerName + "' not found!");
                 continue;
             }
+
             newMask &= ~(1 << layer);
         }
 
-        Debug.Log($"Old mask: {originalCullingMask} | New mask: {newMask}");
+        Debug.Log("Old mask: " + originalCullingMask + " | New mask: " + newMask);
+
         Camera.main.cullingMask = newMask;
     }
 
     public void RestoreCullingMask()
     {
-        Camera.main.cullingMask = originalCullingMask;
+        if (Camera.main != null)
+        {
+            Camera.main.cullingMask = originalCullingMask;
+        }
     }
 }

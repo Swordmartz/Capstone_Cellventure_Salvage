@@ -1,0 +1,13 @@
+am/final.mdl
+conf/mfcc.conf
+conf/model.conf
+graph/disambig_tid.int
+graph/phones/word_boundary.int
+graph/Gr.fst
+graph/HCLr.fst
+ivector/final.dubm
+ivector/final.ie
+ivector/final.mat
+ivector/global_cmvn.stats
+ivector/online_cmvn.conf
+ivector/splice.conf

@@ -7,7 +7,7 @@ public class MainMenuManager : MonoBehaviour
 {
     public static MainMenuManager _;
     [SerializeField] private bool _debugMode;
-    public enum MainMenuButton { play, settings, almanac, quit }
+    public enum MainMenuButton { play, settings, almanac, quit, awards }
     public enum SettingButtons { back }
     public enum AlmanacButtons { back }
 
@@ -15,6 +15,7 @@ public class MainMenuManager : MonoBehaviour
     [SerializeField] private GameObject _MainMenuContainer;
     [SerializeField] private GameObject _SettingsContainer;
     [SerializeField] private GameObject _AlmanacContainer;
+    [SerializeField] private GameObject _AwardsContainer;
 
     [SerializeField] private string _sceneToLoad;
     public void Awake()
@@ -48,6 +49,9 @@ public class MainMenuManager : MonoBehaviour
                 break;
             case MainMenuButton.quit: 
                 QuitGame();
+                break;
+            case MainMenuButton.awards:
+                AwardsClicked();
                 break;
             default:
                 Debug.Log("The button clicked wasn't implemnted in MainMenuManager Method");
@@ -94,6 +98,11 @@ public class MainMenuManager : MonoBehaviour
         OpenMenu(_AlmanacContainer);
     }
 
+    public void AwardsClicked()
+    {
+        OpenMenu(_AwardsContainer);
+    }
+
     private void DebugMessage(string message)
     {
         if (_debugMode)
@@ -114,6 +123,7 @@ public class MainMenuManager : MonoBehaviour
         _MainMenuContainer.SetActive(menuToOpen == _MainMenuContainer);
         _AlmanacContainer.SetActive(menuToOpen == _AlmanacContainer);
         _SettingsContainer.SetActive(menuToOpen == _SettingsContainer);
+        _AwardsContainer.SetActive(menuToOpen == _AwardsContainer);
     }
 
    IEnumerator LoadSceneFade()

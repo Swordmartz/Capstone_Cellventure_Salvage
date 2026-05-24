@@ -8,7 +8,6 @@ public class EnemyFSM : MonoBehaviour
     [Header("Stats")]
     [SerializeField] private int maxHealth = 100;
     public int currentHealth;
-
     [SerializeField] private int attackDamage = 10;
 
     [Header("Movement")]
@@ -31,27 +30,27 @@ public class EnemyFSM : MonoBehaviour
     [Header("Wall Check")]
     [SerializeField] private LayerMask wallMask;
 
-    [Header("Teleport Axis Threshold")]
+    [Header("Axis Threshold (Teleport)")]
     [SerializeField] private float axisThreshold = 2f;
 
-    private enum State
-    {
-        MoveToTarget,
-        Attack,
-        MoveToTeleport,
-        Dead
-    }
+    private enum State { MoveToTarget, Attack, MoveToTeleport, Dead }
 
     private State state;
-
     private NavMeshAgent agent;
     private Attackable currentTarget;
-    private Transform currentTeleport; // the point we are currently walking TOWARD
-    private Transform lastTeleport;    // the point we are physically STANDING ON
+
+    // The index of the teleport point the enemy is currently standing on.
+    // -1 means the enemy hasn't used any teleport yet.
+    private int occupiedTeleportIndex = -1;
+
+    // Snapshot of occupiedTeleportIndex taken at the moment we START walking
+    // to a trigger. Used in HandleMoveToTeleport so the origin is never lost.
+    private int lastOccupiedTeleportIndex = -1;
+
+    private int walkingToTeleportIndex = -1;
 
     private float attackTimer;
     private bool isDead;
-
     private Coroutine speedRoutine;
 
     // ─────────────────────────────
@@ -60,9 +59,7 @@ public class EnemyFSM : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         agent.speed = moveSpeed;
         agent.stoppingDistance = stoppingDistance;
-
         currentHealth = maxHealth;
-
         state = State.MoveToTarget;
         PickRandomTarget();
     }
@@ -83,53 +80,49 @@ public class EnemyFSM : MonoBehaviour
     }
 
     // ─────────────────────────────
-    // RANDOM TARGET
+    // PICK TARGET — find nearest alive attackable
     // ─────────────────────────────
     void PickRandomTarget()
     {
-        List<Attackable> valid = new List<Attackable>();
+        Attackable nearest = null;
+        float nearestDist = float.MaxValue;
 
         foreach (var a in attackableTargets)
         {
             if (a == null || a.IsDead) continue;
-            valid.Add(a);
+
+            Vector2 enemyXZ = new Vector2(transform.position.x, transform.position.z);
+            Vector2 targetXZ = new Vector2(a.transform.position.x, a.transform.position.z);
+            float d = Vector2.Distance(enemyXZ, targetXZ);
+            if (d < nearestDist) { nearestDist = d; nearest = a; }
         }
 
-        if (valid.Count == 0)
+        if (nearest == null)
         {
-            PickTeleport();
+            Debug.Log("[EnemyFSM] No alive targets found.");
             return;
         }
 
-        currentTarget = valid[Random.Range(0, valid.Count)];
-
+        Debug.Log("[EnemyFSM] Targeting " + nearest.name);
+        currentTarget = nearest;
         agent.isStopped = false;
         agent.SetDestination(currentTarget.transform.position);
         state = State.MoveToTarget;
     }
 
+    // ─────────────────────────────
+    // STATE HANDLERS
+    // ─────────────────────────────
     void HandleMoveToTarget()
     {
-        if (currentTarget == null || currentTarget.IsDead)
-        {
-            PickTeleport();
-            return;
-        }
-
+        if (currentTarget == null || currentTarget.IsDead) { PickTeleport(); return; }
         if (!agent.pathPending && agent.remainingDistance <= stoppingDistance)
-        {
             state = State.Attack;
-        }
     }
 
     void HandleAttack()
     {
-        if (currentTarget == null || currentTarget.IsDead)
-        {
-            PickTeleport();
-            return;
-        }
-
+        if (currentTarget == null || currentTarget.IsDead) { PickTeleport(); return; }
         if (attackTimer <= 0f)
         {
             attackTimer = attackCooldown;
@@ -142,159 +135,183 @@ public class EnemyFSM : MonoBehaviour
         if (currentTarget != null && !currentTarget.IsDead)
         {
             currentTarget.TakeDamage(attackDamage);
-
-            if (currentTarget.IsDead)
-            {
-                PickTeleport();
-                yield break;
-            }
+            if (currentTarget.IsDead) { PickTeleport(); yield break; }
         }
-
         yield return new WaitForSeconds(0.3f);
     }
 
     // ─────────────────────────────
-    // TAKE DAMAGE -> TELEPORT + SPEED BOOST
+    // TAKE DAMAGE
+    // If currently attacking — stop immediately and teleport away.
+    // Otherwise — instant warp as usual.
     // ─────────────────────────────
     public void TakeDamage(int dmg)
     {
         if (isDead) return;
-
         currentHealth -= dmg;
+        if (currentHealth <= 0) { Die(); return; }
 
-        if (currentHealth <= 0)
+        StopAllCoroutines();
+        attackTimer = attackCooldown;
+        PickTeleport();         // walk to trigger first → warp on arrival
+        ApplySpeedBoost();      // called AFTER PickTeleport so StopAllCoroutines doesn't kill it
+    }
+
+    void DoInstantWarp()
+    {
+        int index = PickTeleportIndex(occupiedTeleportIndex);
+
+        Debug.Log($"[EnemyFSM] DoInstantWarp — occupiedIndex={occupiedTeleportIndex}, chosen={index}");
+
+        if (index < 0)
         {
-            Die();
+            Debug.LogWarning("[EnemyFSM] DoInstantWarp — no valid teleport found!");
             return;
         }
 
-        PickTeleport();
-        ApplySpeedBoost();
+        lastOccupiedTeleportIndex = -1;
+        occupiedTeleportIndex = index;
+        walkingToTeleportIndex = -1;
+
+        Debug.Log($"[EnemyFSM] Warping to index={index} name={teleportPoints[index].name}");
+
+        agent.Warp(teleportPoints[index].position);
+        state = State.MoveToTarget;
+        PickRandomTarget();
     }
 
     // ─────────────────────────────
-    // SPEED BOOST SYSTEM
+    // PICK TELEPORT — walk to trigger, then warp from there
+    // ─────────────────────────────
+    void PickTeleport()
+    {
+        int index = PickTeleportIndex(occupiedTeleportIndex);
+
+        Debug.Log($"[EnemyFSM] PickTeleport — occupiedIndex={occupiedTeleportIndex}, chosen={index}");
+
+        if (index < 0)
+        {
+            Debug.LogWarning("[EnemyFSM] PickTeleport — no valid point, chasing target.");
+            state = State.MoveToTarget;
+            PickRandomTarget();
+            return;
+        }
+
+        // Snapshot origin BEFORE we start walking so it is never lost mid-walk
+        lastOccupiedTeleportIndex = occupiedTeleportIndex;
+        walkingToTeleportIndex = index;
+
+        Debug.Log($"[EnemyFSM] Walking to trigger index={index} name={teleportPoints[index].name}");
+
+        agent.isStopped = false;
+        agent.SetDestination(teleportPoints[index].position);
+        state = State.MoveToTeleport;
+    }
+
+    void HandleMoveToTeleport()
+    {
+        if (walkingToTeleportIndex < 0) { PickRandomTarget(); return; }
+
+        if (!agent.pathPending && agent.remainingDistance <= stoppingDistance)
+        {
+            int triggerIndex = walkingToTeleportIndex;
+            walkingToTeleportIndex = -1;
+
+            Debug.Log($"[EnemyFSM] Reached trigger={triggerIndex}. Excluding trigger={triggerIndex} AND lastOccupied={lastOccupiedTeleportIndex}");
+
+            // Exclude BOTH the trigger point AND the snapshotted origin
+            int warpIndex = PickTeleportIndex(triggerIndex, lastOccupiedTeleportIndex);
+
+            // Fallback for setups with only 2 points
+            if (warpIndex < 0)
+                warpIndex = PickTeleportIndex(triggerIndex);
+
+            lastOccupiedTeleportIndex = -1;
+
+            if (warpIndex < 0)
+            {
+                Debug.LogWarning("[EnemyFSM] HandleMoveToTeleport — no valid warp destination!");
+                state = State.MoveToTarget;
+                PickRandomTarget();
+                return;
+            }
+
+            Debug.Log($"[EnemyFSM] Warping to index={warpIndex} name={teleportPoints[warpIndex].name}");
+
+            agent.Warp(teleportPoints[warpIndex].position);
+
+            // Update occupiedIndex ONLY after the warp succeeds
+            occupiedTeleportIndex = warpIndex;
+
+            state = State.MoveToTarget;
+            PickRandomTarget();
+        }
+    }
+
+    // ─────────────────────────────
+    // CORE: pick a teleport index, always excluding ALL indices in excludeList
+    // Pass 1 — same X or Z axis
+    // Pass 2 — any other point (fallback)
+    // Uses Random.Range instead of nearest — prevents always picking same index
+    // ─────────────────────────────
+    int PickTeleportIndex(params int[] excludeList)
+    {
+        List<int> candidates = new List<int>();
+
+        // Pass 1: same X or Z axis, skip any excluded index
+        for (int i = 0; i < teleportPoints.Count; i++)
+        {
+            if (teleportPoints[i] == null) continue;
+
+            bool excluded = false;
+            foreach (int ex in excludeList) if (i == ex) { excluded = true; break; }
+            if (excluded) continue;
+
+            bool sameX = Mathf.Abs(teleportPoints[i].position.x - transform.position.x) <= axisThreshold;
+            bool sameZ = Mathf.Abs(teleportPoints[i].position.z - transform.position.z) <= axisThreshold;
+
+            if (sameX || sameZ)
+                candidates.Add(i);
+        }
+
+        Debug.Log($"[EnemyFSM] PickTeleportIndex — Pass1 axis candidates: {candidates.Count}, excluding: {string.Join(",", excludeList)}");
+
+        // Pass 2: any point not in exclude list
+        if (candidates.Count == 0)
+        {
+            for (int i = 0; i < teleportPoints.Count; i++)
+            {
+                if (teleportPoints[i] == null) continue;
+
+                bool excluded = false;
+                foreach (int ex in excludeList) if (i == ex) { excluded = true; break; }
+                if (excluded) continue;
+
+                candidates.Add(i);
+            }
+            Debug.Log($"[EnemyFSM] PickTeleportIndex — Pass2 fallback candidates: {candidates.Count}");
+        }
+
+        if (candidates.Count == 0) return -1;
+
+        // RANDOM pick — not nearest, prevents repeating the same index
+        return candidates[Random.Range(0, candidates.Count)];
+    }
+
+    // ─────────────────────────────
+    // SPEED BOOST
     // ─────────────────────────────
     void ApplySpeedBoost()
     {
-        if (speedRoutine != null)
-            StopCoroutine(speedRoutine);
-
+        if (speedRoutine != null) StopCoroutine(speedRoutine);
         speedRoutine = StartCoroutine(SpeedBoostRoutine());
     }
 
     IEnumerator SpeedBoostRoutine()
     {
         agent.speed = moveSpeed * speedBoostMultiplier;
-
         yield return new WaitForSeconds(speedBoostDuration);
-
         agent.speed = moveSpeed;
-    }
-
-    // ─────────────────────────────
-    // TELEPORT - nearest point on same axis, never the one we are standing on
-    // ─────────────────────────────
-    void PickTeleport()
-    {
-        List<Transform> sameAxisPoints = new List<Transform>();
-
-        foreach (Transform tp in teleportPoints)
-        {
-            if (tp == null) continue;
-
-            // Skip the point we physically landed on last time
-            if (tp == lastTeleport) continue;
-
-            bool sameX = Mathf.Abs(tp.position.x - transform.position.x) <= axisThreshold;
-            bool sameZ = Mathf.Abs(tp.position.z - transform.position.z) <= axisThreshold;
-
-            if (!sameX && !sameZ) continue;
-
-            // Wall-visibility check
-            Vector3 origin = transform.position + Vector3.up * 1f;
-            Vector3 target = tp.position + Vector3.up * 1f;
-            float dist = Vector3.Distance(origin, target);
-
-            if (Physics.Raycast(origin, (target - origin).normalized, dist, wallMask))
-                continue;
-
-            sameAxisPoints.Add(tp);
-        }
-
-        // Fall back to ALL visible points if nothing shares an axis
-        List<Transform> candidates = sameAxisPoints.Count > 0
-            ? sameAxisPoints
-            : GetAllVisibleTeleports();
-
-        if (candidates.Count == 0)
-        {
-            state = State.MoveToTarget;
-            PickRandomTarget();
-            return;
-        }
-
-        // Pick the NEAREST among candidates
-        Transform nearest = null;
-        float nearestDist = float.MaxValue;
-
-        foreach (Transform tp in candidates)
-        {
-            float d = Vector3.Distance(transform.position, tp.position);
-            if (d < nearestDist)
-            {
-                nearestDist = d;
-                nearest = tp;
-            }
-        }
-
-        currentTeleport = nearest;
-        agent.isStopped = false;
-        agent.SetDestination(currentTeleport.position);
-        state = State.MoveToTeleport;
-    }
-
-    List<Transform> GetAllVisibleTeleports()
-    {
-        List<Transform> valid = new List<Transform>();
-
-        foreach (Transform tp in teleportPoints)
-        {
-            if (tp == null) continue;
-
-            // Skip the point we physically landed on last time
-            if (tp == lastTeleport) continue;
-
-            Vector3 origin = transform.position + Vector3.up * 1f;
-            Vector3 target = tp.position + Vector3.up * 1f;
-            float dist = Vector3.Distance(origin, target);
-
-            if (!Physics.Raycast(origin, (target - origin).normalized, dist, wallMask))
-                valid.Add(tp);
-        }
-
-        return valid;
-    }
-
-    void HandleMoveToTeleport()
-    {
-        if (currentTeleport == null)
-        {
-            PickRandomTarget();
-            return;
-        }
-
-        if (!agent.pathPending && agent.remainingDistance <= stoppingDistance)
-        {
-            agent.Warp(currentTeleport.position);
-
-            // Record where we physically landed so PickTeleport excludes it next call
-            lastTeleport = currentTeleport;
-            currentTeleport = null;
-
-            state = State.MoveToTarget;
-            PickRandomTarget();
-        }
     }
 
     // ─────────────────────────────
@@ -304,9 +321,84 @@ public class EnemyFSM : MonoBehaviour
     {
         isDead = true;
         state = State.Dead;
-
         StopAllCoroutines();
         agent.isStopped = true;
         agent.ResetPath();
+    }
+
+    // ─────────────────────────────
+    // GIZMOS
+    // ─────────────────────────────
+    private void OnDrawGizmos()
+    {
+        Vector3 pos = transform.position;
+
+        // ── Axis threshold lines (X and Z) for TELEPORT detection ──
+        Gizmos.color = new Color(0f, 0.5f, 1f, 0.2f);
+        Gizmos.DrawCube(pos, new Vector3(axisThreshold * 2f, 0.1f, 200f));
+        Gizmos.DrawCube(pos, new Vector3(200f, 0.1f, axisThreshold * 2f));
+
+        // ── Teleport points ──
+        if (teleportPoints != null)
+        {
+            for (int i = 0; i < teleportPoints.Count; i++)
+            {
+                if (teleportPoints[i] == null) continue;
+
+                bool sameX = Mathf.Abs(teleportPoints[i].position.x - pos.x) <= axisThreshold;
+                bool sameZ = Mathf.Abs(teleportPoints[i].position.z - pos.z) <= axisThreshold;
+                bool isOccupied = (i == occupiedTeleportIndex);
+                bool isWalkingTo = (i == walkingToTeleportIndex);
+
+                if (isOccupied)
+                    Gizmos.color = Color.red;
+                else if (isWalkingTo)
+                    Gizmos.color = Color.yellow;
+                else if (sameX || sameZ)
+                    Gizmos.color = Color.cyan;
+                else
+                    Gizmos.color = new Color(1f, 1f, 1f, 0.3f);
+
+                Gizmos.DrawSphere(teleportPoints[i].position + Vector3.up * 0.5f, 0.4f);
+
+                if ((sameX || sameZ) && !isOccupied)
+                {
+                    Gizmos.color = Color.cyan;
+                    Gizmos.DrawLine(pos + Vector3.up * 0.5f, teleportPoints[i].position + Vector3.up * 0.5f);
+                }
+            }
+        }
+
+        // ── Attackable targets ──
+        if (attackableTargets != null)
+        {
+            foreach (var a in attackableTargets)
+            {
+                if (a == null || a.IsDead) continue;
+
+                bool isCurrentTarget = (a == currentTarget);
+
+                Gizmos.color = isCurrentTarget ? Color.red : Color.green;
+                Gizmos.DrawSphere(a.transform.position + Vector3.up * 1f, 0.5f);
+
+                if (isCurrentTarget)
+                {
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawLine(pos + Vector3.up * 0.5f, a.transform.position + Vector3.up * 1f);
+                }
+            }
+        }
+
+        // ── State label box ──
+        Gizmos.color = Color.white;
+        Gizmos.DrawWireCube(pos + Vector3.up * 2.5f, new Vector3(0.1f, 0.1f, 0.1f));
+
+#if UNITY_EDITOR
+        string label = "State: " + state
+                     + "\nOccupied TP: " + occupiedTeleportIndex
+                     + "\nLast Occupied TP: " + lastOccupiedTeleportIndex
+                     + "\nWalking To TP: " + walkingToTeleportIndex;
+        UnityEditor.Handles.Label(pos + Vector3.up * 3f, label);
+#endif
     }
 }
