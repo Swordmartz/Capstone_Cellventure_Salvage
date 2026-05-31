@@ -56,6 +56,13 @@ public class Item : MonoBehaviour
     [Tooltip("Orthographic size when secondary camera teleports to Location C / Heart.")]
     public float cameraOrthoSizeC = 5f;
 
+    [Header("Mission Submission")]
+    [Tooltip("Enable this to complete a mission when Execute() is called.")]
+    public bool completeMissionOnExecute = false;
+    [Tooltip("Which mission index to complete (0 = first, 1 = second, etc.)")]
+    public int missionIndex = 0;
+    public MissionSubmissionManager missionManager;
+
     private int originalCullingMask;
 
     private void Start()
@@ -137,11 +144,23 @@ public class Item : MonoBehaviour
         {
             miniScreen.SetActive(true);
         }
+
+        if (completeMissionOnExecute)
+        {
+            if (missionManager != null)
+            {
+                missionManager.CompleteMissionByIndex(missionIndex);
+                Debug.Log("[Item] Mission " + missionIndex + " completed via Execute().");
+            }
+            else
+            {
+                Debug.LogWarning("[Item] completeMissionOnExecute is true but missionManager is not assigned.");
+            }
+        }
     }
 
     private Transform GetPlayerToTeleport()
     {
-        // First choice: manually assigned player.
         if (player != null && player.gameObject.activeInHierarchy)
         {
             Rigidbody assignedRb = FindRigidbodyForPlayer(player);
@@ -155,7 +174,6 @@ public class Item : MonoBehaviour
             Debug.LogWarning("Assigned player is active but has no Rigidbody on itself, child, or parent: " + player.name);
         }
 
-        // Fallback: find active tagged Player objects.
         GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
 
         foreach (GameObject playerObj in players)
@@ -215,11 +233,6 @@ public class Item : MonoBehaviour
             return;
         }
 
-        /*
-         * Important:
-         * The Rigidbody is on a child, so moving only the Rigidbody can make the full player look offset.
-         * This moves the player root by the exact difference needed so the Rigidbody child reaches the destination.
-         */
         Transform rootToMove = playerRootToMove != null ? playerRootToMove : selectedPlayer;
 
         Vector3 targetPosition = destination.position;
@@ -228,10 +241,8 @@ public class Item : MonoBehaviour
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
 
-        // Move the root so the Rigidbody child lines up with the teleport target.
         rootToMove.position += offsetNeeded;
 
-        // Force the Rigidbody child to the exact target position after moving the root.
         rb.position = targetPosition;
         rb.transform.position = targetPosition;
 

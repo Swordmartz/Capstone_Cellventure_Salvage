@@ -22,6 +22,12 @@ public class ItemReceiverIncrement : MonoBehaviour
     [Header("Increment Settings")]
     public int deliveryIncrementAmount = 1;
 
+    [Header("Mission Submission")]
+    public bool completeMissionOnExecute = false;
+    [Tooltip("Which mission index to complete (0 = first, 1 = second, etc.)")]
+    public int missionIndex = 0;
+    public MissionSubmissionManager missionManager;
+
     private bool playerNearby = false;
 
     private void Start()
@@ -65,14 +71,12 @@ public class ItemReceiverIncrement : MonoBehaviour
                 return;
             }
 
-            // Player has no item at all
             if (!playerInventory.HasItem)
             {
                 Debug.Log("No item in inventory!");
                 return;
             }
 
-            // Player has wrong item — count as failed delivery
             if (playerInventory.currentItem != requiredItem)
             {
                 Debug.Log("Wrong item delivered: " + playerInventory.currentItem.itemName);
@@ -92,7 +96,6 @@ public class ItemReceiverIncrement : MonoBehaviour
                 return;
             }
 
-            // Correct item!
             Debug.Log("Correct item received: " + playerInventory.currentItem.itemName);
 
             if (consumeItem)
@@ -102,18 +105,14 @@ public class ItemReceiverIncrement : MonoBehaviour
             }
         }
 
-        // Increment correct delivery count
         if (requireItem && correctDelivery)
         {
             if (halu != null)
             {
-                halu.itemsDelivered += deliveryIncrementAmount;
-                halu.UpdateCounterUI();
-                Debug.Log("Items delivered: " + halu.itemsDelivered);
+                halu.RegisterDelivery(deliveryIncrementAmount);
             }
         }
 
-        // Reactivate multiple objects
         if (objectToReactivate != null && objectToReactivate.Length > 0)
         {
             foreach (GameObject obj in objectToReactivate)
@@ -123,6 +122,20 @@ public class ItemReceiverIncrement : MonoBehaviour
                     obj.SetActive(true);
                     Debug.Log("Reactivated: " + obj.name);
                 }
+            }
+        }
+
+        // Complete mission at specified index
+        if (completeMissionOnExecute)
+        {
+            if (missionManager != null)
+            {
+                missionManager.CompleteMissionByIndex(missionIndex);
+                Debug.Log("[ItemReceiverIncrement] Mission " + missionIndex + " completed.");
+            }
+            else
+            {
+                Debug.LogWarning("[ItemReceiverIncrement] completeMissionOnExecute is true but missionManager is not assigned.");
             }
         }
 

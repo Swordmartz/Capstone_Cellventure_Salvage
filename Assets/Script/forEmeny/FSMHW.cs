@@ -33,20 +33,18 @@ public class EnemyFSM : MonoBehaviour
     [Header("Axis Threshold (Teleport)")]
     [SerializeField] private float axisThreshold = 2f;
 
+    [Header("Mission Submission")]
+    public MissionSubmissionManager missionManager;
+    public int missionIndex = 0;
+
     private enum State { MoveToTarget, Attack, MoveToTeleport, Dead }
 
     private State state;
     private NavMeshAgent agent;
     private Attackable currentTarget;
 
-    // The index of the teleport point the enemy is currently standing on.
-    // -1 means the enemy hasn't used any teleport yet.
     private int occupiedTeleportIndex = -1;
-
-    // Snapshot of occupiedTeleportIndex taken at the moment we START walking
-    // to a trigger. Used in HandleMoveToTeleport so the origin is never lost.
     private int lastOccupiedTeleportIndex = -1;
-
     private int walkingToTeleportIndex = -1;
 
     private float attackTimer;
@@ -79,9 +77,6 @@ public class EnemyFSM : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────
-    // PICK TARGET — find nearest alive attackable
-    // ─────────────────────────────
     void PickRandomTarget()
     {
         Attackable nearest = null;
@@ -110,9 +105,6 @@ public class EnemyFSM : MonoBehaviour
         state = State.MoveToTarget;
     }
 
-    // ─────────────────────────────
-    // STATE HANDLERS
-    // ─────────────────────────────
     void HandleMoveToTarget()
     {
         if (currentTarget == null || currentTarget.IsDead) { PickTeleport(); return; }
@@ -140,11 +132,6 @@ public class EnemyFSM : MonoBehaviour
         yield return new WaitForSeconds(0.3f);
     }
 
-    // ─────────────────────────────
-    // TAKE DAMAGE
-    // If currently attacking — stop immediately and teleport away.
-    // Otherwise — instant warp as usual.
-    // ─────────────────────────────
     public void TakeDamage(int dmg)
     {
         if (isDead) return;
@@ -153,8 +140,8 @@ public class EnemyFSM : MonoBehaviour
 
         StopAllCoroutines();
         attackTimer = attackCooldown;
-        PickTeleport();         // walk to trigger first → warp on arrival
-        ApplySpeedBoost();      // called AFTER PickTeleport so StopAllCoroutines doesn't kill it
+        PickTeleport();
+        ApplySpeedBoost();
     }
 
     void DoInstantWarp()
@@ -180,9 +167,6 @@ public class EnemyFSM : MonoBehaviour
         PickRandomTarget();
     }
 
-    // ─────────────────────────────
-    // PICK TELEPORT — walk to trigger, then warp from there
-    // ─────────────────────────────
     void PickTeleport()
     {
         int index = PickTeleportIndex(occupiedTeleportIndex);
@@ -197,7 +181,6 @@ public class EnemyFSM : MonoBehaviour
             return;
         }
 
-        // Snapshot origin BEFORE we start walking so it is never lost mid-walk
         lastOccupiedTeleportIndex = occupiedTeleportIndex;
         walkingToTeleportIndex = index;
 
@@ -219,10 +202,8 @@ public class EnemyFSM : MonoBehaviour
 
             Debug.Log($"[EnemyFSM] Reached trigger={triggerIndex}. Excluding trigger={triggerIndex} AND lastOccupied={lastOccupiedTeleportIndex}");
 
-            // Exclude BOTH the trigger point AND the snapshotted origin
             int warpIndex = PickTeleportIndex(triggerIndex, lastOccupiedTeleportIndex);
 
-            // Fallback for setups with only 2 points
             if (warpIndex < 0)
                 warpIndex = PickTeleportIndex(triggerIndex);
 
@@ -239,26 +220,16 @@ public class EnemyFSM : MonoBehaviour
             Debug.Log($"[EnemyFSM] Warping to index={warpIndex} name={teleportPoints[warpIndex].name}");
 
             agent.Warp(teleportPoints[warpIndex].position);
-
-            // Update occupiedIndex ONLY after the warp succeeds
             occupiedTeleportIndex = warpIndex;
-
             state = State.MoveToTarget;
             PickRandomTarget();
         }
     }
 
-    // ─────────────────────────────
-    // CORE: pick a teleport index, always excluding ALL indices in excludeList
-    // Pass 1 — same X or Z axis
-    // Pass 2 — any other point (fallback)
-    // Uses Random.Range instead of nearest — prevents always picking same index
-    // ─────────────────────────────
     int PickTeleportIndex(params int[] excludeList)
     {
         List<int> candidates = new List<int>();
 
-        // Pass 1: same X or Z axis, skip any excluded index
         for (int i = 0; i < teleportPoints.Count; i++)
         {
             if (teleportPoints[i] == null) continue;
@@ -276,7 +247,6 @@ public class EnemyFSM : MonoBehaviour
 
         Debug.Log($"[EnemyFSM] PickTeleportIndex — Pass1 axis candidates: {candidates.Count}, excluding: {string.Join(",", excludeList)}");
 
-        // Pass 2: any point not in exclude list
         if (candidates.Count == 0)
         {
             for (int i = 0; i < teleportPoints.Count; i++)
@@ -294,13 +264,9 @@ public class EnemyFSM : MonoBehaviour
 
         if (candidates.Count == 0) return -1;
 
-        // RANDOM pick — not nearest, prevents repeating the same index
         return candidates[Random.Range(0, candidates.Count)];
     }
 
-    // ─────────────────────────────
-    // SPEED BOOST
-    // ─────────────────────────────
     void ApplySpeedBoost()
     {
         if (speedRoutine != null) StopCoroutine(speedRoutine);
@@ -314,9 +280,6 @@ public class EnemyFSM : MonoBehaviour
         agent.speed = moveSpeed;
     }
 
-    // ─────────────────────────────
-    // DEATH
-    // ─────────────────────────────
     void Die()
     {
         isDead = true;
@@ -324,21 +287,22 @@ public class EnemyFSM : MonoBehaviour
         StopAllCoroutines();
         agent.isStopped = true;
         agent.ResetPath();
+
+        if (missionManager != null)
+        {
+            missionManager.CompleteMissionByIndex(missionIndex);
+            Debug.Log("[EnemyFSM] Enemy died — Mission " + missionIndex + " completed.");
+        }
     }
 
-    // ─────────────────────────────
-    // GIZMOS
-    // ─────────────────────────────
     private void OnDrawGizmos()
     {
         Vector3 pos = transform.position;
 
-        // ── Axis threshold lines (X and Z) for TELEPORT detection ──
         Gizmos.color = new Color(0f, 0.5f, 1f, 0.2f);
         Gizmos.DrawCube(pos, new Vector3(axisThreshold * 2f, 0.1f, 200f));
         Gizmos.DrawCube(pos, new Vector3(200f, 0.1f, axisThreshold * 2f));
 
-        // ── Teleport points ──
         if (teleportPoints != null)
         {
             for (int i = 0; i < teleportPoints.Count; i++)
@@ -369,7 +333,6 @@ public class EnemyFSM : MonoBehaviour
             }
         }
 
-        // ── Attackable targets ──
         if (attackableTargets != null)
         {
             foreach (var a in attackableTargets)
@@ -389,7 +352,6 @@ public class EnemyFSM : MonoBehaviour
             }
         }
 
-        // ── State label box ──
         Gizmos.color = Color.white;
         Gizmos.DrawWireCube(pos + Vector3.up * 2.5f, new Vector3(0.1f, 0.1f, 0.1f));
 

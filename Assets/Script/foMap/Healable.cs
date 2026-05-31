@@ -16,6 +16,10 @@ public class HealTarget : MonoBehaviour
     [SerializeField] private bool isDead;
     [SerializeField] private bool isFullyHealed;
 
+    [Header("Mission Submission")]
+    public MissionSubmissionManager missionManager;
+    public int missionIndex = 0;
+
     public float CurrentHP => currentHP;
     public bool IsDead => isDead;
     public bool IsFullyHealed => isFullyHealed;
@@ -57,7 +61,15 @@ public class HealTarget : MonoBehaviour
         currentHP = Mathf.Min(Mathf.Round(currentHP + healPerTap), maxHP);
 
         if (currentHP >= maxHP)
+        {
             isFullyHealed = true;
+
+            if (missionManager != null)
+            {
+                missionManager.CompleteMissionByIndex(missionIndex);
+                Debug.Log("[HealTarget] Fully healed — Mission " + missionIndex + " completed.");
+            }
+        }
     }
 
     private void OnDrawGizmosSelected()

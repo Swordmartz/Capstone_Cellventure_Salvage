@@ -12,7 +12,7 @@ public class AI_TestTD : MonoBehaviour
     public GameObject oxygen;
     public LayerMask enemyLayer;
     public GameObject MB;
-    private bool firstDeliveryTriggered = false; // ADD THIS
+    private bool firstDeliveryTriggered = false;
 
     private Dictionary<int, bool> triggeredFlags = new Dictionary<int, bool>()
     {
@@ -24,10 +24,10 @@ public class AI_TestTD : MonoBehaviour
     public GameTimer MissionManager;
 
     [Header("Player score")]
-    public float comptTime = 0;//When the goal is reached, the time is captured and stored in this variable
-    public int performanceScore = 0;//For Tracking of Performance Score(The score is get by the decision tree)
-    public int idleTime = 0; //For Tracking of Idle time
-    public int FailedDelivery = 0; //For Tracking of Failed Delivery
+    public float comptTime = 0;
+    public int performanceScore = 0;
+    public int idleTime = 0;
+    public int FailedDelivery = 0;
 
     [Header("Triggers")]
     public bool playerInTrigger = false;
@@ -43,9 +43,8 @@ public class AI_TestTD : MonoBehaviour
     public GameTimer missionTimer;
     public bool hasCapturedTime = false;
 
+    private bool firstDeliverySkipped = false;
 
-
-    // 🔥 NEW (for proper checkpoint detection)
     private float previousTime;
 
     void Start()
@@ -53,29 +52,18 @@ public class AI_TestTD : MonoBehaviour
         string sceneName = SceneManager.GetActiveScene().name;
 
         if (sceneName == "Chapter1 - IRBC")
-        {
             StartCoroutine(dialogueSystem.DialogueSequence0IRBC());
-        }
         else if (sceneName == "Chapter1 - IWBCNM")
-        {
             StartCoroutine(dialogueSystem.DialogueSequence0IWBC());
-        }
         else if (sceneName == "Chapter1 - IWBCE")
-        {
             StartCoroutine(dialogueSystem.DialogueSequence0IWBCE());
-        }
         else if (sceneName == "Chapter1 - Platelets")
-        {
             StartCoroutine(dialogueSystem.DialogueSequenceIPI());
-        }
         else if (sceneName == "Chapter 1 - IICE")
-        {
             StartCoroutine(dialogueSystem.DialogueSequenceIICE0());
-        }
 
         UpdateCounterUI();
 
-        // 🔥 INIT previous time
         if (missionTimer != null)
             previousTime = missionTimer.GetCurrentTime();
     }
@@ -87,23 +75,15 @@ public class AI_TestTD : MonoBehaviour
             string sceneName = SceneManager.GetActiveScene().name;
 
             if (sceneName == "Chapter1 - IRBC")
-
                 StartCoroutine(dialogueSystem.DialogueSequence0IRBC());
-
             else if (sceneName == "Chapter1 - IWBCNM")
-
                 StartCoroutine(dialogueSystem.DialogueSequence0IWBC());
-
             else if (sceneName == "Chapter1 - IWBCE")
-
                 StartCoroutine(dialogueSystem.DialogueSequence0IWBCE());
             else if (sceneName == "Chapter1 - Platelets")
-
                 StartCoroutine(dialogueSystem.DialogueSequenceIPI());
-
             else if (sceneName == "Chapter 1 - IICE")
-                StartCoroutine(dialogueSystem.DialogueSequenceIICE0()); 
-
+                StartCoroutine(dialogueSystem.DialogueSequenceIICE0());
 
             playerInTrigger = false;
         }
@@ -127,35 +107,42 @@ public class AI_TestTD : MonoBehaviour
     public void UpdateCounterUI()
     {
         if (counterText != null)
-        {
             counterText.text = $"{itemsDelivered}/{deliveryThreshold}";
+    }
+
+    /// <summary>
+    /// First delivery: ignored but plays the IRB9 dialogue.
+    /// All subsequent deliveries count normally.
+    /// </summary>
+    public void RegisterDelivery(int amount)
+    {
+        if (!firstDeliverySkipped)
+        {
+            firstDeliverySkipped = true;
+            Debug.Log("[AI_TestTD] First delivery ignored — playing IRB9 dialogue.");
+            StartCoroutine(dialogueSystem.DialogueSequenceIRB9());
+            return;
         }
+
+        itemsDelivered += amount;
+        UpdateCounterUI();
+        Debug.Log("[AI_TestTD] Items delivered: " + itemsDelivered);
     }
 
     public void ItemTimeChecker()
     {
         if (missionTimer != null && !hasCapturedTime)
         {
-            if (itemsDelivered >= 1 && !firstDeliveryTriggered)
-            {
-                firstDeliveryTriggered = true;
-                StartCoroutine(dialogueSystem.DialogueSequenceIRB9()); // Replace with your target dialogue
-            }
             if (itemsDelivered >= deliveryThreshold)
             {
                 hasCapturedTime = true;
-
                 float currentTime = missionTimer.GetCurrentTime();
-                comptTime = missionTimer.missionTime - currentTime; // elapsed time
-
+                comptTime = missionTimer.missionTime - currentTime;
                 Debug.Log("Time elapsed: " + comptTime);
             }
         }
     }
 
-    // =========================
-    // ⏱ TIMER CHECK (FIXED)
-    // =========================
     private void LogMissionTimer()
     {
         if (missionTimer == null) return;
@@ -166,19 +153,13 @@ public class AI_TestTD : MonoBehaviour
         EvaluateCheckpoint(90, previousTime, currentTime);
         EvaluateCheckpoint(30, previousTime, currentTime);
 
-        previousTime = currentTime; // 🔥 IMPORTANT
+        previousTime = currentTime;
     }
 
-    // =========================
-    // 🧠 CHECKPOINT FIX
-    // =========================
     private void EvaluateCheckpoint(int triggerTime, float prevTime, float currentTime)
     {
-        // ❌ OLD: ContainsKey (always true)
-        // ✅ FIX:
         if (triggeredFlags[triggerTime]) return;
 
-        // 🔥 CROSSING DETECTION (MAIN FIX)
         if (prevTime > triggerTime && currentTime <= triggerTime)
         {
             triggeredFlags[triggerTime] = true;
@@ -194,48 +175,27 @@ public class AI_TestTD : MonoBehaviour
         }
     }
 
-    // =========================
-    // 🧠 HEURISTIC FUNCTION
-    // =========================
     private float EvaluateHeuristic(int triggerTime, float currentTime, int items)
     {
-        float itemScore = items / 5f; // ✅ was 4f, max deliveries is 5
-
+        float itemScore = items / 5f;
         float timeError = Mathf.Abs(currentTime - triggerTime);
         float timeScore = 1f - Mathf.Clamp01(timeError / 2f);
-
-        float result =
-            (itemScore * 0.7f) +
-            (timeScore * 0.3f);
-
+        float result = (itemScore * 0.7f) + (timeScore * 0.3f);
         return result * 5f;
     }
-    // =========================
-    // 🎭 DIALOGUE SELECTOR
-    // =========================
+
     private void PlayDialogue(int triggerTime, int score)
     {
         int tier = GetTier(score);
 
         switch (triggerTime)
         {
-            case 210:
-                StartCoroutine(Dialogue210(tier));
-                break;
-
-            case 90:
-                StartCoroutine(Dialogue90(tier));
-                break;
-
-            case 30:
-                StartCoroutine(Dialogue30(tier));
-                break;
+            case 210: StartCoroutine(Dialogue210(tier)); break;
+            case 90: StartCoroutine(Dialogue90(tier)); break;
+            case 30: StartCoroutine(Dialogue30(tier)); break;
         }
     }
 
-    // =========================
-    // 🧠 SCORE → TIER
-    // =========================
     private int GetTier(int score)
     {
         if (score >= 5) return 5;
@@ -246,9 +206,6 @@ public class AI_TestTD : MonoBehaviour
         return 0;
     }
 
-    // =========================
-    // 🎭 DIALOGUES
-    // =========================
     private IEnumerator Dialogue210(int tier)
     {
         switch (tier)
@@ -287,5 +244,4 @@ public class AI_TestTD : MonoBehaviour
             default: yield return dialogueSystem.DialogueSequenceIRBCT300(); break;
         }
     }
-
 }
