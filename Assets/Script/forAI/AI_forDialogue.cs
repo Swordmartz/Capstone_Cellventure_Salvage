@@ -176,9 +176,9 @@ public class AIforDialogue : MonoBehaviour
     {
 
         // Step 1: Disable target object
-        if (targetGameObject != null) 
+        if (targetGameObject != null)
             targetGameObject.SetActive(false);
-        if (MB != null) 
+        if (MB != null)
         {
             MB.SetActive(true); dialoguePanel.SetActive(false);
         }
@@ -187,7 +187,7 @@ public class AIforDialogue : MonoBehaviour
 
         yield return new WaitForSeconds(5f);
 
-        if (MB != null) 
+        if (MB != null)
             MB.SetActive(false);
 
         // Step 2: Play dialogue index 0
@@ -246,11 +246,11 @@ public class AIforDialogue : MonoBehaviour
             missionTimer.ResumeTimer();
     }
 
-       
+
 
     public IEnumerator DialogueSequence1IRBC()
     {
-        if (missionTimer != null) 
+        if (missionTimer != null)
             missionTimer.StopTimer();
         // 1️⃣ Reset joystick input BEFORE disabling the GameObject
         if (targetGameObject != null)
@@ -417,6 +417,8 @@ public class AIforDialogue : MonoBehaviour
         {
             Debug.LogWarning("Player or Intro Teleport Target is missing!");
         }
+
+
 
         // 6. Play dialogue set index 2 after teleport
         if (dialogueSets.Count > 2)
@@ -1569,24 +1571,10 @@ public class AIforDialogue : MonoBehaviour
     }
     public IEnumerator DialogueSequence0IWBCE()
     {
-        Camera cam = Camera.main;
-        if (cam == null)
-            yield break;
-
-        // 1️⃣ Hide MULTIPLE layers at once (Inspector controlled)
-        cam.cullingMask = cam.cullingMask & ~layersToHide.value;
-
-        // 2️⃣ Disable target object
+        // Disable target object
         if (targetObject != null)
-        {
             targetObject.SetActive(false);
-            yield return null;
-        }
 
-        if (MB != null)
-        {
-            MB.SetActive(true); dialoguePanel.SetActive(false);
-        }
         if (line != null)
             line.SetActive(false);
 
@@ -1595,9 +1583,7 @@ public class AIforDialogue : MonoBehaviour
         if (MB != null)
             MB.SetActive(false);
 
-        yield return new WaitForEndOfFrame();
-
-        // 3️⃣ Play dialogue index 0
+        // Play dialogue
         if (dialogueSets != null && dialogueSets.Count > 0)
         {
             dialogueFinished = false;
@@ -1607,24 +1593,22 @@ public class AIforDialogue : MonoBehaviour
             yield return new WaitUntil(() => dialogueFinished);
         }
 
-        // 4️⃣ Re-enable target object
+        // Re-enable target object
         if (targetObject != null)
             targetObject.SetActive(true);
 
-        // 5️⃣ 🔥 ACTIVATE ALL ENEMIES (WORKS EVEN IF INACTIVE)
+        // Activate all enemies
         EnemyFSM[] enemies = Resources.FindObjectsOfTypeAll<EnemyFSM>();
 
         foreach (EnemyFSM enemy in enemies)
         {
-            if (enemy == null) continue;
-
-            // optional safety: avoid prefab assets
-            if (enemy.gameObject.scene.IsValid())
+            if (enemy != null && enemy.gameObject.scene.IsValid())
             {
                 enemy.gameObject.SetActive(true);
                 Debug.Log("Activated enemy: " + enemy.name);
             }
         }
+
         if (missionTimer != null)
             missionTimer.ActivateTimer();
     }
@@ -1673,6 +1657,7 @@ public class AIforDialogue : MonoBehaviour
 
     public IEnumerator DialogueSequenceIICE0()
     {
+
         if (missionTimer != null)
             missionTimer.StopTimer();
 
@@ -1714,6 +1699,93 @@ public class AIforDialogue : MonoBehaviour
 
         if (missionTimer != null)
             missionTimer.ActivateTimer();
+    }
+
+    public IEnumerator DialogueSequence1IWBCE()
+    {
+        if (missionTimer != null)
+            missionTimer.StopTimer();
+
+        // 1) Disable the target object
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        if (dialoguePanel != null)
+            dialoguePanel.SetActive(true);
+
+        if (nextButton != null)
+            nextButton.gameObject.SetActive(true);
+
+        // 2) Play dialogue index 1
+        if (dialogueSets.Count > 1)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[1].setName);
+            yield return new WaitUntil(() => dialogueFinished);
+            dialogueFinished = false; // Reset so index 2 wait works correctly
+
+            // Force disable immediately after ShowNextMessage reactivates it
+            if (targetObject != null)
+                targetObject.SetActive(false);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 1 not found!");
+        }
+
+        // 3) Teleport player — object stays disabled
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null && introTeleportTarget != null)
+        {
+            Rigidbody rb = playerObj.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.position = introTeleportTarget.position;
+            }
+            else
+            {
+                playerObj.transform.position = introTeleportTarget.position;
+            }
+            Debug.Log("Player teleported to " + introTeleportTarget.name);
+        }
+        else
+        {
+            Debug.LogWarning("Player or introTeleportTarget is missing!");
+        }
+
+        // Force disable again after teleport
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 4) Play dialogue index 2
+        if (dialogueSets.Count > 2)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[2].setName);
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 2 not found!");
+        }
+
+        // 5) Start the timer
+        if (missionTimer != null)
+            missionTimer.ActivateTimer();
+
+        // 6) Activate the target object
+        if (targetObject != null)
+            targetObject.SetActive(true);
+
+        // Activate ICEVIT tagged objects
+        GameObject[] allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+        foreach (GameObject obj in allObjects)
+        {
+            if (obj.CompareTag("ICEVIT") && obj.scene.IsValid())
+                obj.SetActive(true);
+        }
     }
 }
 

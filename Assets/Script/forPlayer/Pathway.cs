@@ -9,6 +9,9 @@ public class PasserbyMultiCurvePath : MonoBehaviour
 
         [Header("Speed toward this point")]
         public float speed = 1f;
+
+        [Header("Reset Inventory at this point")]
+        public bool resetInventoryHere = false;
     }
 
     [Header("Path Points")]
@@ -22,8 +25,13 @@ public class PasserbyMultiCurvePath : MonoBehaviour
     public SpriteRenderer spriteRenderer;
     public bool flipSpriteBasedOnDirection = true;
 
+    [Header("References")]
+    public Inventory passerbyInventory;
+    public PasserbyItemPickup passerbyItemPickup;
+
     private float progress = 0f;
     private Vector3 lastPosition;
+    private int lastWaypointIndex = -1;
 
     private void Start()
     {
@@ -42,7 +50,6 @@ public class PasserbyMultiCurvePath : MonoBehaviour
             return;
 
         float currentSpeed = GetCurrentSpeed();
-
         progress += currentSpeed * Time.deltaTime;
 
         float maxProgress = loop ? pathPoints.Length : pathPoints.Length - 1;
@@ -50,9 +57,7 @@ public class PasserbyMultiCurvePath : MonoBehaviour
         if (progress >= maxProgress)
         {
             if (loop)
-            {
                 progress = 0f;
-            }
             else
             {
                 progress = maxProgress;
@@ -65,6 +70,13 @@ public class PasserbyMultiCurvePath : MonoBehaviour
 
                 return;
             }
+        }
+
+        int currentWaypointIndex = Mathf.FloorToInt(progress);
+        if (currentWaypointIndex != lastWaypointIndex)
+        {
+            lastWaypointIndex = currentWaypointIndex;
+            CheckWaypointReset(currentWaypointIndex);
         }
 
         Vector3 newPosition = GetPoint(progress);
@@ -83,6 +95,36 @@ public class PasserbyMultiCurvePath : MonoBehaviour
         lastPosition = newPosition;
     }
 
+    private void CheckWaypointReset(int index)
+    {
+        if (index < 0 || index >= pathPoints.Length) return;
+
+        PathPoint wp = pathPoints[index];
+
+
+
+        if (!wp.resetInventoryHere) return;
+
+        if (passerbyInventory != null)
+        {
+            passerbyInventory.ClearItem();
+            Debug.Log("Inventory cleared!");
+        }
+        else
+        {
+            Debug.LogError("passerbyInventory is not assigned!");
+        }
+
+        if (passerbyItemPickup != null)
+        {
+            passerbyItemPickup.ResetPickup();
+            Debug.Log("Pickup reset!");
+        }
+        else
+        {
+            Debug.LogError("passerbyItemPickup is not assigned!");
+        }
+    }
     private float GetCurrentSpeed()
     {
         int targetIndex = Mathf.Clamp(Mathf.FloorToInt(progress) + 1, 0, pathPoints.Length - 1);

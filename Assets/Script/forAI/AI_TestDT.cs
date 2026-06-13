@@ -56,7 +56,7 @@ public class AI_TestTD : MonoBehaviour
         else if (sceneName == "Chapter1 - IWBCNM")
             StartCoroutine(dialogueSystem.DialogueSequence0IWBC());
         else if (sceneName == "Chapter1 - IWBCE")
-            StartCoroutine(dialogueSystem.DialogueSequence0IWBCE());
+            StartCoroutine(dialogueSystem.DialogueSequence1IWBCE());
         else if (sceneName == "Chapter1 - Platelets")
             StartCoroutine(dialogueSystem.DialogueSequenceIPI());
         else if (sceneName == "Chapter 1 - IICE")
@@ -79,7 +79,7 @@ public class AI_TestTD : MonoBehaviour
             else if (sceneName == "Chapter1 - IWBCNM")
                 StartCoroutine(dialogueSystem.DialogueSequence0IWBC());
             else if (sceneName == "Chapter1 - IWBCE")
-                StartCoroutine(dialogueSystem.DialogueSequence0IWBCE());
+                StartCoroutine(dialogueSystem.DialogueSequence1IWBCE());
             else if (sceneName == "Chapter1 - Platelets")
                 StartCoroutine(dialogueSystem.DialogueSequenceIPI());
             else if (sceneName == "Chapter 1 - IICE")

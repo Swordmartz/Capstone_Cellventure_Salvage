@@ -6,7 +6,7 @@ using System.Collections;
 public class StarRatingManager : MonoBehaviour
 {
     [Header("Stars (assign 3 in order)")]
-    public Image[] starImages;              // 3 star Image components
+    public Image[] starImages;
 
     [Header("Star 1 Sprites")]
     public Sprite star1Filled;
@@ -33,7 +33,32 @@ public class StarRatingManager : MonoBehaviour
     [Header("Level Settings")]
     public float maxTime = 120f;
 
-    // Helper to get the correct filled/empty sprite per star index
+    [Header("Scoring Weights (must add up to 1)")]
+    [Tooltip("Weight for completion time (faster = better).")]
+    [Range(0f, 1f)] public float timeWeight = 0.35f;
+    [Tooltip("Weight for performance score.")]
+    [Range(0f, 1f)] public float performanceWeight = 0.35f;
+    [Tooltip("Weight for idle time penalty (less idle = better).")]
+    [Range(0f, 1f)] public float idleWeight = 0.15f;
+    [Tooltip("Weight for failed delivery penalty.")]
+    [Range(0f, 1f)] public float failedDeliveryWeight = 0.15f;
+
+    [Header("Penalty Settings")]
+    [Tooltip("Each idle second reduces idle score by this much.")]
+    public float idlePenaltyPerSecond = 0.05f;
+    [Tooltip("Each failed delivery reduces that score by this much.")]
+    public float failedDeliveryPenalty = 0.2f;
+
+    [Header("Star Thresholds")]
+    [Tooltip("Final score (0-1) needed for 3 stars.")]
+    [Range(0f, 1f)] public float threshold3Stars = 0.80f;
+    [Tooltip("Final score (0-1) needed for 2 stars.")]
+    [Range(0f, 1f)] public float threshold2Stars = 0.50f;
+    [Tooltip("Final score (0-1) needed for 1 star.")]
+    [Range(0f, 1f)] public float threshold1Star = 0.20f;
+
+    // ─────────────────────────────────────────────────────────────────────────
+
     private Sprite GetFilled(int index)
     {
         switch (index)
@@ -56,26 +81,68 @@ public class StarRatingManager : MonoBehaviour
         }
     }
 
-    public void EvaluateScore(float completionTime, float performanceScore)
+    /// <summary>
+    /// Call this when the level ends.
+    /// Pass the four values straight from AI_TestTD.
+    /// </summary>
+    public void EvaluateFromMission(AI_TestTD missionData)
     {
-        StopAllCoroutines();
-        StartCoroutine(EvaluateRoutine(completionTime, performanceScore));
+        EvaluateScore(
+            missionData.comptTime,
+            missionData.performanceScore,
+            missionData.idleTime,
+            missionData.FailedDelivery
+        );
     }
 
-    private IEnumerator EvaluateRoutine(float completionTime, float performanceScore)
+    /// <summary>
+    /// Core evaluation — can also be called directly with raw values.
+    /// </summary>
+    public void EvaluateScore(float completionTime, float performanceScore,
+                               int idleTime, int failedDeliveries)
+    {
+        StopAllCoroutines();
+        StartCoroutine(EvaluateRoutine(completionTime, performanceScore,
+                                       idleTime, failedDeliveries));
+    }
+
+    private IEnumerator EvaluateRoutine(float completionTime, float performanceScore,
+                                         int idleTime, int failedDeliveries)
     {
         yield return null;
 
-        float fuzzyScore = FuzzyLogicEvaluator.Evaluate(completionTime, maxTime, performanceScore);
-        int stars = FuzzyLogicEvaluator.GetStars(fuzzyScore);
+        // ── Time score: 1 if completed instantly, 0 if used all maxTime ──────
+        float timeScore = 1f - Mathf.Clamp01(completionTime / maxTime);
 
-        Debug.Log($"[StarRating] CompletionTime:{completionTime} | MaxTime:{maxTime} | PerfScore:{performanceScore} | FuzzyScore:{fuzzyScore} | Stars:{stars}");
+        // ── Performance score: normalise 0-5 range from AI_TestTD heuristic ──
+        // performanceScore is accumulated across 3 checkpoints, max ~15 (3 × 5)
+        float perfScore = Mathf.Clamp01(performanceScore / 15f);
 
-        scoreText.text = "Score: " + performanceScore.ToString();
+        // ── Idle penalty: more idle = lower score ─────────────────────────────
+        float idleScore = Mathf.Clamp01(1f - idleTime * idlePenaltyPerSecond);
+
+        // ── Failed delivery penalty ───────────────────────────────────────────
+        float deliveryScore = Mathf.Clamp01(1f - failedDeliveries * failedDeliveryPenalty);
+
+        // ── Weighted final score ──────────────────────────────────────────────
+        float finalScore = (timeScore * timeWeight)
+                         + (perfScore * performanceWeight)
+                         + (idleScore * idleWeight)
+                         + (deliveryScore * failedDeliveryWeight);
+
+        finalScore = Mathf.Clamp01(finalScore);
+
+        int stars = GetStars(finalScore);
+
+        Debug.Log($"[StarRating] Time:{completionTime} | Perf:{performanceScore} " +
+                  $"| Idle:{idleTime} | Failed:{failedDeliveries} " +
+                  $"| FinalScore:{finalScore:F2} | Stars:{stars}");
+
+        // ── Update UI ─────────────────────────────────────────────────────────
+        scoreText.text = "Score: " + Mathf.RoundToInt(finalScore * 100);
         timeText.text = "Time: " + FormatTime(completionTime);
         feedbackText.text = GetFeedback(stars);
 
-        // Reset all stars to empty using their individual sprites
         for (int i = 0; i < starImages.Length; i++)
         {
             starImages[i].sprite = GetEmpty(i);
@@ -83,6 +150,14 @@ public class StarRatingManager : MonoBehaviour
         }
 
         yield return StartCoroutine(AnimateStars(stars));
+    }
+
+    private int GetStars(float score)
+    {
+        if (score >= threshold3Stars) return 3;
+        if (score >= threshold2Stars) return 2;
+        if (score >= threshold1Star) return 1;
+        return 0;
     }
 
     private IEnumerator AnimateStars(int earnedStars)
@@ -102,18 +177,14 @@ public class StarRatingManager : MonoBehaviour
     private IEnumerator AnimateStar(Transform starTransform)
     {
         float elapsed = 0f;
-
         while (elapsed < animDuration)
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / animDuration);
-
             float scale = Mathf.Lerp(starMaxScale, 1f, EaseOutBack(t));
             starTransform.localScale = Vector3.one * scale;
-
             yield return null;
         }
-
         starTransform.localScale = Vector3.one;
     }
 

@@ -9,6 +9,8 @@ TagManager:
   - Teleport
   - Attackable
   - ICEVIT
+  - Passerby
+  - Wall
   layers:
   - Default
   - TransparentFX
@@ -33,8 +35,8 @@ TagManager:
   - Minimap
   - MinimapNotInclude
   - Draggable
-  - 
-  - 
+  - Intestine
+  - Paserby
   - 
   - 
   - 

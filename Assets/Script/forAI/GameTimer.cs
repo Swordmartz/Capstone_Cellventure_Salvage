@@ -63,8 +63,8 @@ public class GameTimer : MonoBehaviour
 
         // Evaluate and display star rating
         if (starRatingManager != null && aiTestTD != null)
-            starRatingManager.EvaluateScore(aiTestTD.comptTime, aiTestTD.performanceScore);
-        
+            starRatingManager.EvaluateScore(aiTestTD.comptTime, aiTestTD.performanceScore, aiTestTD.idleTime, aiTestTD.FailedDelivery);
+
 
     }
 

@@ -1,336 +1,354 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AI;
+using UnityEngine.Splines;
 
+/// <summary>
+/// EnemyFSM — No NavMesh, pure transform movement.
+///
+/// PATROL  — follows spline forward, scans for Attackables
+/// CHASE   — moves directly toward target
+/// ATTACK  — in range, damages target on cooldown
+/// FLEE    — took player damage, follows spline, then picks different target
+/// DEAD    — stops, reports mission
+/// </summary>
 public class EnemyFSM : MonoBehaviour
 {
     [Header("Stats")]
     [SerializeField] private int maxHealth = 100;
-    public int currentHealth;
     [SerializeField] private int attackDamage = 10;
+    public int currentHealth;
 
     [Header("Movement")]
-    [SerializeField] private float moveSpeed = 4f;
+    [SerializeField] private float chaseSpeed = 4f;
+    [SerializeField] private float patrolSpeed = 2f;
+    [SerializeField] private float fleeSpeed = 5f;
     [SerializeField] private float stoppingDistance = 1.2f;
 
-    [Header("Speed Boost (on hit)")]
-    [SerializeField] private float speedBoostMultiplier = 1.8f;
-    [SerializeField] private float speedBoostDuration = 2f;
+    [Header("Spline Guide")]
+    public SplineContainer splineContainer;
+    [SerializeField] private float splineLookahead = 2f;
+    [SerializeField] private float heightFollowSpeed = 50f;
+
+    [Header("Detection")]
+    [SerializeField] private float detectionRadius = 8f;
 
     [Header("Attack")]
     [SerializeField] private float attackCooldown = 1.5f;
 
+    [Header("Flee")]
+    [SerializeField] private float fleeDuration = 3f;
+
+    [Header("Rotation")]
+    [SerializeField] private float rotationSpeed = 10f;
+
     [Header("Targets")]
     [SerializeField] private List<Attackable> attackableTargets;
-
-    [Header("Teleports")]
-    [SerializeField] private List<Transform> teleportPoints;
-
-    [Header("Wall Check")]
-    [SerializeField] private LayerMask wallMask;
-
-    [Header("Axis Threshold (Teleport)")]
-    [SerializeField] private float axisThreshold = 2f;
 
     [Header("Mission Submission")]
     public MissionSubmissionManager missionManager;
     public int missionIndex = 0;
 
-    private enum State { MoveToTarget, Attack, MoveToTeleport, Dead }
+    // ── FSM ───────────────────────────────────────────────────────────────────
+    private enum State { Patrol, Chase, Attack, Flee, Dead }
+    private State _state;
 
-    private State state;
-    private NavMeshAgent agent;
-    private Attackable currentTarget;
+    // ── Private ───────────────────────────────────────────────────────────────
+    private Attackable _currentTarget;
+    private Attackable _lastTarget;
+    private float _attackTimer;
+    private bool _isDead;
+    private float _splineT;
+    private float _splineLength;
+    private float _fleeTimer;
 
-    private int occupiedTeleportIndex = -1;
-    private int lastOccupiedTeleportIndex = -1;
-    private int walkingToTeleportIndex = -1;
-
-    private float attackTimer;
-    private bool isDead;
-    private Coroutine speedRoutine;
-
-    // ─────────────────────────────
-    private void Start()
+    // ─────────────────────────────────────────────────────────────────────────
+    void Start()
     {
-        agent = GetComponent<NavMeshAgent>();
-        agent.speed = moveSpeed;
-        agent.stoppingDistance = stoppingDistance;
         currentHealth = maxHealth;
-        state = State.MoveToTarget;
-        PickRandomTarget();
+
+        if (splineContainer != null)
+        {
+            _splineLength = splineContainer.CalculateLength();
+            SnapSplineTToSelf();
+        }
+
+        _state = State.Patrol;
     }
 
-    private void Update()
+    void Update()
     {
-        if (isDead) return;
+        if (_isDead) return;
 
-        if (attackTimer > 0)
-            attackTimer -= Time.deltaTime;
+        if (_attackTimer > 0f)
+            _attackTimer -= Time.deltaTime;
 
-        switch (state)
+        switch (_state)
         {
-            case State.MoveToTarget: HandleMoveToTarget(); break;
+            case State.Patrol: HandlePatrol(); break;
+            case State.Chase: HandleChase(); break;
             case State.Attack: HandleAttack(); break;
-            case State.MoveToTeleport: HandleMoveToTeleport(); break;
+            case State.Flee: HandleFlee(); break;
+        }
+
+        ApplySplineHeight();
+    }
+
+    // ── PATROL ────────────────────────────────────────────────────────────────
+    void HandlePatrol()
+    {
+        if (splineContainer == null) return;
+
+        _splineT += (patrolSpeed / _splineLength) * Time.deltaTime;
+        if (_splineT >= 1f) _splineT -= 1f;
+
+        float lookaheadT = Mathf.Repeat(_splineT + splineLookahead / _splineLength, 1f);
+        Vector3 dest = GetSplinePositionWorld(lookaheadT);
+        MoveToward(dest, patrolSpeed);
+
+        Attackable found = ScanForTarget(null);
+        if (found != null)
+        {
+            _currentTarget = found;
+            _state = State.Chase;
         }
     }
 
-    void PickRandomTarget()
+    // ── CHASE ─────────────────────────────────────────────────────────────────
+    void HandleChase()
     {
-        Attackable nearest = null;
-        float nearestDist = float.MaxValue;
-
-        foreach (var a in attackableTargets)
+        if (_currentTarget == null || _currentTarget.IsDead)
         {
-            if (a == null || a.IsDead) continue;
-
-            Vector2 enemyXZ = new Vector2(transform.position.x, transform.position.z);
-            Vector2 targetXZ = new Vector2(a.transform.position.x, a.transform.position.z);
-            float d = Vector2.Distance(enemyXZ, targetXZ);
-            if (d < nearestDist) { nearestDist = d; nearest = a; }
-        }
-
-        if (nearest == null)
-        {
-            Debug.Log("[EnemyFSM] No alive targets found.");
+            _state = State.Patrol;
             return;
         }
 
-        Debug.Log("[EnemyFSM] Targeting " + nearest.name);
-        currentTarget = nearest;
-        agent.isStopped = false;
-        agent.SetDestination(currentTarget.transform.position);
-        state = State.MoveToTarget;
+        // Advance spline T so height keeps updating while chasing
+        _splineT += (chaseSpeed / _splineLength) * Time.deltaTime;
+        if (_splineT >= 1f) _splineT -= 1f;
+
+        // Check distance using collider bounds if available, else transform distance
+        float dist = GetDistanceToTarget(_currentTarget);
+
+        if (dist <= stoppingDistance)
+        {
+            _state = State.Attack;
+            return;
+        }
+
+        // Blend between spline forward and direct-to-target so enemy
+        // stays near the path while still closing in on the target
+        float lookaheadT = Mathf.Repeat(_splineT + splineLookahead / _splineLength, 1f);
+        Vector3 splineDest = GetSplinePositionWorld(lookaheadT);
+        Vector3 targetDest = _currentTarget.transform.position;
+
+        // Closer to target = move more directly toward it
+        float blend = Mathf.Clamp01(1f - dist / detectionRadius);
+        Vector3 dest = Vector3.Lerp(splineDest, targetDest, blend);
+
+        MoveToward(dest, chaseSpeed);
     }
 
-    void HandleMoveToTarget()
-    {
-        if (currentTarget == null || currentTarget.IsDead) { PickTeleport(); return; }
-        if (!agent.pathPending && agent.remainingDistance <= stoppingDistance)
-            state = State.Attack;
-    }
-
+    // ── ATTACK ────────────────────────────────────────────────────────────────
     void HandleAttack()
     {
-        if (currentTarget == null || currentTarget.IsDead) { PickTeleport(); return; }
-        if (attackTimer <= 0f)
+        if (_currentTarget == null || _currentTarget.IsDead)
         {
-            attackTimer = attackCooldown;
+            _state = State.Patrol;
+            return;
+        }
+
+        FaceTarget(_currentTarget.transform.position);
+
+        float dist = GetDistanceToTarget(_currentTarget);
+        if (dist > stoppingDistance * 1.5f)
+        {
+            _state = State.Chase;
+            return;
+        }
+
+        if (_attackTimer <= 0f)
+        {
+            _attackTimer = attackCooldown;
             StartCoroutine(DoAttack());
         }
     }
 
-    IEnumerator DoAttack()
+    /// <summary>Distance to target using its collider bounds if available.</summary>
+    float GetDistanceToTarget(Attackable target)
     {
-        if (currentTarget != null && !currentTarget.IsDead)
-        {
-            currentTarget.TakeDamage(attackDamage);
-            if (currentTarget.IsDead) { PickTeleport(); yield break; }
-        }
-        yield return new WaitForSeconds(0.3f);
+        Collider col = target.GetComponent<Collider>();
+        if (col != null)
+            return Vector3.Distance(transform.position, col.ClosestPoint(transform.position));
+        return Vector3.Distance(transform.position, target.transform.position);
     }
 
+    IEnumerator DoAttack()
+    {
+        yield return new WaitForSeconds(0.15f);
+        if (_currentTarget != null && !_currentTarget.IsDead)
+            _currentTarget.TakeDamage(attackDamage);
+    }
+
+    // ── FLEE ──────────────────────────────────────────────────────────────────
+    void HandleFlee()
+    {
+        _fleeTimer -= Time.deltaTime;
+
+        if (splineContainer != null)
+        {
+            _splineT += (fleeSpeed / _splineLength) * Time.deltaTime;
+            if (_splineT >= 1f) _splineT -= 1f;
+
+            float lookaheadT = Mathf.Repeat(_splineT + splineLookahead / _splineLength, 1f);
+            Vector3 dest = GetSplinePositionWorld(lookaheadT);
+            MoveToward(dest, fleeSpeed);
+        }
+
+        if (_fleeTimer <= 0f)
+        {
+            Attackable next = ScanForTarget(_lastTarget);
+            if (next != null)
+            {
+                _currentTarget = next;
+                _state = State.Chase;
+            }
+            else
+            {
+                _state = State.Patrol;
+            }
+        }
+    }
+
+    // ── TakeDamage (called by player) ─────────────────────────────────────────
     public void TakeDamage(int dmg)
     {
-        if (isDead) return;
+        if (_isDead) return;
+
         currentHealth -= dmg;
         if (currentHealth <= 0) { Die(); return; }
 
         StopAllCoroutines();
-        attackTimer = attackCooldown;
-        PickTeleport();
-        ApplySpeedBoost();
+        _attackTimer = attackCooldown;
+        _lastTarget = _currentTarget;
+        _currentTarget = null;
+        _fleeTimer = fleeDuration;
+        SnapSplineTToSelf();
+        _state = State.Flee;
     }
 
-    void DoInstantWarp()
+    // ── Height from spline ────────────────────────────────────────────────────
+    void ApplySplineHeight()
     {
-        int index = PickTeleportIndex(occupiedTeleportIndex);
+        if (splineContainer == null) return;
 
-        Debug.Log($"[EnemyFSM] DoInstantWarp — occupiedIndex={occupiedTeleportIndex}, chosen={index}");
+        SplineUtility.GetNearestPoint(
+            splineContainer.Spline,
+            splineContainer.transform.InverseTransformPoint(transform.position),
+            out _, out float heightT);
 
-        if (index < 0)
-        {
-            Debug.LogWarning("[EnemyFSM] DoInstantWarp — no valid teleport found!");
-            return;
-        }
-
-        lastOccupiedTeleportIndex = -1;
-        occupiedTeleportIndex = index;
-        walkingToTeleportIndex = -1;
-
-        Debug.Log($"[EnemyFSM] Warping to index={index} name={teleportPoints[index].name}");
-
-        agent.Warp(teleportPoints[index].position);
-        state = State.MoveToTarget;
-        PickRandomTarget();
+        float targetY = GetSplinePositionWorld(heightT).y;
+        Vector3 pos = transform.position;
+        pos.y = Mathf.MoveTowards(pos.y, targetY, heightFollowSpeed * Time.deltaTime);
+        transform.position = pos;
     }
 
-    void PickTeleport()
+    // ── Movement Helpers ──────────────────────────────────────────────────────
+    void MoveToward(Vector3 destination, float speed)
     {
-        int index = PickTeleportIndex(occupiedTeleportIndex);
+        Vector3 dir = destination - transform.position;
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.001f) return;
 
-        Debug.Log($"[EnemyFSM] PickTeleport — occupiedIndex={occupiedTeleportIndex}, chosen={index}");
-
-        if (index < 0)
-        {
-            Debug.LogWarning("[EnemyFSM] PickTeleport — no valid point, chasing target.");
-            state = State.MoveToTarget;
-            PickRandomTarget();
-            return;
-        }
-
-        lastOccupiedTeleportIndex = occupiedTeleportIndex;
-        walkingToTeleportIndex = index;
-
-        Debug.Log($"[EnemyFSM] Walking to trigger index={index} name={teleportPoints[index].name}");
-
-        agent.isStopped = false;
-        agent.SetDestination(teleportPoints[index].position);
-        state = State.MoveToTeleport;
+        transform.position += dir.normalized * speed * Time.deltaTime;
+        FaceTarget(destination);
     }
 
-    void HandleMoveToTeleport()
+    void FaceTarget(Vector3 target)
     {
-        if (walkingToTeleportIndex < 0) { PickRandomTarget(); return; }
+        Vector3 dir = target - transform.position;
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.001f) return;
 
-        if (!agent.pathPending && agent.remainingDistance <= stoppingDistance)
+        Quaternion targetRot = Quaternion.LookRotation(dir.normalized);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot,
+                                                 rotationSpeed * Time.deltaTime);
+    }
+
+    // ── Scan for target ───────────────────────────────────────────────────────
+    Attackable ScanForTarget(Attackable exclude)
+    {
+        Attackable best = null;
+        float bestDist = float.MaxValue;
+
+        foreach (var a in attackableTargets)
         {
-            int triggerIndex = walkingToTeleportIndex;
-            walkingToTeleportIndex = -1;
+            if (a == null || a.IsDead) continue;
+            if (a == exclude) continue;
 
-            Debug.Log($"[EnemyFSM] Reached trigger={triggerIndex}. Excluding trigger={triggerIndex} AND lastOccupied={lastOccupiedTeleportIndex}");
-
-            int warpIndex = PickTeleportIndex(triggerIndex, lastOccupiedTeleportIndex);
-
-            if (warpIndex < 0)
-                warpIndex = PickTeleportIndex(triggerIndex);
-
-            lastOccupiedTeleportIndex = -1;
-
-            if (warpIndex < 0)
+            float dist = Vector3.Distance(transform.position, a.transform.position);
+            if (dist <= detectionRadius && dist < bestDist)
             {
-                Debug.LogWarning("[EnemyFSM] HandleMoveToTeleport — no valid warp destination!");
-                state = State.MoveToTarget;
-                PickRandomTarget();
-                return;
+                bestDist = dist;
+                best = a;
             }
-
-            Debug.Log($"[EnemyFSM] Warping to index={warpIndex} name={teleportPoints[warpIndex].name}");
-
-            agent.Warp(teleportPoints[warpIndex].position);
-            occupiedTeleportIndex = warpIndex;
-            state = State.MoveToTarget;
-            PickRandomTarget();
-        }
-    }
-
-    int PickTeleportIndex(params int[] excludeList)
-    {
-        List<int> candidates = new List<int>();
-
-        for (int i = 0; i < teleportPoints.Count; i++)
-        {
-            if (teleportPoints[i] == null) continue;
-
-            bool excluded = false;
-            foreach (int ex in excludeList) if (i == ex) { excluded = true; break; }
-            if (excluded) continue;
-
-            bool sameX = Mathf.Abs(teleportPoints[i].position.x - transform.position.x) <= axisThreshold;
-            bool sameZ = Mathf.Abs(teleportPoints[i].position.z - transform.position.z) <= axisThreshold;
-
-            if (sameX || sameZ)
-                candidates.Add(i);
         }
 
-        Debug.Log($"[EnemyFSM] PickTeleportIndex — Pass1 axis candidates: {candidates.Count}, excluding: {string.Join(",", excludeList)}");
-
-        if (candidates.Count == 0)
-        {
-            for (int i = 0; i < teleportPoints.Count; i++)
-            {
-                if (teleportPoints[i] == null) continue;
-
-                bool excluded = false;
-                foreach (int ex in excludeList) if (i == ex) { excluded = true; break; }
-                if (excluded) continue;
-
-                candidates.Add(i);
-            }
-            Debug.Log($"[EnemyFSM] PickTeleportIndex — Pass2 fallback candidates: {candidates.Count}");
-        }
-
-        if (candidates.Count == 0) return -1;
-
-        return candidates[Random.Range(0, candidates.Count)];
+        return best;
     }
 
-    void ApplySpeedBoost()
+    // ── Spline Helpers ────────────────────────────────────────────────────────
+    void SnapSplineTToSelf()
     {
-        if (speedRoutine != null) StopCoroutine(speedRoutine);
-        speedRoutine = StartCoroutine(SpeedBoostRoutine());
+        if (splineContainer == null) return;
+        SplineUtility.GetNearestPoint(
+            splineContainer.Spline,
+            splineContainer.transform.InverseTransformPoint(transform.position),
+            out _, out _splineT);
     }
 
-    IEnumerator SpeedBoostRoutine()
+    Vector3 GetSplinePositionWorld(float t)
     {
-        agent.speed = moveSpeed * speedBoostMultiplier;
-        yield return new WaitForSeconds(speedBoostDuration);
-        agent.speed = moveSpeed;
+        Vector3 local = SplineUtility.EvaluatePosition(splineContainer.Spline, t);
+        return splineContainer.transform.TransformPoint(local);
     }
 
+    // ── Die ───────────────────────────────────────────────────────────────────
     void Die()
     {
-        isDead = true;
-        state = State.Dead;
+        _isDead = true;
+        _state = State.Dead;
         StopAllCoroutines();
-        agent.isStopped = true;
-        agent.ResetPath();
 
         if (missionManager != null)
         {
             missionManager.CompleteMissionByIndex(missionIndex);
-            Debug.Log("[EnemyFSM] Enemy died — Mission " + missionIndex + " completed.");
+            Debug.Log("[EnemyFSM] Died — Mission " + missionIndex + " completed.");
         }
     }
 
-    private void OnDrawGizmos()
+    // ── Gizmos ────────────────────────────────────────────────────────────────
+    void OnDrawGizmos()
     {
         Vector3 pos = transform.position;
 
-        Gizmos.color = new Color(0f, 0.5f, 1f, 0.2f);
-        Gizmos.DrawCube(pos, new Vector3(axisThreshold * 2f, 0.1f, 200f));
-        Gizmos.DrawCube(pos, new Vector3(200f, 0.1f, axisThreshold * 2f));
+        Gizmos.color = new Color(1f, 0.5f, 0f, 0.15f);
+        Gizmos.DrawWireSphere(pos, detectionRadius);
 
-        if (teleportPoints != null)
+        if (splineContainer != null && Application.isPlaying)
         {
-            for (int i = 0; i < teleportPoints.Count; i++)
-            {
-                if (teleportPoints[i] == null) continue;
+            Vector3 splinePos = GetSplinePositionWorld(_splineT);
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawSphere(splinePos, 0.2f);
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(pos, splinePos);
+        }
 
-                bool sameX = Mathf.Abs(teleportPoints[i].position.x - pos.x) <= axisThreshold;
-                bool sameZ = Mathf.Abs(teleportPoints[i].position.z - pos.z) <= axisThreshold;
-                bool isOccupied = (i == occupiedTeleportIndex);
-                bool isWalkingTo = (i == walkingToTeleportIndex);
-
-                if (isOccupied)
-                    Gizmos.color = Color.red;
-                else if (isWalkingTo)
-                    Gizmos.color = Color.yellow;
-                else if (sameX || sameZ)
-                    Gizmos.color = Color.cyan;
-                else
-                    Gizmos.color = new Color(1f, 1f, 1f, 0.3f);
-
-                Gizmos.DrawSphere(teleportPoints[i].position + Vector3.up * 0.5f, 0.4f);
-
-                if ((sameX || sameZ) && !isOccupied)
-                {
-                    Gizmos.color = Color.cyan;
-                    Gizmos.DrawLine(pos + Vector3.up * 0.5f, teleportPoints[i].position + Vector3.up * 0.5f);
-                }
-            }
+        if (_currentTarget != null && !_currentTarget.IsDead)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(pos + Vector3.up * 0.5f, _currentTarget.transform.position + Vector3.up);
+            Gizmos.DrawSphere(_currentTarget.transform.position + Vector3.up, 0.4f);
         }
 
         if (attackableTargets != null)
@@ -338,28 +356,17 @@ public class EnemyFSM : MonoBehaviour
             foreach (var a in attackableTargets)
             {
                 if (a == null || a.IsDead) continue;
-
-                bool isCurrentTarget = (a == currentTarget);
-
-                Gizmos.color = isCurrentTarget ? Color.red : Color.green;
-                Gizmos.DrawSphere(a.transform.position + Vector3.up * 1f, 0.5f);
-
-                if (isCurrentTarget)
-                {
-                    Gizmos.color = Color.red;
-                    Gizmos.DrawLine(pos + Vector3.up * 0.5f, a.transform.position + Vector3.up * 1f);
-                }
+                Gizmos.color = (a == _currentTarget) ? Color.red : Color.green;
+                Gizmos.DrawSphere(a.transform.position + Vector3.up, 0.3f);
             }
         }
 
-        Gizmos.color = Color.white;
-        Gizmos.DrawWireCube(pos + Vector3.up * 2.5f, new Vector3(0.1f, 0.1f, 0.1f));
-
 #if UNITY_EDITOR
-        string label = "State: " + state
-                     + "\nOccupied TP: " + occupiedTeleportIndex
-                     + "\nLast Occupied TP: " + lastOccupiedTeleportIndex
-                     + "\nWalking To TP: " + walkingToTeleportIndex;
+        string label = $"State: {_state}"
+                     + $"\nHP: {currentHealth}/{maxHealth}"
+                     + $"\nTarget: {(_currentTarget != null ? _currentTarget.name : "none")}"
+                     + $"\nLast: {(_lastTarget != null ? _lastTarget.name : "none")}"
+                     + $"\nSplineT: {_splineT:F2}";
         UnityEditor.Handles.Label(pos + Vector3.up * 3f, label);
 #endif
     }
