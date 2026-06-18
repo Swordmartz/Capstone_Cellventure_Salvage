@@ -1,91 +1,89 @@
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
+using TMPro;
 
-public class BGMSwitchButton : MonoBehaviour
+[RequireComponent(typeof(Toggle))]
+public class AnimatedToggleSwitch : MonoBehaviour
 {
-    [Header("Button")]
-    public Button switchButton;
-
-    [Header("Switch Knob")]
+    [Header("References")]
+    public Toggle toggle;
     public RectTransform knob;
-    public Vector2 knobOnPosition;
-    public Vector2 knobOffPosition;
-    public float slideDuration = 0.2f;
+    public Image trackImage;
+    public TextMeshProUGUI label; // optional, leave empty if not using a label
 
-    [Header("Background Music")]
-    public AudioSource[] bgmSources;
+    [Header("Track Colors")]
+    public Color onColor = new Color(0.36f, 0.78f, 0.42f);   // green
+    public Color offColor = new Color(0.18f, 0.22f, 0.32f);  // dark navy
 
-    [Header("Default State")]
-    public bool startOn = true;
+    [Header("Knob Position (local X)")]
+    public float knobOnX = 13f;
+    public float knobOffX = -13f;
 
-    private bool isOn;
-    private Coroutine slideCoroutine;
+    [Header("Animation")]
+    public float animDuration = 0.15f;
 
-    private void Start()
+    [Header("Label Text")]
+    public string onText = "ON";
+    public string offText = "OFF";
+
+    private Coroutine animCoroutine;
+
+    void Awake()
     {
-        isOn = startOn;
+        if (toggle == null)
+            toggle = GetComponent<Toggle>();
 
-        if (switchButton != null)
-            switchButton.onClick.AddListener(ToggleSwitch);
-
-        ApplyStateInstant();
+        toggle.onValueChanged.AddListener(OnToggleChanged);
     }
 
-    private void ToggleSwitch()
+    void Start()
     {
-        isOn = !isOn;
-
-        ApplyAudioState();
-        AnimateKnob();
+        // Snap to correct initial state without animating
+        ApplyVisualsInstant(toggle.isOn);
     }
 
-    private void ApplyAudioState()
+    void OnToggleChanged(bool isOn)
     {
-        foreach (AudioSource source in bgmSources)
+        if (animCoroutine != null)
+            StopCoroutine(animCoroutine);
+
+        animCoroutine = StartCoroutine(AnimateToggle(isOn));
+    }
+
+    private System.Collections.IEnumerator AnimateToggle(bool isOn)
+    {
+        float elapsed = 0f;
+
+        Vector2 startPos = knob.anchoredPosition;
+        Vector2 endPos = new Vector2(isOn ? knobOnX : knobOffX, startPos.y);
+
+        Color startColor = trackImage.color;
+        Color endColor = isOn ? onColor : offColor;
+
+        while (elapsed < animDuration)
         {
-            if (source != null)
-                source.mute = !isOn;
-        }
-    }
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / animDuration);
 
-    private void AnimateKnob()
-    {
-        if (knob == null)
-            return;
-
-        if (slideCoroutine != null)
-            StopCoroutine(slideCoroutine);
-
-        Vector2 targetPosition = isOn ? knobOnPosition : knobOffPosition;
-        slideCoroutine = StartCoroutine(SlideKnob(targetPosition));
-    }
-
-    private IEnumerator SlideKnob(Vector2 targetPosition)
-    {
-        Vector2 startPosition = knob.anchoredPosition;
-        float timer = 0f;
-
-        while (timer < slideDuration)
-        {
-            timer += Time.deltaTime;
-
-            float t = timer / slideDuration;
-            t = t * t * (3f - 2f * t); // smooth movement
-
-            knob.anchoredPosition = Vector2.Lerp(startPosition, targetPosition, t);
+            knob.anchoredPosition = Vector2.Lerp(startPos, endPos, t);
+            trackImage.color = Color.Lerp(startColor, endColor, t);
 
             yield return null;
         }
 
-        knob.anchoredPosition = targetPosition;
+        knob.anchoredPosition = endPos;
+        trackImage.color = endColor;
+
+        if (label != null)
+            label.text = isOn ? onText : offText;
     }
 
-    private void ApplyStateInstant()
+    private void ApplyVisualsInstant(bool isOn)
     {
-        ApplyAudioState();
+        knob.anchoredPosition = new Vector2(isOn ? knobOnX : knobOffX, knob.anchoredPosition.y);
+        trackImage.color = isOn ? onColor : offColor;
 
-        if (knob != null)
-            knob.anchoredPosition = isOn ? knobOnPosition : knobOffPosition;
+        if (label != null)
+            label.text = isOn ? onText : offText;
     }
 }

@@ -11,6 +11,8 @@ TagManager:
   - ICEVIT
   - Passerby
   - Wall
+  - Music
+  - Sound
   layers:
   - Default
   - TransparentFX

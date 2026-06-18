@@ -224,6 +224,9 @@ public class AIforDialogue : MonoBehaviour
             }
         }
 
+        if (targetGameObject != null)
+            targetGameObject.SetActive(false);
+
         // Step 3.5: Play dialogue index 1 after teleport
         if (dialogueSets.Count > 22)
         {
