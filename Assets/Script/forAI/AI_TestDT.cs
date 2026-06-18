@@ -24,10 +24,14 @@ public class AI_TestTD : MonoBehaviour
     public GameTimer MissionManager;
 
     [Header("Player score")]
+    [Header("RBC")]
     public float comptTime = 0;
     public int performanceScore = 0;
     public int idleTime = 0;
     public int FailedDelivery = 0;
+    [Header("WBCE")]
+    public int EnemyDeathTime = 0;
+    public int AttackableDied = 0;
 
     [Header("Triggers")]
     public bool playerInTrigger = false;

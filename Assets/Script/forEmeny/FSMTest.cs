@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
-using Unity.VisualScripting;
 
 public class DetectionFSM : MonoBehaviour
 {
@@ -39,6 +38,13 @@ public class DetectionFSM : MonoBehaviour
     [Header("Attacked")]
     public bool isMarked { get; private set; } = false;
 
+    [Header("Hit Flash")]
+    public SpriteRenderer spriteRenderer;
+    public float flashDuration = 0.3f;
+    public int flashCount = 1;
+
+    private Coroutine _flashCoroutine;
+
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -47,13 +53,14 @@ public class DetectionFSM : MonoBehaviour
         if (originalTarget != null)
             agent.SetDestination(originalTarget.position);
 
-        currentHealth = maxHealth; // initialize health
+        currentHealth = maxHealth;
 
+        if (spriteRenderer == null)
+            spriteRenderer = GetComponentInChildren<SpriteRenderer>();
     }
 
     void Update()
     {
-        // Always track the currently active player
         if (player == null || !player.gameObject.activeInHierarchy)
         {
             GameObject activePlayer = GameObject.FindGameObjectWithTag("Player");
@@ -63,24 +70,11 @@ public class DetectionFSM : MonoBehaviour
 
         switch (currentState)
         {
-            case EnemyState.Idle:
-                HandleIdle();
-                break;
-
-            case EnemyState.Detecting:
-                HandleDetecting();
-                break;
-
-            case EnemyState.Hiding:
-                HandleHiding();
-                break;
-
-            case EnemyState.Returning:
-                HandleReturning();
-                break;
-
-            case EnemyState.Dead:
-                break;
+            case EnemyState.Idle: HandleIdle(); break;
+            case EnemyState.Detecting: HandleDetecting(); break;
+            case EnemyState.Hiding: HandleHiding(); break;
+            case EnemyState.Returning: HandleReturning(); break;
+            case EnemyState.Dead: break;
         }
     }
 
@@ -88,14 +82,11 @@ public class DetectionFSM : MonoBehaviour
     {
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
         if (canHide && distanceToPlayer <= detectionRadius)
-        {
             currentState = EnemyState.Detecting;
-        }
     }
 
     private void HandleDetecting()
     {
-        // If no target yet, pick one
         if (currentTarget == null)
         {
             currentTarget = FindRandomHideable();
@@ -106,27 +97,18 @@ public class DetectionFSM : MonoBehaviour
                 float boostFactor = Mathf.Clamp01(1f - (float)hideCount / maxBoosts);
                 float boostedSpeed = Mathf.Lerp(normalSpeed, maxBoostSpeed, boostFactor);
                 StartCoroutine(ApplyBoostAfterStop(boostedSpeed));
-
-                Debug.Log($"{name} detected player! Moving to hideable: {currentTarget.name}");
             }
         }
 
-        // Transition to Hiding once reached
         if (currentTarget != null && !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
-        {
             currentState = EnemyState.Hiding;
-        }
     }
 
     private void HandleHiding()
     {
-        // Start hiding only once
-        if (!isInvincible)   // ensures we don’t restart coroutine every frame
-        {
+        if (!isInvincible)
             StartCoroutine(HideTimer());
-        }
     }
-
 
     private void HandleReturning()
     {
@@ -136,43 +118,83 @@ public class DetectionFSM : MonoBehaviour
             currentState = EnemyState.Idle;
         }
     }
+
     public void TakeDamage(int amount)
     {
-        if (isInvincible)
-        {
-            Debug.Log($"{name} is invincible! Ignoring damage.");
-            return;
-        }
+        if (isInvincible) return;
 
         currentHealth -= amount;
         currentHealth = Mathf.Max(currentHealth, 0);
 
-        Debug.Log($"{name} took {amount} damage. Health: {currentHealth}/{maxHealth}");
+        if (_flashCoroutine != null)
+            StopCoroutine(_flashCoroutine);
+        _flashCoroutine = StartCoroutine(FlashRed());
 
         if (currentHealth <= 0)
         {
             Die();
+            return;
         }
+
+        // Don't apply boost if stunned
+        if (!agent.isStopped)
+        {
+            float boostFactor = Mathf.Clamp01(1f - (float)hideCount / maxBoosts);
+            float boostedSpeed = Mathf.Lerp(normalSpeed, maxBoostSpeed, boostFactor);
+            StartCoroutine(ApplyBoostAfterStop(boostedSpeed));
+        }
+    }
+
+    private IEnumerator FlashRed()
+    {
+        if (spriteRenderer == null) yield break;
+
+        Color originalColor = spriteRenderer.color;
+
+        for (int i = 0; i < flashCount; i++)
+        {
+            spriteRenderer.color = Color.red;
+
+            float elapsed = 0f;
+            while (elapsed < flashDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / flashDuration;
+                spriteRenderer.color = Color.Lerp(Color.red, originalColor, t);
+                yield return null;
+            }
+        }
+
+        spriteRenderer.color = originalColor;
+        _flashCoroutine = null;
     }
 
     public void Die()
     {
-        Debug.Log($"{name} has died.");
         currentState = EnemyState.Dead;
+        currentHealth = 0;
 
-        currentHealth = 0; // 👈 zero out HP
+        if (_flashCoroutine != null)
+        {
+            StopCoroutine(_flashCoroutine);
+            _flashCoroutine = null;
+        }
+
+        if (spriteRenderer != null)
+            spriteRenderer.color = Color.white;
 
         if (agent != null)
         {
             agent.isStopped = true;
-            agent.velocity = Vector3.zero;  // 👈 kill any remaining momentum
-            agent.ResetPath();              // 👈 clear any active path
+            agent.velocity = Vector3.zero;
+            agent.ResetPath();
         }
     }
+
     public void ForceKill()
     {
         currentHealth = 0;
-        Die(); // calls the existing private Die() method... 
+        Die();
     }
 
     private IEnumerator HideTimer()
@@ -181,11 +203,8 @@ public class DetectionFSM : MonoBehaviour
         canHide = false;
         hideCount++;
 
-        Debug.Log($"{name} is hiding for {hideTime} seconds...");
-
         yield return new WaitForSeconds(hideTime);
 
-        // Exit from random point inside collider
         if (currentTarget != null)
         {
             Collider col = currentTarget.GetComponent<Collider>();
@@ -200,21 +219,16 @@ public class DetectionFSM : MonoBehaviour
 
                 NavMeshHit hit;
                 if (NavMesh.SamplePosition(randomPoint, out hit, 2f, NavMesh.AllAreas))
-                {
                     agent.SetDestination(hit.position);
-                    Debug.Log($"{name} exiting hideable {currentTarget.name} at {hit.position}");
-                }
             }
         }
 
-        // Return to original target
         if (originalTarget != null)
         {
             agent.SetDestination(originalTarget.position);
             currentState = EnemyState.Returning;
         }
 
-        // Reset
         agent.speed = normalSpeed;
         isInvincible = false;
 
@@ -233,7 +247,8 @@ public class DetectionFSM : MonoBehaviour
 
     private IEnumerator ApplyBoostAfterStop(float boostedSpeed)
     {
-        if (currentState == EnemyState.Dead) yield break; // 👈 don't boost if dead
+        if (currentState == EnemyState.Dead) yield break;
+        if (agent.isStopped) yield break;
 
         agent.speed = boostedSpeed;
         StartCoroutine(GraduallyReduceSpeed());
@@ -244,39 +259,38 @@ public class DetectionFSM : MonoBehaviour
     {
         while (agent.speed > normalSpeed && currentState != EnemyState.Hiding)
         {
+            if (agent.isStopped) yield break;
+
             agent.speed -= speedDecayRate * Time.deltaTime;
             if (agent.speed < normalSpeed)
                 agent.speed = normalSpeed;
             yield return null;
         }
     }
+
     public void ApplyStop(float duration)
     {
         if (agent == null) return;
-        if (currentState == EnemyState.Dead) return; // 👈 don't apply stop if dead
+        if (currentState == EnemyState.Dead) return;
 
         StartCoroutine(StopCoroutine(duration));
     }
 
     private IEnumerator StopCoroutine(float duration)
     {
-        float originalSpeed = agent.speed;
         agent.isStopped = true;
 
         yield return new WaitForSeconds(duration);
 
-        if (currentState == EnemyState.Dead) yield break; // 👈 don't resume if died during stop
+        if (currentState == EnemyState.Dead) yield break;
 
         agent.isStopped = false;
         agent.speed = normalSpeed;
-        Debug.Log($"{name} resumed movement.");
     }
+
     public void MarkAsHit()
     {
         isMarked = true;
-        Debug.Log($"{gameObject.name} has been marked!");
-        // Optional: add a visual cue, e.g. change material tint
-        // GetComponent<Renderer>().material.color = Color.red;
     }
 
     public void ClearMark()
@@ -286,20 +300,16 @@ public class DetectionFSM : MonoBehaviour
 
     void OnDrawGizmos()
     {
-        // Draw detection radius (red)
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
 
-        // Draw search radius (blue)
         Gizmos.color = Color.blue;
         Gizmos.DrawWireSphere(transform.position, searchRadius);
 
-        // If current target exists, draw a line to it
         if (currentTarget != null)
         {
             Gizmos.color = Color.green;
             Gizmos.DrawLine(transform.position, currentTarget.position);
         }
     }
-
 }

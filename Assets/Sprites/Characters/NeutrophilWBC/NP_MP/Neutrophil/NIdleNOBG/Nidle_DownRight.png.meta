@@ -113,10 +113,10 @@ TextureImporter:
       name: Nidle_DownRight_0
       rect:
         serializedVersion: 2
-        x: 771
-        y: 32
-        width: 223
-        height: 190
+        x: 0
+        y: 561
+        width: 442
+        height: 368
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -135,10 +135,10 @@ TextureImporter:
       name: Nidle_DownRight_2
       rect:
         serializedVersion: 2
-        x: 513
-        y: 30
-        width: 223
-        height: 190
+        x: 29
+        y: 62
+        width: 442
+        height: 368
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -157,10 +157,10 @@ TextureImporter:
       name: Nidle_DownRight_3
       rect:
         serializedVersion: 2
-        x: 0
-        y: 30
-        width: 223
-        height: 190
+        x: 547
+        y: 53
+        width: 442
+        height: 368
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -171,6 +171,28 @@ TextureImporter:
       bones: []
       spriteID: 47e203cb0b317134d91e61ab8668791c
       internalID: 73074669
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nidle_DownRight_1
+      rect:
+        serializedVersion: 2
+        x: 29
+        y: 62
+        width: 442
+        height: 368
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 89edd03831afbf044bf5bca81bbe7516
+      internalID: 1298368907
       vertices: []
       indices: 
       edges: []

@@ -5,6 +5,9 @@ public class Attackable : MonoBehaviour
     [SerializeField] private int maxHealth = 50;
     public int currentHealth;
 
+    [Header("Mission Reference")]
+    public AI_TestTD missionData;
+
     public bool IsDead { get; private set; }
     public bool WasHit { get; private set; }
 
@@ -19,15 +22,16 @@ public class Attackable : MonoBehaviour
     {
         if (IsDead) return;
 
-        WasHit = true; // 🔥 important
+        WasHit = true;
 
         currentHealth -= amount;
-        Debug.Log($"{name} took {amount} damage");
 
         if (currentHealth <= 0)
         {
             IsDead = true;
-            Debug.Log($"{name} died");
+
+            if (missionData != null)
+                missionData.AttackableDied++;
         }
     }
 

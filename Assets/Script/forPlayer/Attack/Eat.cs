@@ -41,7 +41,12 @@ public class MeleeAttack2 : MonoBehaviour
             if (enemy == null) continue;
 
             if (enemy.currentHealth <= 0 || enemy.currentState == DetectionFSM.EnemyState.Dead)
+            {
                 hit.gameObject.SetActive(false);
+
+                if (WinConditionManager.Instance != null)
+                    WinConditionManager.Instance.ReportEnemyDefeated(hit.gameObject);
+            }
         }
     }
 

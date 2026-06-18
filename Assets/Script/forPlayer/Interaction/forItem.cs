@@ -24,6 +24,14 @@ public class Item : MonoBehaviour
     public Button muscleButton;
     public Button heartButton;
 
+    [Header("First Teleport Optional Deactivation")]
+    [Tooltip("Optional GameObject to deactivate before the first teleport (Brain button).")]
+    public GameObject objectToDeactivateOnFirstTP;
+
+    [Header("Third Teleport Optional Activation")]
+    [Tooltip("Optional GameObject to activate before the third teleport (Heart button).")]
+    public GameObject objectToActivateOnThirdTP;
+
     [Tooltip("Assign the Player root or the Player object with the Player tag.")]
     public Transform player;
 
@@ -79,20 +87,47 @@ public class Item : MonoBehaviour
 
         if (brainButton != null)
         {
-            brainButton.onClick.AddListener(() => TeleportPlayer(brainTarget));
-            brainButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationA, cameraOrthoSizeA));
+            Transform brain = brainTarget;
+            Transform camA = cameraLocationA;
+            float orthoA = cameraOrthoSizeA;
+
+            brainButton.onClick.AddListener(() =>
+            {
+                if (objectToDeactivateOnFirstTP != null)
+                    objectToDeactivateOnFirstTP.SetActive(false);
+
+                TeleportPlayer(brain);
+                TeleportSecondaryCamera(camA, orthoA);
+            });
         }
 
         if (muscleButton != null)
         {
-            muscleButton.onClick.AddListener(() => TeleportPlayer(muscleTarget));
-            muscleButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationB, cameraOrthoSizeB));
+            Transform muscle = muscleTarget;
+            Transform camB = cameraLocationB;
+            float orthoB = cameraOrthoSizeB;
+
+            muscleButton.onClick.AddListener(() =>
+            {
+                TeleportPlayer(muscle);
+                TeleportSecondaryCamera(camB, orthoB);
+            });
         }
 
         if (heartButton != null)
         {
-            heartButton.onClick.AddListener(() => TeleportPlayer(heartTarget));
-            heartButton.onClick.AddListener(() => TeleportSecondaryCamera(cameraLocationC, cameraOrthoSizeC));
+            Transform heart = heartTarget;
+            Transform camC = cameraLocationC;
+            float orthoC = cameraOrthoSizeC;
+
+            heartButton.onClick.AddListener(() =>
+            {
+                if (objectToActivateOnThirdTP != null)
+                    objectToActivateOnThirdTP.SetActive(true);
+
+                TeleportPlayer(heart);
+                TeleportSecondaryCamera(camC, orthoC);
+            });
         }
     }
 
@@ -132,6 +167,9 @@ public class Item : MonoBehaviour
 
         if (teleportTarget != null)
         {
+            if (optionalObjectToDisable != null)
+                optionalObjectToDisable.SetActive(false);
+
             TeleportPlayerToPosition(teleportTarget);
         }
 

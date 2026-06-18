@@ -113,10 +113,10 @@ TextureImporter:
       name: Nidle_DownLeft_0
       rect:
         serializedVersion: 2
-        x: 4
-        y: 31
-        width: 228
-        height: 185
+        x: 7
+        y: 552
+        width: 451
+        height: 384
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -135,10 +135,10 @@ TextureImporter:
       name: Nidle_DownLeft_1
       rect:
         serializedVersion: 2
-        x: 258
-        y: 30
-        width: 228
-        height: 185
+        x: 523
+        y: 552
+        width: 451
+        height: 384
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -157,10 +157,10 @@ TextureImporter:
       name: Nidle_DownLeft_2
       rect:
         serializedVersion: 2
-        x: 772
-        y: 30
-        width: 228
-        height: 185
+        x: 546
+        y: 36
+        width: 451
+        height: 384
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}

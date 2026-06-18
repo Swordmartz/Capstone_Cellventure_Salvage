@@ -19,8 +19,15 @@ public class PasserbySpawner : MonoBehaviour
     public float minSpeed = 0.5f;
     public float maxSpeed = 2f;
 
+    [Header("Pool Settings")]
+    [Tooltip("How many instances to pre-create per prefab at startup.")]
+    public int poolSizePerPrefab = 5;
+
     private int _lastIndex = -1;
     private Coroutine _spawnRoutine;
+
+    // Pool: one queue per prefab index
+    private Dictionary<int, Queue<GameObject>> _pool = new Dictionary<int, Queue<GameObject>>();
 
     void Start()
     {
@@ -33,8 +40,72 @@ public class PasserbySpawner : MonoBehaviour
             return;
         }
 
+        WarmUpPool();
+
         _spawnRoutine = StartCoroutine(SpawnRoutine());
     }
+
+    // ── Pool ──────────────────────────────────────────────────────────────────
+
+    void WarmUpPool()
+    {
+        for (int i = 0; i < passerbyPrefabs.Count; i++)
+        {
+            if (passerbyPrefabs[i] == null) continue;
+
+            _pool[i] = new Queue<GameObject>();
+
+            for (int j = 0; j < poolSizePerPrefab; j++)
+            {
+                GameObject obj = CreateInstance(passerbyPrefabs[i]);
+                obj.SetActive(false);
+                _pool[i].Enqueue(obj);
+            }
+        }
+    }
+
+    GameObject CreateInstance(GameObject prefab)
+    {
+        GameObject obj = Instantiate(prefab, transform);
+        // Listen for when PasserbySplinePath finishes so we can return to pool
+        PasserbySplinePath path = obj.GetComponent<PasserbySplinePath>();
+        if (path != null)
+            path.OnPathFinished += () => ReturnToPool(obj);
+        return obj;
+    }
+
+    GameObject GetFromPool(int index)
+    {
+        if (!_pool.ContainsKey(index))
+            _pool[index] = new Queue<GameObject>();
+
+        // If pool is empty, create a new one on the fly
+        if (_pool[index].Count == 0)
+        {
+            Debug.Log($"PasserbySpawner: Pool empty for index {index}, creating new instance.");
+            return CreateInstance(passerbyPrefabs[index]);
+        }
+
+        return _pool[index].Dequeue();
+    }
+
+    void ReturnToPool(GameObject obj)
+    {
+        obj.SetActive(false);
+
+        // Find which prefab index this belongs to
+        for (int i = 0; i < passerbyPrefabs.Count; i++)
+        {
+            if (passerbyPrefabs[i] == null) continue;
+            if (obj.name.Contains(passerbyPrefabs[i].name))
+            {
+                _pool[i].Enqueue(obj);
+                return;
+            }
+        }
+    }
+
+    // ── Spawn ─────────────────────────────────────────────────────────────────
 
     IEnumerator SpawnRoutine()
     {
@@ -64,13 +135,18 @@ public class PasserbySpawner : MonoBehaviour
                 SplineUtility.EvaluatePosition(splineContainer.Spline, 0f))
             : transform.position;
 
-        GameObject instance = Instantiate(prefab, spawnPos, Quaternion.identity);
+        // Get from pool instead of Instantiate
+        GameObject instance = GetFromPool(newIndex);
+        instance.transform.position = spawnPos;
+        instance.transform.rotation = Quaternion.identity;
+        instance.SetActive(true);
 
         PasserbySplinePath path = instance.GetComponent<PasserbySplinePath>();
         if (path != null)
         {
             path.splineContainer = splineContainer;
             path.speed = Random.Range(minSpeed, maxSpeed);
+            path.ResetPath(); // make sure it starts from beginning
         }
         else
         {
@@ -91,6 +167,8 @@ public class PasserbySpawner : MonoBehaviour
 
         return index;
     }
+
+    // ── Controls ──────────────────────────────────────────────────────────────
 
     public void StopSpawning()
     {

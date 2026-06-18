@@ -138,10 +138,5 @@ public class ItemReceiverIncrement : MonoBehaviour
                 Debug.LogWarning("[ItemReceiverIncrement] completeMissionOnExecute is true but missionManager is not assigned.");
             }
         }
-
-        if (useButton != null)
-            useButton.gameObject.SetActive(false);
-
-        gameObject.SetActive(false);
     }
 }

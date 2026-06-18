@@ -200,4 +200,6 @@ public class PlayerMovementTry : MonoBehaviour
 
         Debug.Log($"Struggle: {statsScript.idleTime}");
     }
+
+   
 }

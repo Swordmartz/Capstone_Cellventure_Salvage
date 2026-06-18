@@ -33,28 +33,24 @@ public class StarRatingManager : MonoBehaviour
     [Header("Level Settings")]
     public float maxTime = 120f;
 
-    [Header("Scoring Weights (must add up to 1)")]
-    [Tooltip("Weight for completion time (faster = better).")]
-    [Range(0f, 1f)] public float timeWeight = 0.35f;
-    [Tooltip("Weight for performance score.")]
-    [Range(0f, 1f)] public float performanceWeight = 0.35f;
-    [Tooltip("Weight for idle time penalty (less idle = better).")]
-    [Range(0f, 1f)] public float idleWeight = 0.15f;
-    [Tooltip("Weight for failed delivery penalty.")]
-    [Range(0f, 1f)] public float failedDeliveryWeight = 0.15f;
+    [Header("Formula Selection")]
+    public bool useFormula1 = true;
+    // public bool useFormula2 = false;  // uncomment when ready
+    // public bool useFormula3 = false;
 
-    [Header("Penalty Settings")]
-    [Tooltip("Each idle second reduces idle score by this much.")]
+    [Header("Formula 1 — Time + Performance + Idle + Delivery")]
+    public float timeWeight = 0.35f;
+    public float performanceWeight = 0.35f;
+    public float idleWeight = 0.15f;
+    public float failedDeliveryWeight = 0.15f;
     public float idlePenaltyPerSecond = 0.05f;
-    [Tooltip("Each failed delivery reduces that score by this much.")]
     public float failedDeliveryPenalty = 0.2f;
 
+    // [Header("Formula 2 — ...")]  // add variables here when ready
+
     [Header("Star Thresholds")]
-    [Tooltip("Final score (0-1) needed for 3 stars.")]
     [Range(0f, 1f)] public float threshold3Stars = 0.80f;
-    [Tooltip("Final score (0-1) needed for 2 stars.")]
     [Range(0f, 1f)] public float threshold2Stars = 0.50f;
-    [Tooltip("Final score (0-1) needed for 1 star.")]
     [Range(0f, 1f)] public float threshold1Star = 0.20f;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -81,10 +77,6 @@ public class StarRatingManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Call this when the level ends.
-    /// Pass the four values straight from AI_TestTD.
-    /// </summary>
     public void EvaluateFromMission(AI_TestTD missionData)
     {
         EvaluateScore(
@@ -95,9 +87,6 @@ public class StarRatingManager : MonoBehaviour
         );
     }
 
-    /// <summary>
-    /// Core evaluation — can also be called directly with raw values.
-    /// </summary>
     public void EvaluateScore(float completionTime, float performanceScore,
                                int idleTime, int failedDeliveries)
     {
@@ -111,32 +100,39 @@ public class StarRatingManager : MonoBehaviour
     {
         yield return null;
 
-        // ── Time score: 1 if completed instantly, 0 if used all maxTime ──────
-        float timeScore = 1f - Mathf.Clamp01(completionTime / maxTime);
+        float finalScore = 0f;
+        bool formulaFound = false;
 
-        // ── Performance score: normalise 0-5 range from AI_TestTD heuristic ──
-        // performanceScore is accumulated across 3 checkpoints, max ~15 (3 × 5)
-        float perfScore = Mathf.Clamp01(performanceScore / 15f);
+        // ── Formula 1 ────────────────────────────────────────────────────────
+        if (useFormula1)
+        {
+            formulaFound = true;
+            float timeScore = 1f - Mathf.Clamp01(completionTime / maxTime);
+            float perfScore = Mathf.Clamp01(performanceScore / 15f);
+            float idleScore = Mathf.Clamp01(1f - idleTime * idlePenaltyPerSecond);
+            float deliveryScore = Mathf.Clamp01(1f - failedDeliveries * failedDeliveryPenalty);
 
-        // ── Idle penalty: more idle = lower score ─────────────────────────────
-        float idleScore = Mathf.Clamp01(1f - idleTime * idlePenaltyPerSecond);
+            finalScore = (timeScore * timeWeight)
+                       + (perfScore * performanceWeight)
+                       + (idleScore * idleWeight)
+                       + (deliveryScore * failedDeliveryWeight);
+        }
 
-        // ── Failed delivery penalty ───────────────────────────────────────────
-        float deliveryScore = Mathf.Clamp01(1f - failedDeliveries * failedDeliveryPenalty);
+        // ── Formula 2 (add when ready) ───────────────────────────────────────
+        // else if (useFormula2)
+        // {
+        //     formulaFound = true;
+        //     finalScore = ...;
+        // }
 
-        // ── Weighted final score ──────────────────────────────────────────────
-        float finalScore = (timeScore * timeWeight)
-                         + (perfScore * performanceWeight)
-                         + (idleScore * idleWeight)
-                         + (deliveryScore * failedDeliveryWeight);
+        if (!formulaFound)
+        {
+            Debug.LogWarning("[StarRating] No formula selected!");
+            yield break;
+        }
 
         finalScore = Mathf.Clamp01(finalScore);
-
         int stars = GetStars(finalScore);
-
-        Debug.Log($"[StarRating] Time:{completionTime} | Perf:{performanceScore} " +
-                  $"| Idle:{idleTime} | Failed:{failedDeliveries} " +
-                  $"| FinalScore:{finalScore:F2} | Stars:{stars}");
 
         // ── Update UI ─────────────────────────────────────────────────────────
         scoreText.text = "Score: " + Mathf.RoundToInt(finalScore * 100);

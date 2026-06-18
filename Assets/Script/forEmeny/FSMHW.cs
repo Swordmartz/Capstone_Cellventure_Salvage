@@ -3,15 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Splines;
 
-/// <summary>
-/// EnemyFSM — No NavMesh, pure transform movement.
-///
-/// PATROL  — follows spline forward, scans for Attackables
-/// CHASE   — moves directly toward target
-/// ATTACK  — in range, damages target on cooldown
-/// FLEE    — took player damage, follows spline, then picks different target
-/// DEAD    — stops, reports mission
-/// </summary>
 public class EnemyFSM : MonoBehaviour
 {
     [Header("Stats")]
@@ -49,6 +40,17 @@ public class EnemyFSM : MonoBehaviour
     public MissionSubmissionManager missionManager;
     public int missionIndex = 0;
 
+    [Header("Mission Reference")]
+    public AI_TestTD missionData;
+
+    [Header("On Death")]
+    public GameObject objectToActivateOnDeath;
+
+    [Header("Hit Flash")]
+    public SpriteRenderer spriteRenderer;
+    public float flashDuration = 0.1f;
+    public int flashCount = 2;
+
     // ── FSM ───────────────────────────────────────────────────────────────────
     private enum State { Patrol, Chase, Attack, Flee, Dead }
     private State _state;
@@ -62,7 +64,6 @@ public class EnemyFSM : MonoBehaviour
     private float _splineLength;
     private float _fleeTimer;
 
-    // ─────────────────────────────────────────────────────────────────────────
     void Start()
     {
         currentHealth = maxHealth;
@@ -72,6 +73,9 @@ public class EnemyFSM : MonoBehaviour
             _splineLength = splineContainer.CalculateLength();
             SnapSplineTToSelf();
         }
+
+        if (spriteRenderer == null)
+            spriteRenderer = GetComponentInChildren<SpriteRenderer>();
 
         _state = State.Patrol;
     }
@@ -94,7 +98,6 @@ public class EnemyFSM : MonoBehaviour
         ApplySplineHeight();
     }
 
-    // ── PATROL ────────────────────────────────────────────────────────────────
     void HandlePatrol()
     {
         if (splineContainer == null) return;
@@ -114,7 +117,6 @@ public class EnemyFSM : MonoBehaviour
         }
     }
 
-    // ── CHASE ─────────────────────────────────────────────────────────────────
     void HandleChase()
     {
         if (_currentTarget == null || _currentTarget.IsDead)
@@ -123,11 +125,9 @@ public class EnemyFSM : MonoBehaviour
             return;
         }
 
-        // Advance spline T so height keeps updating while chasing
         _splineT += (chaseSpeed / _splineLength) * Time.deltaTime;
         if (_splineT >= 1f) _splineT -= 1f;
 
-        // Check distance using collider bounds if available, else transform distance
         float dist = GetDistanceToTarget(_currentTarget);
 
         if (dist <= stoppingDistance)
@@ -136,20 +136,16 @@ public class EnemyFSM : MonoBehaviour
             return;
         }
 
-        // Blend between spline forward and direct-to-target so enemy
-        // stays near the path while still closing in on the target
         float lookaheadT = Mathf.Repeat(_splineT + splineLookahead / _splineLength, 1f);
         Vector3 splineDest = GetSplinePositionWorld(lookaheadT);
         Vector3 targetDest = _currentTarget.transform.position;
 
-        // Closer to target = move more directly toward it
         float blend = Mathf.Clamp01(1f - dist / detectionRadius);
         Vector3 dest = Vector3.Lerp(splineDest, targetDest, blend);
 
         MoveToward(dest, chaseSpeed);
     }
 
-    // ── ATTACK ────────────────────────────────────────────────────────────────
     void HandleAttack()
     {
         if (_currentTarget == null || _currentTarget.IsDead)
@@ -174,7 +170,6 @@ public class EnemyFSM : MonoBehaviour
         }
     }
 
-    /// <summary>Distance to target using its collider bounds if available.</summary>
     float GetDistanceToTarget(Attackable target)
     {
         Collider col = target.GetComponent<Collider>();
@@ -190,7 +185,6 @@ public class EnemyFSM : MonoBehaviour
             _currentTarget.TakeDamage(attackDamage);
     }
 
-    // ── FLEE ──────────────────────────────────────────────────────────────────
     void HandleFlee()
     {
         _fleeTimer -= Time.deltaTime;
@@ -220,7 +214,6 @@ public class EnemyFSM : MonoBehaviour
         }
     }
 
-    // ── TakeDamage (called by player) ─────────────────────────────────────────
     public void TakeDamage(int dmg)
     {
         if (_isDead) return;
@@ -228,7 +221,9 @@ public class EnemyFSM : MonoBehaviour
         currentHealth -= dmg;
         if (currentHealth <= 0) { Die(); return; }
 
-        StopAllCoroutines();
+        StopCoroutine(nameof(FlashRed));
+        StartCoroutine(FlashRed());
+
         _attackTimer = attackCooldown;
         _lastTarget = _currentTarget;
         _currentTarget = null;
@@ -237,7 +232,29 @@ public class EnemyFSM : MonoBehaviour
         _state = State.Flee;
     }
 
-    // ── Height from spline ────────────────────────────────────────────────────
+    private IEnumerator FlashRed()
+    {
+        if (spriteRenderer == null) yield break;
+
+        Color originalColor = spriteRenderer.color;
+
+        for (int i = 0; i < flashCount; i++)
+        {
+            spriteRenderer.color = Color.red;
+
+            float elapsed = 0f;
+            while (elapsed < flashDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / flashDuration;
+                spriteRenderer.color = Color.Lerp(Color.red, originalColor, t);
+                yield return null;
+            }
+        }
+
+        spriteRenderer.color = originalColor;
+    }
+
     void ApplySplineHeight()
     {
         if (splineContainer == null) return;
@@ -253,7 +270,6 @@ public class EnemyFSM : MonoBehaviour
         transform.position = pos;
     }
 
-    // ── Movement Helpers ──────────────────────────────────────────────────────
     void MoveToward(Vector3 destination, float speed)
     {
         Vector3 dir = destination - transform.position;
@@ -272,10 +288,9 @@ public class EnemyFSM : MonoBehaviour
 
         Quaternion targetRot = Quaternion.LookRotation(dir.normalized);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRot,
-                                                 rotationSpeed * Time.deltaTime);
+                                               rotationSpeed * Time.deltaTime);
     }
 
-    // ── Scan for target ───────────────────────────────────────────────────────
     Attackable ScanForTarget(Attackable exclude)
     {
         Attackable best = null;
@@ -297,7 +312,6 @@ public class EnemyFSM : MonoBehaviour
         return best;
     }
 
-    // ── Spline Helpers ────────────────────────────────────────────────────────
     void SnapSplineTToSelf()
     {
         if (splineContainer == null) return;
@@ -313,21 +327,28 @@ public class EnemyFSM : MonoBehaviour
         return splineContainer.transform.TransformPoint(local);
     }
 
-    // ── Die ───────────────────────────────────────────────────────────────────
     void Die()
     {
         _isDead = true;
         _state = State.Dead;
         StopAllCoroutines();
 
-        if (missionManager != null)
+        if (spriteRenderer != null)
+            spriteRenderer.color = Color.white;
+
+        if (missionData != null && missionData.missionTimer != null)
         {
-            missionManager.CompleteMissionByIndex(missionIndex);
-            Debug.Log("[EnemyFSM] Died — Mission " + missionIndex + " completed.");
+            missionData.EnemyDeathTime = Mathf.RoundToInt(missionData.missionTimer.GetCurrentTime());
+            missionData.missionTimer.StopTimer();
         }
+
+        if (objectToActivateOnDeath != null)
+            objectToActivateOnDeath.SetActive(true);
+
+        if (missionManager != null)
+            missionManager.CompleteMissionByIndex(missionIndex);
     }
 
-    // ── Gizmos ────────────────────────────────────────────────────────────────
     void OnDrawGizmos()
     {
         Vector3 pos = transform.position;

@@ -367,14 +367,26 @@ public class AIforDialogue : MonoBehaviour
         // 1. Disable the assigned GameObject
         if (targetObject != null)
             targetObject.SetActive(false);
+
         if (MB != null)
         {
-            MB.SetActive(true); dialoguePanel.SetActive(false);
+            MB.SetActive(true);
+            dialoguePanel.SetActive(false);
         }
         if (line != null)
             line.SetActive(false);
 
+        // Block all input while mission board is shown
+        UnityEngine.EventSystems.EventSystem eventSystem =
+            UnityEngine.EventSystems.EventSystem.current;
+        if (eventSystem != null)
+            eventSystem.enabled = false;
+
         yield return new WaitForSeconds(5f);
+
+        // Re-enable input after mission board closes
+        if (eventSystem != null)
+            eventSystem.enabled = true;
 
         if (MB != null)
             MB.SetActive(false);
@@ -390,9 +402,7 @@ public class AIforDialogue : MonoBehaviour
         if (dialogueSets.Count > 0)
         {
             dialogueFinished = false;
-
             TriggerDialogue(dialogueSets[0].setName);
-
             yield return new WaitUntil(() => dialogueFinished);
         }
         else
@@ -406,11 +416,9 @@ public class AIforDialogue : MonoBehaviour
 
         // 5. Teleport player using Transform only
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-
         if (playerObj != null && introTeleportTarget != null)
         {
             playerObj.transform.position = introTeleportTarget.position;
-
             Debug.Log("Player teleported to " + introTeleportTarget.position);
         }
         else
@@ -418,7 +426,8 @@ public class AIforDialogue : MonoBehaviour
             Debug.LogWarning("Player or Intro Teleport Target is missing!");
         }
 
-
+        if (targetObject != null)
+            targetObject.SetActive(false);
 
         // 6. Play dialogue set index 2 after teleport
         if (dialogueSets.Count > 2)
@@ -430,9 +439,7 @@ public class AIforDialogue : MonoBehaviour
                 nextButton.gameObject.SetActive(true);
 
             dialogueFinished = false;
-
             TriggerDialogue(dialogueSets[2].setName);
-
             yield return new WaitUntil(() => dialogueFinished);
         }
         else
@@ -1571,42 +1578,31 @@ public class AIforDialogue : MonoBehaviour
     }
     public IEnumerator DialogueSequence0IWBCE()
     {
-        // Disable target object
         if (targetObject != null)
             targetObject.SetActive(false);
 
         if (line != null)
             line.SetActive(false);
 
-        yield return new WaitForSeconds(5f);
-
         if (MB != null)
             MB.SetActive(false);
 
-        // Play dialogue
+        // Play dialogue immediately
         if (dialogueSets != null && dialogueSets.Count > 0)
         {
             dialogueFinished = false;
-
             TriggerDialogue(dialogueSets[0].setName);
-
             yield return new WaitUntil(() => dialogueFinished);
         }
 
-        // Re-enable target object
         if (targetObject != null)
             targetObject.SetActive(true);
 
-        // Activate all enemies
         EnemyFSM[] enemies = Resources.FindObjectsOfTypeAll<EnemyFSM>();
-
         foreach (EnemyFSM enemy in enemies)
         {
             if (enemy != null && enemy.gameObject.scene.IsValid())
-            {
                 enemy.gameObject.SetActive(true);
-                Debug.Log("Activated enemy: " + enemy.name);
-            }
         }
 
         if (missionTimer != null)

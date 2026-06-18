@@ -9,6 +9,8 @@ public class SuperMove : MonoBehaviour
     public GameObject nextCharacter;
     public CinemachineCamera vcam1;
     public CinemachineCamera vcam2;
+    public MinimapFollow minimapFollow;
+    public string minimapTargetChildName = "MinimapTarget";
 
     [Header("UI to Deactivate")]
     public GameObject superSliderObject;
@@ -71,6 +73,12 @@ public class SuperMove : MonoBehaviour
 
         if (vcam1 != null) vcam1.Priority = 0;
         if (vcam2 != null) vcam2.Priority = 10;
+
+        if (minimapFollow != null && nextCharacter != null)
+        {
+            Transform minimapTarget = nextCharacter.transform.Find(minimapTargetChildName);
+            minimapFollow.player = minimapTarget != null ? minimapTarget : nextCharacter.transform;
+        }
 
         gameObject.SetActive(false);
     }

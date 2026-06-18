@@ -69,6 +69,9 @@ public class HealTarget : MonoBehaviour
                 missionManager.CompleteMissionByIndex(missionIndex);
                 Debug.Log("[HealTarget] Fully healed — Mission " + missionIndex + " completed.");
             }
+
+            if (HealWinConditionManager.Instance != null)
+                HealWinConditionManager.Instance.CheckAllHealed();
         }
     }
 

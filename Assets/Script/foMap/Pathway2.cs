@@ -17,6 +17,9 @@ public class PasserbySplinePath : MonoBehaviour
     public SpriteRenderer spriteRenderer;
     public bool flipSpriteBasedOnDirection = true;
 
+    // Pool callback — PasserbySpawner subscribes to this
+    public System.Action OnPathFinished;
+
     private float _t = 0f;
     private Vector3 _lastPosition;
 
@@ -58,8 +61,16 @@ public class PasserbySplinePath : MonoBehaviour
             {
                 _t = 1f;
                 transform.position = EvaluateWorld(1f);
-                if (destroyAtEnd) Destroy(gameObject);
-                else enabled = false;
+
+                if (destroyAtEnd)
+                {
+                    // Notify spawner to return to pool instead of destroying
+                    OnPathFinished?.Invoke();
+                }
+                else
+                {
+                    enabled = false;
+                }
                 return;
             }
         }
@@ -70,6 +81,19 @@ public class PasserbySplinePath : MonoBehaviour
         transform.position = newPosition;
         FlipSprite(direction);
         _lastPosition = newPosition;
+    }
+
+    /// <summary>Resets the passerby back to the start of the spline for pool reuse.</summary>
+    public void ResetPath()
+    {
+        _t = 0f;
+        enabled = true;
+
+        if (splineContainer != null)
+        {
+            transform.position = EvaluateWorld(0f);
+            _lastPosition = transform.position;
+        }
     }
 
     void FlipSprite(Vector3 direction)
