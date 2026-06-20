@@ -51,6 +51,9 @@ public class EnemyFSM : MonoBehaviour
     public float flashDuration = 0.1f;
     public int flashCount = 2;
 
+    [Header("HP Bar")]
+    public UnityEngine.UI.Slider hpBarSlider;
+
     // ── FSM ───────────────────────────────────────────────────────────────────
     private enum State { Patrol, Chase, Attack, Flee, Dead }
     private State _state;
@@ -76,6 +79,12 @@ public class EnemyFSM : MonoBehaviour
 
         if (spriteRenderer == null)
             spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+
+        if (hpBarSlider != null)
+        {
+            hpBarSlider.maxValue = maxHealth;
+            hpBarSlider.value = currentHealth;
+        }
 
         _state = State.Patrol;
     }
@@ -221,6 +230,9 @@ public class EnemyFSM : MonoBehaviour
         currentHealth -= dmg;
         if (currentHealth <= 0) { Die(); return; }
 
+        if (hpBarSlider != null)
+            hpBarSlider.value = currentHealth;
+
         StopCoroutine(nameof(FlashRed));
         StartCoroutine(FlashRed());
 
@@ -335,6 +347,12 @@ public class EnemyFSM : MonoBehaviour
 
         if (spriteRenderer != null)
             spriteRenderer.color = Color.white;
+
+        if (hpBarSlider != null)
+        {
+            hpBarSlider.value = 0;
+            hpBarSlider.gameObject.SetActive(false);
+        }
 
         if (missionData != null && missionData.missionTimer != null)
         {

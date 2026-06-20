@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.UI;
 using System.Collections;
 
 public class DetectionFSM : MonoBehaviour
@@ -43,6 +44,9 @@ public class DetectionFSM : MonoBehaviour
     public float flashDuration = 0.3f;
     public int flashCount = 1;
 
+    [Header("HP Bar")]
+    public Slider hpBarSlider;
+
     private Coroutine _flashCoroutine;
 
     void Start()
@@ -57,6 +61,12 @@ public class DetectionFSM : MonoBehaviour
 
         if (spriteRenderer == null)
             spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+
+        if (hpBarSlider != null)
+        {
+            hpBarSlider.maxValue = maxHealth;
+            hpBarSlider.value = currentHealth;
+        }
     }
 
     void Update()
@@ -126,6 +136,9 @@ public class DetectionFSM : MonoBehaviour
         currentHealth -= amount;
         currentHealth = Mathf.Max(currentHealth, 0);
 
+        if (hpBarSlider != null)
+            hpBarSlider.value = currentHealth;
+
         if (_flashCoroutine != null)
             StopCoroutine(_flashCoroutine);
         _flashCoroutine = StartCoroutine(FlashRed());
@@ -182,6 +195,12 @@ public class DetectionFSM : MonoBehaviour
 
         if (spriteRenderer != null)
             spriteRenderer.color = Color.white;
+
+        if (hpBarSlider != null)
+        {
+            hpBarSlider.value = 0;
+            hpBarSlider.gameObject.SetActive(false);
+        }
 
         if (agent != null)
         {

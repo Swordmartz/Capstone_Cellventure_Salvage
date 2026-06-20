@@ -7,6 +7,7 @@ public class SpearMeleeAttack : MonoBehaviour
     public float capsuleRadius = 0.3f;
     public LayerMask enemyLayer;
     public int attackDamage = 1;
+    public int rapidAttackStack = 0;
 
     [Header("Cooldown")]
     public float meleeCooldown = 1f;
@@ -51,6 +52,8 @@ public class SpearMeleeAttack : MonoBehaviour
 
         Debug.Log($"[SpearMeleeAttack] Hits found: {hits.Length}");
 
+        bool hitAtLeastOneEnemy = false;
+
         foreach (Collider hit in hits)
         {
             // GetComponentInParent handles colliders on child objects
@@ -63,7 +66,11 @@ public class SpearMeleeAttack : MonoBehaviour
 
             Debug.Log($"[SpearMeleeAttack] Dealing {attackDamage} damage to {enemy.name}");
             enemy.TakeDamage(attackDamage);
+            hitAtLeastOneEnemy = true;
         }
+
+        if (hitAtLeastOneEnemy)
+            rapidAttackStack++;
     }
 
     void OnDrawGizmosSelected()
