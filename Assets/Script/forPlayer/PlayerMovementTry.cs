@@ -38,6 +38,12 @@ public class PlayerMovementTry : MonoBehaviour
 
     public Vector3 lastInputDirection = Vector3.forward;
 
+    // ── Attack Lock ──────────────────────────────────────────────────────────
+    // When true, movement input is ignored and velocity is held still.
+    // Set/cleared by whatever attack script (e.g. PlayerCapsuleAttack) drives it.
+    private bool isAttacking = false;
+    public bool IsAttacking => isAttacking;
+
     void Awake()
     {
         anim = GetComponent<Animator>();
@@ -59,6 +65,14 @@ public class PlayerMovementTry : MonoBehaviour
     {
         if (gameTimer != null && !gameTimer.timerActive && gameTimer.GetCurrentTime() <= 0f)
             return;
+
+        // While attacking, movement input is ignored entirely — player holds position.
+        if (isAttacking)
+        {
+            targetVelocity = Vector3.zero;
+            SendStruggles();
+            return;
+        }
 
         targetVelocity = new Vector3(movementInput.x, 0, movementInput.y) * moveSpeed;
 
@@ -142,6 +156,19 @@ public class PlayerMovementTry : MonoBehaviour
         Vector3 velocity = rb.linearVelocity;
         Vector3 horizontalVel = new Vector3(velocity.x, 0, velocity.z);
 
+        // While attacking, kill horizontal velocity and skip normal accel/decel.
+        if (isAttacking)
+        {
+            horizontalVel = Vector3.MoveTowards(horizontalVel, Vector3.zero, deceleration * Time.fixedDeltaTime);
+
+            rb.linearVelocity = new Vector3(
+                horizontalVel.x,
+                velocity.y,
+                horizontalVel.z
+            );
+            return;
+        }
+
         if (movementInput.sqrMagnitude > 0.01f)
         {
             Vector3 velocityChange = targetVelocity - horizontalVel;
@@ -167,12 +194,32 @@ public class PlayerMovementTry : MonoBehaviour
 
     public void OnMove(InputAction.CallbackContext context)
     {
-        movementInput = context.ReadValue<Vector2>();
+        Vector2 value = context.ReadValue<Vector2>();
+
+        // Ignore new-Input-System move callbacks entirely while an attack
+        // is locking movement — otherwise this overwrites movementInput
+        // every frame regardless of what called SetAttackLock.
+        if (isAttacking)
+        {
+            Debug.Log($"[PlayerMovementTry] OnMove ignored — isAttacking=true. Incoming value={value}");
+            return;
+        }
+
+        movementInput = value;
+        Debug.Log($"[PlayerMovementTry] OnMove called. New movementInput={movementInput}, isAttacking={IsAttacking}");
     }
 
     public void SetMovementInput(Vector2 input)
     {
+        // Same guard as OnMove — ignore external writes while locked.
+        if (isAttacking)
+        {
+            Debug.Log($"[PlayerMovementTry] SetMovementInput ignored — isAttacking=true. Incoming value={input}");
+            return;
+        }
+
         movementInput = input;
+        Debug.Log($"[PlayerMovementTry] SetMovementInput called. New movementInput={movementInput}, isAttacking={IsAttacking}");
     }
 
     public void ResetTimers()
@@ -198,8 +245,26 @@ public class PlayerMovementTry : MonoBehaviour
         int struggle = Mathf.RoundToInt((idleTime * 0.6f) + (lostTime * 0.4f));
         statsScript.idleTime = Mathf.Clamp(struggle, 0, int.MaxValue);
 
-        Debug.Log($"Struggle: {statsScript.idleTime}");
+
     }
 
-   
+    // ── Attack Lock API ─────────────────────────────────────────────────────
+    /// <summary>
+    /// Call with true to lock movement (e.g. when an attack starts),
+    /// false to release the lock (when the attack ends).
+    /// </summary>
+    public void SetAttackLock(bool locked)
+    {
+        Debug.Log($"[PlayerMovementTry] SetAttackLock({locked}) called. movementInput before={movementInput}");
+
+        isAttacking = locked;
+
+        if (locked)
+        {
+            // Zero input immediately so no stale direction sneaks through
+            // on the frame the lock is applied.
+            movementInput = Vector2.zero;
+        }
+    }
+
 }

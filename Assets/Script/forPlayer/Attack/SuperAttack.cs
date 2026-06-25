@@ -13,14 +13,20 @@ public class SuperMove : MonoBehaviour
     public string minimapTargetChildName = "MinimapTarget";
 
     [Header("UI to Deactivate")]
-    public GameObject superSliderObject;
-    public GameObject superButtonObject;
+    public GameObject[] objectsToDeactivate;
 
     [Header("UI to Activate")]
-    public GameObject nextUIObject;
+    public GameObject[] objectsToActivate;
 
     [Header("Super Settings")]
     public float killRadius = 30f;
+
+    [Header("Poof Effect")]
+    [Tooltip("Drag your poof particle system prefab here.")]
+    public GameObject poofPrefab;
+
+    [Tooltip("Vertical offset so the poof appears at chest/center level.")]
+    public Vector3 poofOffset = new Vector3(0f, 1f, 0f);
 
     public void ActivateSuper()
     {
@@ -31,9 +37,9 @@ public class SuperMove : MonoBehaviour
 
         target.Die();
         target.ClearMark();
-        superBar.ConsumeBar();
 
-        UpdateUI();
+        UpdateUI();           // ← UI first
+        superBar.ConsumeBar(); // ← then reset bar (won't fight UpdateUI)
         SwitchToNextCharacter();
     }
 
@@ -62,14 +68,35 @@ public class SuperMove : MonoBehaviour
 
     private void UpdateUI()
     {
-        superSliderObject?.SetActive(false);
-        superButtonObject?.SetActive(false);
-        nextUIObject?.SetActive(true);
+        foreach (GameObject obj in objectsToDeactivate)
+            obj?.SetActive(false);
+
+        foreach (GameObject obj in objectsToActivate)
+            obj?.SetActive(true);
+    }
+
+    private void SpawnPoof()
+    {
+        if (poofPrefab == null) return;
+
+        GameObject poof = Instantiate(poofPrefab, transform.position + poofOffset, Quaternion.identity);
+
+        ParticleSystem ps = poof.GetComponent<ParticleSystem>();
+        if (ps != null)
+            Destroy(poof, ps.main.duration + ps.main.startLifetime.constantMax);
+        else
+            Destroy(poof, 2f);
     }
 
     private void SwitchToNextCharacter()
     {
-        nextCharacter?.SetActive(true);
+        SpawnPoof();
+
+        if (nextCharacter != null)
+        {
+            transform.position = nextCharacter.transform.position;
+            nextCharacter.SetActive(true);
+        }
 
         if (vcam1 != null) vcam1.Priority = 0;
         if (vcam2 != null) vcam2.Priority = 10;

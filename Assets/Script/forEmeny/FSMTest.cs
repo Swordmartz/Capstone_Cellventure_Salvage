@@ -208,6 +208,11 @@ public class DetectionFSM : MonoBehaviour
             agent.velocity = Vector3.zero;
             agent.ResetPath();
         }
+
+        // Enable trigger on death so SuperEat can detect them
+        Collider col = GetComponent<Collider>();
+        if (col != null)
+            col.isTrigger = true;
     }
 
     public void ForceKill()

@@ -118,7 +118,7 @@ public class PasserbyMultiCurvePath : MonoBehaviour
         if (passerbyItemPickup != null)
         {
             passerbyItemPickup.ResetPickup();
-            Debug.Log("Pickup reset!");
+        
         }
         else
         {

@@ -95,7 +95,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50fdc07694786a947936af9a43560a32, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectileBehaviour
-  stopDuration: 2
+  stopDuration: 10
+  comboCounter: {fileID: 0}
 --- !u!1 &3567659134063247135
 GameObject:
   m_ObjectHideFlags: 0

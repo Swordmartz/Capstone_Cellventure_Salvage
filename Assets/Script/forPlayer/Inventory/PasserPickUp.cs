@@ -48,8 +48,6 @@ public class PasserbyItemPickup : MonoBehaviour
 
         if (afterPickupSprite != null)
             spriteRenderer.sprite = afterPickupSprite;
-
-        Debug.Log($"{gameObject.name} received {item.itemName} and changed sprite.");
     }
 
     public void ResetPickup()

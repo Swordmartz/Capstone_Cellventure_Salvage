@@ -34,7 +34,11 @@ public class MobileInputBridge : MonoBehaviour
     {
         if (joystick == null) return;
 
-        if (inputLocked || !joystick.gameObject.activeInHierarchy)
+        // Respect PlayerMovementTry's own attack lock (e.g. during rapid attack
+        // bursts) in addition to this bridge's own inputLocked flag — otherwise
+        // this script keeps feeding live joystick input straight through even
+        // while an attack is supposed to be holding the player still.
+        if (inputLocked || playerMovement.IsAttacking || !joystick.gameObject.activeInHierarchy)
         {
             playerMovement.SetMovementInput(Vector2.zero);
             return;

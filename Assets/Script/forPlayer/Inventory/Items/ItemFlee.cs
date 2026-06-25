@@ -79,7 +79,7 @@ public class ItemFlee : MonoBehaviour
                 else
                 {
                     cooldownTimer = cooldown;
-                    Debug.Log(gameObject.name + " decided not to flee.");
+           
                 }
             }
         }
@@ -94,7 +94,7 @@ public class ItemFlee : MonoBehaviour
                 isFleeing = false;
                 cooldownTimer = cooldown;
                 returnDelayTimer = returnDelay;
-                Debug.Log(gameObject.name + " stopped fleeing, waiting to return.");
+               
                 return;
             }
 
@@ -155,7 +155,6 @@ public class ItemFlee : MonoBehaviour
         fleeDirection = (transform.position - threat.position).normalized;
         fleeDirection.y = 0f;
 
-        Debug.Log(gameObject.name + " is fleeing from " + threat.name);
     }
 
     private Vector3 AvoidWalls(Vector3 direction)

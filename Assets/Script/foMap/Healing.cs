@@ -9,12 +9,12 @@ public class HealButton : MonoBehaviour
     public GameObject interactButton;
     public GameObject healCanvas;
 
-    private HealTarget currentTarget;
+    private HealTargetB currentTarget;
     private bool isInteracting = false;
 
     private void Update()
     {
-        HealTarget nearest = GetNearestInRange();
+        HealTargetB nearest = GetNearestInRange();
 
         // Target changed or left range
         if (nearest != currentTarget)
@@ -48,13 +48,13 @@ public class HealButton : MonoBehaviour
         currentTarget.Tap();
     }
 
-    private HealTarget GetNearestInRange()
+    private HealTargetB GetNearestInRange()
     {
-        HealTarget[] allTargets = FindObjectsByType<HealTarget>(FindObjectsSortMode.None);
-        HealTarget nearest = null;
+        HealTargetB[] allTargets = FindObjectsByType<HealTargetB>(FindObjectsSortMode.None);
+        HealTargetB nearest = null;
         float closestDist = Mathf.Infinity;
 
-        foreach (HealTarget target in allTargets)
+        foreach (HealTargetB target in allTargets)
         {
             if (target.IsFullyHealed || target.IsDead) continue;
 

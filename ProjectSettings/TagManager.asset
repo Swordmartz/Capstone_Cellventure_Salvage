@@ -13,6 +13,7 @@ TagManager:
   - Wall
   - Music
   - Sound
+  - Waypoint
   layers:
   - Default
   - TransparentFX
@@ -39,8 +40,8 @@ TagManager:
   - Draggable
   - Intestine
   - Paserby
-  - 
-  - 
+  - Waypoint
+  - Healable
   - 
   - 
   - 

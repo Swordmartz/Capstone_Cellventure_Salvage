@@ -12,8 +12,18 @@ public class ProjectileBehaviour : MonoBehaviour
     private bool reachedMax = false;
     private float lingerTimer = 0f;
 
-    // Stop effect settings
     public float stopDuration = 2f;
+
+    private ComboCounterUI comboCounter;   // ← no longer a public Inspector field
+
+    void Awake()
+    {
+        // Finds the ComboCounterUI anywhere in the scene automatically
+        comboCounter = FindObjectOfType<ComboCounterUI>();
+
+        if (comboCounter == null)
+            Debug.LogWarning("[ProjectileBehaviour] No ComboCounterUI found in scene.");
+    }
 
     public void Init(float spd, float life, int dmg, float maxDist, float linger)
     {
@@ -43,9 +53,7 @@ public class ProjectileBehaviour : MonoBehaviour
         {
             lingerTimer += Time.deltaTime;
             if (lingerTimer >= lingerTime)
-            {
                 Destroy(gameObject);
-            }
         }
     }
 
@@ -56,7 +64,10 @@ public class ProjectileBehaviour : MonoBehaviour
         {
             enemy.TakeDamage(damage);
             enemy.ApplyStop(stopDuration);
-            enemy.MarkAsHit();        // 👈 mark enemy on hit
+            enemy.MarkAsHit();
+
+            comboCounter?.RegisterExternalHit();
+
             Destroy(gameObject);
         }
     }

@@ -7,10 +7,13 @@ public class MeleeAttack : MonoBehaviour
     public float attackRadius = 1f;
     public LayerMask enemyLayer;
 
-    public float meleeCooldown = 1f; // seconds between attacks
+    public float meleeCooldown = 1f;
     private float lastMeleeTime = -999f;
 
     public Animator anim;
+
+    [Tooltip("Optional: wire up the ComboCounterUI to track melee hits.")]
+    public ComboCounterUI comboCounter;   // ← NEW
 
     private PlayerMovementTry playerMovement;
 
@@ -29,7 +32,6 @@ public class MeleeAttack : MonoBehaviour
         }
 
         anim.SetBool("IsAttacking", true);
-
         lastMeleeTime = Time.time;
 
         Vector3 attackDir = (playerMovement != null && playerMovement.lastInputDirection.sqrMagnitude > 0.01f)
@@ -47,6 +49,8 @@ public class MeleeAttack : MonoBehaviour
             {
                 enemy.TakeDamage(damage);
                 Debug.Log($"Hit {enemy.name} with melee attack!");
+
+                comboCounter?.RegisterExternalHit();   // ← NEW: one tick per enemy hit
             }
         }
     }

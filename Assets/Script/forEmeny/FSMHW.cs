@@ -54,6 +54,16 @@ public class EnemyFSM : MonoBehaviour
     [Header("HP Bar")]
     public UnityEngine.UI.Slider hpBarSlider;
 
+    [Header("Freeze / Stagger")]
+    [Tooltip("Read-only: time remaining (in seconds) that this enemy is frozen for.")]
+    [SerializeField] private float freezeTimer = 0f;
+
+    [Header("Slow / DoT (Super Attack)")]
+    [Tooltip("Read-only: current movement speed multiplier. 1 = normal, 0.5 = half speed.")]
+    [SerializeField] private float slowMultiplier = 1f;
+    [Tooltip("Read-only: time remaining (in seconds) that the slow is active for.")]
+    [SerializeField] private float slowTimer = 0f;
+
     // ── FSM ───────────────────────────────────────────────────────────────────
     private enum State { Patrol, Chase, Attack, Flee, Dead }
     private State _state;
@@ -66,6 +76,11 @@ public class EnemyFSM : MonoBehaviour
     private float _splineT;
     private float _splineLength;
     private float _fleeTimer;
+
+    public bool IsFrozen => freezeTimer > 0f;
+    public bool IsSlowed => slowTimer > 0f;
+
+    private Coroutine _dotRoutine;
 
     void Start()
     {
@@ -93,8 +108,25 @@ public class EnemyFSM : MonoBehaviour
     {
         if (_isDead) return;
 
+        // ── Freeze / Stagger ──
+        // While frozen: no movement, no state transitions, no attack timer
+        // countdown — completely stuck in place. Only the freeze timer itself
+        // counts down.
+        if (freezeTimer > 0f)
+        {
+            freezeTimer -= Time.deltaTime;
+            return;
+        }
+
         if (_attackTimer > 0f)
             _attackTimer -= Time.deltaTime;
+
+        if (slowTimer > 0f)
+        {
+            slowTimer -= Time.deltaTime;
+            if (slowTimer <= 0f)
+                slowMultiplier = 1f;
+        }
 
         switch (_state)
         {
@@ -107,16 +139,29 @@ public class EnemyFSM : MonoBehaviour
         ApplySplineHeight();
     }
 
+    /// <summary>
+    /// Freezes this enemy completely for the given duration. If already
+    /// frozen, the timer is refreshed to the longer of its current remaining
+    /// time or the new duration — so repeated hits (e.g. from a rapid attack)
+    /// keep the enemy locked for as long as hits keep landing.
+    /// </summary>
+    public void Freeze(float duration)
+    {
+        if (_isDead) return;
+
+        freezeTimer = Mathf.Max(freezeTimer, duration);
+    }
+
     void HandlePatrol()
     {
         if (splineContainer == null) return;
 
-        _splineT += (patrolSpeed / _splineLength) * Time.deltaTime;
+        _splineT += (patrolSpeed * slowMultiplier / _splineLength) * Time.deltaTime;
         if (_splineT >= 1f) _splineT -= 1f;
 
         float lookaheadT = Mathf.Repeat(_splineT + splineLookahead / _splineLength, 1f);
         Vector3 dest = GetSplinePositionWorld(lookaheadT);
-        MoveToward(dest, patrolSpeed);
+        MoveToward(dest, patrolSpeed * slowMultiplier);
 
         Attackable found = ScanForTarget(null);
         if (found != null)
@@ -134,7 +179,7 @@ public class EnemyFSM : MonoBehaviour
             return;
         }
 
-        _splineT += (chaseSpeed / _splineLength) * Time.deltaTime;
+        _splineT += (chaseSpeed * slowMultiplier / _splineLength) * Time.deltaTime;
         if (_splineT >= 1f) _splineT -= 1f;
 
         float dist = GetDistanceToTarget(_currentTarget);
@@ -152,7 +197,7 @@ public class EnemyFSM : MonoBehaviour
         float blend = Mathf.Clamp01(1f - dist / detectionRadius);
         Vector3 dest = Vector3.Lerp(splineDest, targetDest, blend);
 
-        MoveToward(dest, chaseSpeed);
+        MoveToward(dest, chaseSpeed * slowMultiplier);
     }
 
     void HandleAttack()
@@ -200,12 +245,12 @@ public class EnemyFSM : MonoBehaviour
 
         if (splineContainer != null)
         {
-            _splineT += (fleeSpeed / _splineLength) * Time.deltaTime;
+            _splineT += (fleeSpeed * slowMultiplier / _splineLength) * Time.deltaTime;
             if (_splineT >= 1f) _splineT -= 1f;
 
             float lookaheadT = Mathf.Repeat(_splineT + splineLookahead / _splineLength, 1f);
             Vector3 dest = GetSplinePositionWorld(lookaheadT);
-            MoveToward(dest, fleeSpeed);
+            MoveToward(dest, fleeSpeed * slowMultiplier);
         }
 
         if (_fleeTimer <= 0f)
@@ -223,12 +268,21 @@ public class EnemyFSM : MonoBehaviour
         }
     }
 
+    [Header("Damage Floor")]
+    [Tooltip("Normal damage (spear/rapid attack) will never reduce HP below this value. " +
+             "Only a super attack calling SuperKill() can actually kill this enemy.")]
+    [SerializeField] private int minHealthFloor = 10;
+
     public void TakeDamage(int dmg)
     {
         if (_isDead) return;
 
         currentHealth -= dmg;
-        if (currentHealth <= 0) { Die(); return; }
+
+        // Normal attacks can never bring this enemy below the floor, and can
+        // never kill it outright — only SuperKill() can finish it off.
+        if (currentHealth < minHealthFloor)
+            currentHealth = minHealthFloor;
 
         if (hpBarSlider != null)
             hpBarSlider.value = currentHealth;
@@ -242,6 +296,80 @@ public class EnemyFSM : MonoBehaviour
         _fleeTimer = fleeDuration;
         SnapSplineTToSelf();
         _state = State.Flee;
+    }
+
+    /// <summary>
+    /// The only way this enemy actually dies. Regular attacks (spear/rapid)
+    /// only call TakeDamage, which floors at minHealthFloor and never kills.
+    /// A super attack should call this directly to finish the enemy off,
+    /// regardless of its current HP.
+    /// </summary>
+    public void SuperKill()
+    {
+        if (_isDead) return;
+
+        currentHealth = 0;
+
+        if (hpBarSlider != null)
+            hpBarSlider.value = 0;
+
+        Die();
+    }
+
+    /// <summary>
+    /// Reduces movement speed by the given multiplier (e.g. 0.5 = half speed)
+    /// for the given duration. Refreshes the duration if already slowed;
+    /// does NOT stack multiple multipliers — the most recent call wins.
+    /// </summary>
+    public void ApplySlow(float multiplier, float duration)
+    {
+        if (_isDead) return;
+
+        slowMultiplier = Mathf.Clamp01(multiplier);
+        slowTimer = Mathf.Max(slowTimer, duration);
+    }
+
+    /// <summary>
+    /// Applies a damage-over-time effect that bypasses minHealthFloor and can
+    /// kill this enemy outright (calls SuperKill once total damage reduces
+    /// HP to 0 or below). Used by the player's super attack.
+    /// totalDamage is spread evenly across (duration / tickInterval) ticks.
+    /// If this enemy is already affected by a DoT, the new call replaces it.
+    /// </summary>
+    public void ApplyDamageOverTime(int totalDamage, float duration, float tickInterval)
+    {
+        if (_isDead) return;
+
+        if (_dotRoutine != null)
+            StopCoroutine(_dotRoutine);
+
+        _dotRoutine = StartCoroutine(DamageOverTimeRoutine(totalDamage, duration, tickInterval));
+    }
+
+    private IEnumerator DamageOverTimeRoutine(int totalDamage, float duration, float tickInterval)
+    {
+        int tickCount = Mathf.Max(1, Mathf.RoundToInt(duration / tickInterval));
+        int damagePerTick = Mathf.Max(1, totalDamage / tickCount);
+
+        for (int i = 0; i < tickCount; i++)
+        {
+            if (_isDead) yield break;
+
+            currentHealth -= damagePerTick;
+
+            if (hpBarSlider != null)
+                hpBarSlider.value = Mathf.Max(currentHealth, 0);
+
+            if (currentHealth <= 0)
+            {
+                SuperKill();
+                yield break;
+            }
+
+            yield return new WaitForSeconds(tickInterval);
+        }
+
+        _dotRoutine = null;
     }
 
     private IEnumerator FlashRed()
@@ -405,7 +533,9 @@ public class EnemyFSM : MonoBehaviour
                      + $"\nHP: {currentHealth}/{maxHealth}"
                      + $"\nTarget: {(_currentTarget != null ? _currentTarget.name : "none")}"
                      + $"\nLast: {(_lastTarget != null ? _lastTarget.name : "none")}"
-                     + $"\nSplineT: {_splineT:F2}";
+                     + $"\nSplineT: {_splineT:F2}"
+                     + $"\nFrozen: {(IsFrozen ? freezeTimer.ToString("F2") : "no")}"
+                     + $"\nSlowed: {(IsSlowed ? $"{slowMultiplier:F2}x for {slowTimer:F2}s" : "no")}";
         UnityEditor.Handles.Label(pos + Vector3.up * 3f, label);
 #endif
     }

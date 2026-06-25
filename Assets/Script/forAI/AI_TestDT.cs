@@ -16,9 +16,8 @@ public class AI_TestTD : MonoBehaviour
 
     private Dictionary<int, bool> triggeredFlags = new Dictionary<int, bool>()
     {
-        {210, false},
-        {90, false},
-        {30, false}
+        {60, false},  // ← replaced 210
+        {10, false}   // ← replaced 90, removed 30
     };
 
     public GameTimer MissionManager;
@@ -114,10 +113,6 @@ public class AI_TestTD : MonoBehaviour
             counterText.text = $"{itemsDelivered}/{deliveryThreshold}";
     }
 
-    /// <summary>
-    /// First delivery: ignored but plays the IRB9 dialogue.
-    /// All subsequent deliveries count normally.
-    /// </summary>
     public void RegisterDelivery(int amount)
     {
         if (!firstDeliverySkipped)
@@ -153,9 +148,8 @@ public class AI_TestTD : MonoBehaviour
 
         float currentTime = missionTimer.GetCurrentTime();
 
-        EvaluateCheckpoint(210, previousTime, currentTime);
-        EvaluateCheckpoint(90, previousTime, currentTime);
-        EvaluateCheckpoint(30, previousTime, currentTime);
+        EvaluateCheckpoint(60, previousTime, currentTime);
+        EvaluateCheckpoint(10, previousTime, currentTime);
 
         previousTime = currentTime;
     }
@@ -194,9 +188,8 @@ public class AI_TestTD : MonoBehaviour
 
         switch (triggerTime)
         {
-            case 210: StartCoroutine(Dialogue210(tier)); break;
-            case 90: StartCoroutine(Dialogue90(tier)); break;
-            case 30: StartCoroutine(Dialogue30(tier)); break;
+            case 60: StartCoroutine(Dialogue60(tier)); break;
+            case 10: StartCoroutine(Dialogue10(tier)); break;
         }
     }
 
@@ -210,7 +203,7 @@ public class AI_TestTD : MonoBehaviour
         return 0;
     }
 
-    private IEnumerator Dialogue210(int tier)
+    private IEnumerator Dialogue60(int tier)
     {
         switch (tier)
         {
@@ -223,20 +216,7 @@ public class AI_TestTD : MonoBehaviour
         }
     }
 
-    private IEnumerator Dialogue90(int tier)
-    {
-        switch (tier)
-        {
-            case 5: yield return dialogueSystem.DialogueSequenceIRBCT905(); break;
-            case 4: yield return dialogueSystem.DialogueSequenceIRBCT904(); break;
-            case 3: yield return dialogueSystem.DialogueSequenceIRBCT903(); break;
-            case 2: yield return dialogueSystem.DialogueSequenceIRBCT902(); break;
-            case 1: yield return dialogueSystem.DialogueSequenceIRBCT901(); break;
-            default: yield return dialogueSystem.DialogueSequenceIRBCT900(); break;
-        }
-    }
-
-    private IEnumerator Dialogue30(int tier)
+    private IEnumerator Dialogue10(int tier)
     {
         switch (tier)
         {
