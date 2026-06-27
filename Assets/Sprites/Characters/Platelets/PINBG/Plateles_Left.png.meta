@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: ac535436c81d23e4daf7c06ad9a5cf3c
+guid: 9dcf21497295ee64ea8a63517e207dbe
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -110,13 +110,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: MWDownLeft_0
+      name: Plateles_Left_0
       rect:
         serializedVersion: 2
-        x: 7
-        y: 269
-        width: 240
-        height: 197
+        x: 526
+        y: 561
+        width: 371
+        height: 359
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -125,52 +125,74 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9f5538be77118a249b5f13e98ccdefab
-      internalID: 864731967
+      spriteID: dd1680e7e0c297a428a7faeb60843d73
+      internalID: 714419507
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: MWDownLeft_1
+      name: Plateles_Left_1
       rect:
         serializedVersion: 2
-        x: 7
-        y: 48
-        width: 236
-        height: 197
-      alignment: 9
-      pivot: {x: 0.50849414, y: 0.4999999}
+        x: 521
+        y: 122
+        width: 371
+        height: 359
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1e26c6bd8141c484988562fa8cd5c425
-      internalID: 1070677712
+      spriteID: 4f33507afabf30f47a5c9e466ac4a6e9
+      internalID: 349367022
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: MWDownLeft_2
+      name: Plateles_Left_2
       rect:
         serializedVersion: 2
-        x: 245
-        y: 41
-        width: 237
-        height: 197
+        x: 119
+        y: 566
+        width: 371
+        height: 359
       alignment: 9
-      pivot: {x: 0.4508904, y: 0.52591854}
+      pivot: {x: 0.45741844, y: 0.5342261}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 843269221f7e9154793c58e8e57f030a
-      internalID: -890470092
+      spriteID: c16285fa5d876b64980a89c639e7acf7
+      internalID: -1127667473
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Plateles_Left_3
+      rect:
+        serializedVersion: 2
+        x: 117
+        y: 112
+        width: 371
+        height: 359
+      alignment: 9
+      pivot: {x: 0.4716123, y: 0.42665845}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dd51363c35001224b8f3b21d904e3ab1
+      internalID: 2119799004
       vertices: []
       indices: 
       edges: []
@@ -179,7 +201,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 113d2d4bdb422c94eadeeb282cb2c541
+    spriteID: 93a3ba21cbe6b2f4f886c7c6a92501eb
     internalID: 0
     vertices: []
     indices: 
@@ -189,9 +211,10 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      MWDownLeft_0: 864731967
-      MWDownLeft_1: 1070677712
-      MWDownLeft_2: -890470092
+      Plateles_Left_0: 714419507
+      Plateles_Left_1: 349367022
+      Plateles_Left_2: -1127667473
+      Plateles_Left_3: 2119799004
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

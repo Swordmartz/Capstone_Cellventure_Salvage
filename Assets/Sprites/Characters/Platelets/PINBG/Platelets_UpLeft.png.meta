@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: ac535436c81d23e4daf7c06ad9a5cf3c
+guid: 47274d8e4b9bffb48a522ca09e9f7862
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -110,67 +110,67 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: MWDownLeft_0
+      name: Platelets_UpLeft_0
       rect:
         serializedVersion: 2
-        x: 7
-        y: 269
-        width: 240
-        height: 197
+        x: 47
+        y: 547
+        width: 432
+        height: 386
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9f5538be77118a249b5f13e98ccdefab
-      internalID: 864731967
+      spriteID: 2a1057a8edaa29f449629184c0159c81
+      internalID: 1805240332
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: MWDownLeft_1
+      name: Platelets_UpLeft_1
       rect:
         serializedVersion: 2
-        x: 7
-        y: 48
-        width: 236
-        height: 197
-      alignment: 9
-      pivot: {x: 0.50849414, y: 0.4999999}
+        x: 510
+        y: 565
+        width: 432
+        height: 386
+      alignment: 0
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1e26c6bd8141c484988562fa8cd5c425
-      internalID: 1070677712
+      spriteID: 5eafede4494c02f41ba48f149accbdd5
+      internalID: -277135447
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: MWDownLeft_2
+      name: Platelets_UpLeft_2
       rect:
         serializedVersion: 2
-        x: 245
-        y: 41
-        width: 237
-        height: 197
-      alignment: 9
-      pivot: {x: 0.4508904, y: 0.52591854}
+        x: 47
+        y: 78
+        width: 432
+        height: 386
+      alignment: 0
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 843269221f7e9154793c58e8e57f030a
-      internalID: -890470092
+      spriteID: 4714aae9936b6a44b833408e0ef79603
+      internalID: 2112075626
       vertices: []
       indices: 
       edges: []
@@ -179,7 +179,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 113d2d4bdb422c94eadeeb282cb2c541
+    spriteID: 848c52df21ee54c42be9258fe0ac3c1e
     internalID: 0
     vertices: []
     indices: 
@@ -189,9 +189,9 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      MWDownLeft_0: 864731967
-      MWDownLeft_1: 1070677712
-      MWDownLeft_2: -890470092
+      Platelets_UpLeft_0: 1805240332
+      Platelets_UpLeft_1: -277135447
+      Platelets_UpLeft_2: 2112075626
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

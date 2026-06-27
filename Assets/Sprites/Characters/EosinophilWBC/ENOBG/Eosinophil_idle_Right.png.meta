@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: ac535436c81d23e4daf7c06ad9a5cf3c
+guid: 7092022e727b559448364eb4c3f3f6b3
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -110,13 +110,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: MWDownLeft_0
+      name: Eosinophil_idle_Right_0
       rect:
         serializedVersion: 2
-        x: 7
-        y: 269
-        width: 240
-        height: 197
+        x: 35
+        y: 504
+        width: 437
+        height: 478
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -125,52 +125,74 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9f5538be77118a249b5f13e98ccdefab
-      internalID: 864731967
+      spriteID: 68e956a918aa5f645a5b3149d647c15c
+      internalID: 1455310467
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: MWDownLeft_1
+      name: Eosinophil_idle_Right_1
       rect:
         serializedVersion: 2
-        x: 7
-        y: 48
-        width: 236
-        height: 197
-      alignment: 9
-      pivot: {x: 0.50849414, y: 0.4999999}
+        x: 516
+        y: 504
+        width: 437
+        height: 478
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1e26c6bd8141c484988562fa8cd5c425
-      internalID: 1070677712
+      spriteID: aa4611916c1ee6b46a611f04a0e033c3
+      internalID: 1231502592
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: MWDownLeft_2
+      name: Eosinophil_idle_Right_2
       rect:
         serializedVersion: 2
-        x: 245
-        y: 41
-        width: 237
-        height: 197
+        x: 35
+        y: 30
+        width: 437
+        height: 478
       alignment: 9
-      pivot: {x: 0.4508904, y: 0.52591854}
+      pivot: {x: 0.51205033, y: 0.5036721}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 843269221f7e9154793c58e8e57f030a
-      internalID: -890470092
+      spriteID: 0b94da2e51603c141a3d3f5ac0861def
+      internalID: 527000460
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Eosinophil_idle_Right_3
+      rect:
+        serializedVersion: 2
+        x: 516
+        y: 0
+        width: 437
+        height: 478
+      alignment: 9
+      pivot: {x: 0.5080336, y: 0.47796676}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7aa775c2c169ab44eb378b53468acac1
+      internalID: 79408421
       vertices: []
       indices: 
       edges: []
@@ -179,7 +201,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 113d2d4bdb422c94eadeeb282cb2c541
+    spriteID: 2aea5e8d5f5230943b1661c1ed6acab5
     internalID: 0
     vertices: []
     indices: 
@@ -189,9 +211,10 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      MWDownLeft_0: 864731967
-      MWDownLeft_1: 1070677712
-      MWDownLeft_2: -890470092
+      Eosinophil_idle_Right_0: 1455310467
+      Eosinophil_idle_Right_1: 1231502592
+      Eosinophil_idle_Right_2: 527000460
+      Eosinophil_idle_Right_3: 79408421
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

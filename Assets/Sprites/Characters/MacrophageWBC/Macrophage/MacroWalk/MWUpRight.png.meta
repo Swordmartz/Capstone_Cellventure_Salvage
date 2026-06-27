@@ -113,12 +113,12 @@ TextureImporter:
       name: MWUpRight_0
       rect:
         serializedVersion: 2
-        x: 256
-        y: 34
-        width: 243
+        x: 307
+        y: 29
+        width: 263
         height: 219
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -135,12 +135,12 @@ TextureImporter:
       name: MWUpRight_1
       rect:
         serializedVersion: 2
-        x: 256
-        y: 281
-        width: 243
+        x: 327
+        y: 279
+        width: 253
         height: 219
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []

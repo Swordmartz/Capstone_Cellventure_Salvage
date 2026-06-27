@@ -123,10 +123,10 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.8980393, g: 0.5568628, b: 0.5254902, a: 1}
-    - _CameraPos: {r: 244.68109, g: 44.578053, b: 1524.2101, a: 0}
+    - _CameraPos: {r: 259.05624, g: 44.578056, b: 1515.026, a: 0}
     - _Color: {r: 0.8980393, g: 0.5568628, b: 0.5254902, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _PlayerPos: {r: 244.68109, g: 27.378052, b: 1530.2101, a: 0}
+    - _PlayerPos: {r: 259.0639, g: 27.378052, b: 1521.0317, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _ViewDir: {r: 0, g: 0, b: 1, a: 0}
   m_BuildTextureStacks: []
