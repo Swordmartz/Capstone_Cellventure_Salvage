@@ -1,7 +1,21 @@
 using UnityEngine;
+using UnityEngine.Splines;
 
 public class ItemFlee : MonoBehaviour
 {
+    [Header("Intro Spline Path")]
+    [Tooltip("If assigned, the object will travel along this spline first (from t=0 to t=1) before any flee/return logic runs. Leave empty to skip the intro and behave normally from the start.")]
+    public SplineContainer introSpline;
+    public float splineTravelSpeed = 3f;
+
+    [Header("Trigger toggle during spline travel")]
+    [Tooltip("PHYSICAL collider only — the one that should be solid once this item lands (e.g. so it can block the player or sit on the ground). " +
+             "isTrigger is set true while traveling the spline, and false once the end is reached. " +
+             "Do NOT assign the same collider here that PickupButton's OnTriggerEnter relies on for pickup detection, " +
+             "or pickup will stop firing the moment the item lands and this collider becomes solid again. " +
+             "Use a separate, dedicated pickup-detection collider (always isTrigger = true) for that.")]
+    public Collider physicsCollider;
+
     [Header("Detection")]
     public float detectionRadius = 5f;
     public string playerTag = "Player";
@@ -31,14 +45,55 @@ public class ItemFlee : MonoBehaviour
     private Vector3 fleeDirection = Vector3.zero;
     private Vector3 originalPosition;
 
+    private bool isOnSpline = false;
+    private float splineT = 0f;
+    private float splineLength = 0f;
+
+    void OnEnable()
+    {
+        // Reset flee/return state every time this object is (re)activated.
+        isFleeing = false;
+        isReturning = false;
+        fleeTimer = 0f;
+        cooldownTimer = 0f;
+        returnDelayTimer = 0f;
+
+        if (introSpline != null)
+        {
+            // Always restart the path from the very beginning.
+            isOnSpline = true;
+            splineT = 0f;
+            splineLength = introSpline.CalculateLength();
+            transform.position = introSpline.EvaluatePosition(0f);
+
+            if (physicsCollider != null)
+                physicsCollider.isTrigger = true;
+        }
+        else
+        {
+            isOnSpline = false;
+        }
+    }
+
     void Start()
     {
-        // Save original position on start
-        originalPosition = transform.position;
+        // Only set the resting position here if there's no intro path;
+        // otherwise it gets set once the spline finishes (see FinishSplineTravel).
+        if (introSpline == null)
+        {
+            originalPosition = transform.position;
+        }
     }
 
     void Update()
     {
+        // While traveling the intro spline, skip all flee/return logic entirely.
+        if (isOnSpline)
+        {
+            TravelSpline();
+            return;
+        }
+
         if (cooldownTimer > 0f)
         {
             cooldownTimer -= Time.deltaTime;
@@ -79,7 +134,7 @@ public class ItemFlee : MonoBehaviour
                 else
                 {
                     cooldownTimer = cooldown;
-           
+
                 }
             }
         }
@@ -94,13 +149,47 @@ public class ItemFlee : MonoBehaviour
                 isFleeing = false;
                 cooldownTimer = cooldown;
                 returnDelayTimer = returnDelay;
-               
+
                 return;
             }
 
             fleeDirection = AvoidWalls(fleeDirection);
             transform.position += fleeDirection * fleeSpeed * Time.deltaTime;
         }
+    }
+
+    private void TravelSpline()
+    {
+        if (introSpline == null || splineLength <= 0f)
+        {
+            FinishSplineTravel();
+            return;
+        }
+
+        float distanceThisFrame = splineTravelSpeed * Time.deltaTime;
+        splineT += distanceThisFrame / splineLength;
+
+        if (splineT >= 1f)
+        {
+            splineT = 1f;
+            transform.position = introSpline.EvaluatePosition(splineT);
+            FinishSplineTravel();
+            return;
+        }
+
+        transform.position = introSpline.EvaluatePosition(splineT);
+    }
+
+    private void FinishSplineTravel()
+    {
+        isOnSpline = false;
+
+        if (physicsCollider != null)
+            physicsCollider.isTrigger = false;
+
+        // The spot where it lands becomes the "home" position
+        // that flee/return logic will return it to.
+        originalPosition = transform.position;
     }
 
     private void ReturnToOrigin()
