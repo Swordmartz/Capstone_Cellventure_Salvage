@@ -1,21 +1,21 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
 
 public class SphereInteractUI : MonoBehaviour
 {
     [Header("Detection Settings")]
-    public string playerTag = "Player";       // Tag to identify the player
-    public GameObject interactButtonUI;       // Assign your UI button here
+    public string playerTag = "Player";              // Tag to identify the player
+    public List<GameObject> interactButtonUIs;       // Assign your UI buttons here
 
     [Header("Item Reference")]
-    public Item itemScript;                   // Drag your Item script here
+    public Item itemScript;                          // Drag your Item script here
 
     private bool playerInRange = false;
 
     void Start()
     {
-        // Hide the button at start
-        if (interactButtonUI != null)
-            interactButtonUI.SetActive(false);
+        // Hide all buttons at start
+        SetButtonsActive(false);
 
         // Auto‑grab Item script if it's on the same GameObject
         if (itemScript == null)
@@ -27,8 +27,7 @@ public class SphereInteractUI : MonoBehaviour
         if (other.CompareTag(playerTag))
         {
             playerInRange = true;
-            if (interactButtonUI != null)
-                interactButtonUI.SetActive(true);
+            SetButtonsActive(true);
         }
     }
 
@@ -37,8 +36,18 @@ public class SphereInteractUI : MonoBehaviour
         if (other.CompareTag(playerTag))
         {
             playerInRange = false;
-            if (interactButtonUI != null)
-                interactButtonUI.SetActive(false);
+            SetButtonsActive(false);
+        }
+    }
+
+    private void SetButtonsActive(bool state)
+    {
+        if (interactButtonUIs == null) return;
+
+        foreach (GameObject button in interactButtonUIs)
+        {
+            if (button != null)
+                button.SetActive(state);
         }
     }
 
@@ -47,7 +56,7 @@ public class SphereInteractUI : MonoBehaviour
     {
         if (playerInRange && itemScript != null)
         {
-            // Call the item’s custom logic
+            // Call the item's custom logic
             itemScript.Execute();
 
             Debug.Log("Sphere interacted, Item script executed!");

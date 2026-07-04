@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 4162404943784640589}
   m_Layer: 24
   m_Name: Fats
-  m_TagString: Untagged
+  m_TagString: Nutrients
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

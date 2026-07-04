@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -174,15 +175,43 @@ public class RapidAttackStackUI : MonoBehaviour
         Collider[] hits = Physics.OverlapCapsule(
             capsuleStart, capsuleEnd, spearAttack.capsuleRadius, spearAttack.enemyLayer);
 
+        var frozenObjects = new HashSet<GameObject>();
+
         foreach (Collider hit in hits)
         {
-            EnemyFSM enemy = hit.GetComponentInParent<EnemyFSM>();
-            if (enemy == null) continue;
+            if (TryFreezeEnemy(hit, frozenObjects))
+            {
+                if (superAttackBar != null)
+                    superAttackBar.AddCombo();
+            }
+        }
+    }
+
+    // Checks for EACH known enemy script type on the hit collider (or its
+    // parents) and freezes whichever one is found. Deduped by GameObject so
+    // a single enemy doesn't add multiple combo charges from one overlap check.
+    private bool TryFreezeEnemy(Collider hit, HashSet<GameObject> frozenObjects)
+    {
+        EnemyFSM enemy = hit.GetComponentInParent<EnemyFSM>();
+        if (enemy != null)
+        {
+            if (frozenObjects.Contains(enemy.gameObject)) return false;
+            frozenObjects.Add(enemy.gameObject);
 
             enemy.Freeze(enemyFreezeDuration);
-
-            if (superAttackBar != null)
-                superAttackBar.AddCombo();
+            return true;
         }
+
+        EnemyPatrolFSM patrolEnemy = hit.GetComponentInParent<EnemyPatrolFSM>();
+        if (patrolEnemy != null)
+        {
+            if (frozenObjects.Contains(patrolEnemy.gameObject)) return false;
+            frozenObjects.Add(patrolEnemy.gameObject);
+
+            patrolEnemy.Freeze(enemyFreezeDuration);
+            return true;
+        }
+
+        return false;
     }
 }

@@ -35,22 +35,47 @@ public class SuperAttack : MonoBehaviour
     {
         Collider[] hits = Physics.OverlapSphere(transform.position, radius, enemyLayer);
 
-        var hitEnemies = new HashSet<EnemyFSM>();
+        var hitObjects = new HashSet<GameObject>();
         int count = 0;
 
         foreach (Collider hit in hits)
         {
-            EnemyFSM enemy = hit.GetComponentInParent<EnemyFSM>();
-            if (enemy == null) continue;
-            if (hitEnemies.Contains(enemy)) continue;
-
-            hitEnemies.Add(enemy);
-            enemy.ApplyDamageOverTime(totalDamage, dotDuration, tickInterval);
-            enemy.ApplySlow(slowMultiplier, dotDuration);
-            count++;
+            if (TryApplySuperAttack(hit, hitObjects))
+                count++;
         }
 
         return count;
+    }
+
+    // Checks for EACH known enemy script type on the hit collider (or its
+    // parents) and applies the DoT + slow to whichever one is found. Uses
+    // hitObjects (keyed by GameObject) to dedupe across enemy types since
+    // EnemyFSM and EnemyPatrolFSM don't share a common base type.
+    private bool TryApplySuperAttack(Collider hit, HashSet<GameObject> hitObjects)
+    {
+        EnemyFSM enemy = hit.GetComponentInParent<EnemyFSM>();
+        if (enemy != null)
+        {
+            if (hitObjects.Contains(enemy.gameObject)) return false;
+            hitObjects.Add(enemy.gameObject);
+
+            enemy.ApplyDamageOverTime(totalDamage, dotDuration, tickInterval);
+            enemy.ApplySlow(slowMultiplier, dotDuration);
+            return true;
+        }
+
+        EnemyPatrolFSM patrolEnemy = hit.GetComponentInParent<EnemyPatrolFSM>();
+        if (patrolEnemy != null)
+        {
+            if (hitObjects.Contains(patrolEnemy.gameObject)) return false;
+            hitObjects.Add(patrolEnemy.gameObject);
+
+            patrolEnemy.ApplyDamageOverTime(totalDamage, dotDuration, tickInterval);
+            patrolEnemy.ApplySlow(slowMultiplier, dotDuration);
+            return true;
+        }
+
+        return false;
     }
 
     private void OnDrawGizmosSelected()

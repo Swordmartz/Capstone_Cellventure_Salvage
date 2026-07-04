@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 4738672894105964655}
   m_Layer: 24
   m_Name: Carbs
-  m_TagString: Untagged
+  m_TagString: Nutrients
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

@@ -219,7 +219,6 @@ public class PlayerMovementTry : MonoBehaviour
         }
 
         movementInput = input;
-        Debug.Log($"[PlayerMovementTry] SetMovementInput called. New movementInput={movementInput}, isAttacking={IsAttacking}");
     }
 
     public void ResetTimers()

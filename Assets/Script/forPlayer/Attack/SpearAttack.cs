@@ -56,21 +56,39 @@ public class SpearMeleeAttack : MonoBehaviour
 
         foreach (Collider hit in hits)
         {
-            // GetComponentInParent handles colliders on child objects
-            EnemyFSM enemy = hit.GetComponentInParent<EnemyFSM>();
-            if (enemy == null)
-            {
-                Debug.Log($"[SpearMeleeAttack] Hit {hit.name} but no EnemyFSM found in parent chain.");
-                continue;
-            }
-
-            Debug.Log($"[SpearMeleeAttack] Dealing {attackDamage} damage to {enemy.name}");
-            enemy.TakeDamage(attackDamage);
-            hitAtLeastOneEnemy = true;
+            if (TryDamageEnemy(hit))
+                hitAtLeastOneEnemy = true;
         }
 
         if (hitAtLeastOneEnemy)
             rapidAttackStack++;
+    }
+
+    // Checks for EACH known enemy script type on the hit collider (or its parents)
+    // and applies damage to whichever one is actually found. This is what was
+    // missing before — the old code only ever checked for EnemyFSM.
+    private bool TryDamageEnemy(Collider hit)
+    {
+        // GetComponentInParent handles colliders on child objects
+
+        EnemyFSM enemy = hit.GetComponentInParent<EnemyFSM>();
+        if (enemy != null)
+        {
+            Debug.Log($"[SpearMeleeAttack] Dealing {attackDamage} damage to {enemy.name} (EnemyFSM)");
+            enemy.TakeDamage(attackDamage);
+            return true;
+        }
+
+        EnemyPatrolFSM patrolEnemy = hit.GetComponentInParent<EnemyPatrolFSM>();
+        if (patrolEnemy != null)
+        {
+            Debug.Log($"[SpearMeleeAttack] Dealing {attackDamage} damage to {patrolEnemy.name} (EnemyPatrolFSM)");
+            patrolEnemy.TakeDamage(attackDamage);
+            return true;
+        }
+
+        Debug.Log($"[SpearMeleeAttack] Hit {hit.name} but no recognized enemy script (EnemyFSM or EnemyPatrolFSM) found in parent chain.");
+        return false;
     }
 
     void OnDrawGizmosSelected()

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
 public class AI_TestTD : MonoBehaviour
@@ -32,6 +33,11 @@ public class AI_TestTD : MonoBehaviour
     public int EnemyDeathTime = 0;
     public int AttackableDied = 0;
 
+    [Header("Timers")]
+    public GameTimer missionTimer;
+    public GameTimer missionTimer2;
+    public GameTimer missionTimer3;
+
     [Header("Triggers")]
     public bool playerInTrigger = false;
     private bool sequenceRunning = false;
@@ -43,10 +49,25 @@ public class AI_TestTD : MonoBehaviour
     public int itemsDelivered = 0;
     public int deliveryThreshold = 5;
     public TMP_Text counterText;
-    public GameTimer missionTimer;
     public bool hasCapturedTime = false;
 
+    [Header("First Delivery Settings")]
+    public bool ignoreFirstDelivery = true;   // toggle in Inspector
     private bool firstDeliverySkipped = false;
+
+    [Header("Max Delivery Reached Event (Optional)")]
+    [Tooltip("If enabled, onMaxDeliveryReached will fire once itemsDelivered hits deliveryThreshold.")]
+    public bool enableMaxDeliveryEvent = false;
+    [Tooltip("Assign any method(s) from any script here — runs once, the moment the delivery threshold is met.")]
+    public UnityEvent onMaxDeliveryReached;
+    private bool maxDeliveryTriggered = false;
+
+    [Header("Timer Reached Zero Event (Optional)")]
+    [Tooltip("If enabled, onTimerReachedZero will fire once missionTimer3's time hits 0.")]
+    public bool enableTimerZeroEvent = false;
+    [Tooltip("Assign any method(s) from any script here — runs once, the moment missionTimer3 reaches 0.")]
+    public UnityEvent onTimerReachedZero;
+    private bool timerZeroTriggered = false;
 
     private float previousTime;
 
@@ -64,6 +85,8 @@ public class AI_TestTD : MonoBehaviour
             StartCoroutine(dialogueSystem.DialogueSequenceIPI());
         else if (sceneName == "Chapter 1 - IICE")
             StartCoroutine(dialogueSystem.DialogueSequenceIICE0());
+        else if (sceneName == "Chapter2 - Ascariasis")
+            StartCoroutine(dialogueSystem.DialogueSequenceC2RBC());
 
         UpdateCounterUI();
 
@@ -87,12 +110,15 @@ public class AI_TestTD : MonoBehaviour
                 StartCoroutine(dialogueSystem.DialogueSequenceIPI());
             else if (sceneName == "Chapter 1 - IICE")
                 StartCoroutine(dialogueSystem.DialogueSequenceIICE0());
+            else if (sceneName == "Chapter2 - Ascariasis")
+                StartCoroutine(dialogueSystem.DialogueSequenceC2RBC());
 
             playerInTrigger = false;
         }
 
         LogMissionTimer();
         ItemTimeChecker();
+        CheckTimerReachedZero();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -115,7 +141,7 @@ public class AI_TestTD : MonoBehaviour
 
     public void RegisterDelivery(int amount)
     {
-        if (!firstDeliverySkipped)
+        if (ignoreFirstDelivery && !firstDeliverySkipped)
         {
             firstDeliverySkipped = true;
             Debug.Log("[AI_TestTD] First delivery ignored — playing IRB9 dialogue.");
@@ -126,6 +152,35 @@ public class AI_TestTD : MonoBehaviour
         itemsDelivered += amount;
         UpdateCounterUI();
         Debug.Log("[AI_TestTD] Items delivered: " + itemsDelivered);
+
+        CheckMaxDeliveryReached();
+    }
+
+    private void CheckMaxDeliveryReached()
+    {
+        if (!enableMaxDeliveryEvent) return;
+        if (maxDeliveryTriggered) return;
+
+        if (itemsDelivered >= deliveryThreshold)
+        {
+            maxDeliveryTriggered = true;
+            Debug.Log("[AI_TestTD] Max delivery reached — invoking onMaxDeliveryReached event.");
+            onMaxDeliveryReached?.Invoke();
+        }
+    }
+
+    private void CheckTimerReachedZero()
+    {
+        if (!enableTimerZeroEvent) return;
+        if (timerZeroTriggered) return;
+        if (missionTimer3 == null) return;
+
+        if (missionTimer3.GetCurrentTime() <= 0f)
+        {
+            timerZeroTriggered = true;
+            Debug.Log("[AI_TestTD] missionTimer3 reached 0 — invoking onTimerReachedZero event.");
+            onTimerReachedZero?.Invoke();
+        }
     }
 
     public void ItemTimeChecker()
