@@ -8,6 +8,7 @@ public class SpearMeleeAttack : MonoBehaviour
     public LayerMask enemyLayer;
     public int attackDamage = 1;
     public int rapidAttackStack = 0;
+    public Animator anim;
 
     [Header("Cooldown")]
     public float meleeCooldown = 1f;
@@ -62,6 +63,8 @@ public class SpearMeleeAttack : MonoBehaviour
 
         if (hitAtLeastOneEnemy)
             rapidAttackStack++;
+
+        anim.SetBool("IsNSAttack", true);
     }
 
     // Checks for EACH known enemy script type on the hit collider (or its parents)
@@ -89,6 +92,11 @@ public class SpearMeleeAttack : MonoBehaviour
 
         Debug.Log($"[SpearMeleeAttack] Hit {hit.name} but no recognized enemy script (EnemyFSM or EnemyPatrolFSM) found in parent chain.");
         return false;
+    }
+
+    public void FinishAttack()
+    {
+        anim.SetBool("IsNSAttack", false);
     }
 
     void OnDrawGizmosSelected()
