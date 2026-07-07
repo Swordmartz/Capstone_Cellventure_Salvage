@@ -7,7 +7,7 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Rigidbody))]
 public class EnemyPatrolFSM : MonoBehaviour
 {
-    private enum State { Patrol, MovingToNutrient, Consuming, ReturningToPath, Dead }
+    private enum State { Patrol, MovingToNutrient, ReturningToPath, Dead }
 
     [Header("State (read-only, for debugging)")]
     [SerializeField] private State _state = State.Patrol;
@@ -49,13 +49,12 @@ public class EnemyPatrolFSM : MonoBehaviour
     [SerializeField] private float chaseSpeed = 4f;
     [SerializeField] private float reachDistance = 0.5f;
 
-    [Header("Consuming")]
-    [SerializeField] private float consumeDuration = 1.5f;
-    private float _consumeTimer;
-
     [Header("Returning To Path")]
     [SerializeField] private float returnSpeed = 4f;
     [SerializeField] private float returnReachDistance = 0.3f;
+    [Tooltip("After returning to the spline, nutrient detection is paused for this many seconds before it can chase another one.")]
+    [SerializeField] private float postReturnCooldown = 2f;
+    private float _cooldownTimer;
 
     [Header("On Death")]
     public GameObject objectToActivateOnDeath;
@@ -120,11 +119,13 @@ public class EnemyPatrolFSM : MonoBehaviour
                 slowMultiplier = 1f;
         }
 
+        if (_cooldownTimer > 0f)
+            _cooldownTimer -= Time.deltaTime;
+
         switch (_state)
         {
             case State.Patrol: HandlePatrol(); break;
             case State.MovingToNutrient: HandleMovingToNutrient(); break;
-            case State.Consuming: HandleConsuming(); break;
             case State.ReturningToPath: HandleReturningToPath(); break;
         }
     }
@@ -223,7 +224,6 @@ public class EnemyPatrolFSM : MonoBehaviour
         if (objectToActivateOnDeath != null)
             objectToActivateOnDeath.SetActive(true);
 
-        Debug.Log("[EnemyPatrolFSM] Enemy died.");
         // Add death VFX/animation/disable logic here as needed.
     }
 
@@ -244,11 +244,15 @@ public class EnemyPatrolFSM : MonoBehaviour
         if (_detectionTimer >= detectionInterval)
         {
             _detectionTimer = 0f;
-            GameObject found = DetectNutrient();
-            if (found != null)
+
+            if (_cooldownTimer <= 0f)
             {
-                _targetNutrient = found;
-                _state = State.MovingToNutrient;
+                GameObject found = DetectNutrient();
+                if (found != null)
+                {
+                    _targetNutrient = found;
+                    _state = State.MovingToNutrient;
+                }
             }
         }
     }
@@ -289,6 +293,10 @@ public class EnemyPatrolFSM : MonoBehaviour
     // =========================================================
     // MOVING TO NUTRIENT
     // =========================================================
+    // Chases the target's live position every frame (re-reads its transform
+    // each call, so it tracks a moving nutrient too) until within
+    // reachDistance, then deactivates it immediately and heads back to
+    // the spline — no consume/wait state in between.
     void HandleMovingToNutrient()
     {
         if (_targetNutrient == null || !_targetNutrient.activeInHierarchy)
@@ -299,30 +307,10 @@ public class EnemyPatrolFSM : MonoBehaviour
         }
 
         Vector3 targetPos = _targetNutrient.transform.position;
-        MoveToward(targetPos, chaseSpeed * slowMultiplier);
+        MoveToward(targetPos, chaseSpeed * slowMultiplier, restrictY: false);
 
         if (Vector3.Distance(transform.position, targetPos) <= reachDistance)
         {
-            _consumeTimer = 0f;
-            _state = State.Consuming;
-        }
-    }
-
-    // =========================================================
-    // CONSUMING
-    // =========================================================
-    void HandleConsuming()
-    {
-        if (_targetNutrient == null)
-        {
-            _state = State.ReturningToPath;
-            return;
-        }
-
-        _consumeTimer += Time.deltaTime;
-        if (_consumeTimer >= consumeDuration)
-        {
-            Debug.Log($"[EnemyPatrolFSM] Consumed nutrient: {_targetNutrient.name}");
             _targetNutrient.SetActive(false);
             _targetNutrient = null;
             _state = State.ReturningToPath;
@@ -347,11 +335,12 @@ public class EnemyPatrolFSM : MonoBehaviour
 
         Vector3 nearestWorld = GetSplinePositionWorld(nearestT);
 
-        MoveToward(nearestWorld, returnSpeed * slowMultiplier);
+        MoveToward(nearestWorld, returnSpeed * slowMultiplier, restrictY: false);
 
         if (Vector3.Distance(transform.position, nearestWorld) <= returnReachDistance)
         {
             _splineT = nearestT;
+            _cooldownTimer = postReturnCooldown;
             _state = State.Patrol;
         }
     }
@@ -377,20 +366,20 @@ public class EnemyPatrolFSM : MonoBehaviour
     // =========================================================
     // MOVEMENT / ROTATION
     // =========================================================
-    void MoveToward(Vector3 destination, float moveSpeed)
+    void MoveToward(Vector3 destination, float moveSpeed, bool restrictY = true)
     {
         Vector3 dir = destination - transform.position;
-        dir.y = 0f;
+        if (restrictY) dir.y = 0f;
         if (dir.sqrMagnitude < 0.001f) return;
 
         transform.position += dir.normalized * moveSpeed * Time.deltaTime;
-        FaceTarget(destination);
+        FaceTarget(destination, restrictY);
     }
 
-    void FaceTarget(Vector3 target)
+    void FaceTarget(Vector3 target, bool restrictY = true)
     {
         Vector3 dir = target - transform.position;
-        dir.y = 0f;
+        if (restrictY) dir.y = 0f;
         if (dir.sqrMagnitude < 0.001f) return;
 
         Quaternion targetRot = Quaternion.LookRotation(dir.normalized);

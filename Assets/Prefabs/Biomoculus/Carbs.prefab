@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1204224290455771390}
   - component: {fileID: 2062004839209942673}
   - component: {fileID: 4738672894105964655}
+  - component: {fileID: -5926516216990530753}
   m_Layer: 24
   m_Name: Carbs
   m_TagString: Nutrients
@@ -165,3 +166,24 @@ MonoBehaviour:
       m_Data: []
   m_Knots:
     m_KnotsLink: []
+--- !u!135 &-5926516216990530753
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2910580900044923155}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.7
+  m_Center: {x: 0, y: 0, z: 0}

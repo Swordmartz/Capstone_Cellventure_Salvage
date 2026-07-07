@@ -18,6 +18,11 @@ public class CharacterSwitchManager : MonoBehaviour
     public CinemachineCamera camera2;
     public CinemachineCamera camera3;
 
+    [Header("Timers")]
+    public GameTimer missionTimer;
+    public GameTimer missionTimer2;
+    public GameTimer missionTimer3;
+
     [Header("Priority Settings")]
     public int activePriority = 10;
     public int inactivePriority = 0;
@@ -29,6 +34,7 @@ public class CharacterSwitchManager : MonoBehaviour
     private GameObject[] characters;
     private GameObject[] extraObjects;
     private CinemachineCamera[] cameras;
+    private GameTimer[] timers;
 
     private int activeIndex = 0;
     private bool initialized = false;
@@ -47,6 +53,7 @@ public class CharacterSwitchManager : MonoBehaviour
         characters = new GameObject[] { character1, character2, character3 };
         extraObjects = new GameObject[] { extraObject1, extraObject2, extraObject3 };
         cameras = new CinemachineCamera[] { camera1, camera2, camera3 };
+        timers = new GameTimer[] { missionTimer, missionTimer2, missionTimer3 };
 
         initialized = true;
 
@@ -92,6 +99,13 @@ public class CharacterSwitchManager : MonoBehaviour
 
     private void ApplySwitch(int newIndex)
     {
+        // Pause the timer belonging to the character we're switching away from
+        // (skip on first-ever call, since activeIndex == newIndex on startup)
+        if (activeIndex != newIndex && timers[activeIndex] != null)
+        {
+            timers[activeIndex].StopTimer();
+        }
+
         for (int i = 0; i < characters.Length; i++)
         {
             bool isActive = (i == newIndex);
@@ -104,6 +118,12 @@ public class CharacterSwitchManager : MonoBehaviour
 
             if (extraObjects[i] != null)
                 extraObjects[i].SetActive(isActive);
+        }
+
+        // Resume the timer for the character we're switching to
+        if (timers[newIndex] != null)
+        {
+            timers[newIndex].ResumeTimer();
         }
 
         player = characters[newIndex];
