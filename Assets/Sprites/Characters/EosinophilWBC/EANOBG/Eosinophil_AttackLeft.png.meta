@@ -113,12 +113,12 @@ TextureImporter:
       name: Eosinophil_AttackLeft_0
       rect:
         serializedVersion: 2
-        x: 505
-        y: 561
-        width: 413
-        height: 342
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 669
+        y: 737
+        width: 495
+        height: 417
+      alignment: 9
+      pivot: {x: 0.6567368, y: 0.571138}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -135,12 +135,12 @@ TextureImporter:
       name: Eosinophil_AttackLeft_1
       rect:
         serializedVersion: 2
-        x: 8
-        y: 92
-        width: 446
-        height: 342
+        x: 22
+        y: 165
+        width: 573
+        height: 367
       alignment: 9
-      pivot: {x: 0.5775376, y: 0.50796485}
+      pivot: {x: 0.68904424, y: 0.5639242}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []

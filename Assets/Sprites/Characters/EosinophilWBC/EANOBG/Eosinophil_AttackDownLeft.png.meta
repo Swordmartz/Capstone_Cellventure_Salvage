@@ -113,12 +113,12 @@ TextureImporter:
       name: Eosinophil_AttackDownLeft_0
       rect:
         serializedVersion: 2
-        x: 50
-        y: 568
-        width: 452
-        height: 430
+        x: 64
+        y: 765
+        width: 554
+        height: 516
       alignment: 9
-      pivot: {x: 0.55048466, y: 0.6673669}
+      pivot: {x: 0.5834364, y: 0.685056}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -135,12 +135,12 @@ TextureImporter:
       name: Eosinophil_AttackDownLeft_1
       rect:
         serializedVersion: 2
-        x: 548
-        y: 77
+        x: 788
+        y: 189
         width: 452
         height: 430
       alignment: 9
-      pivot: {x: 0.56213486, y: 0.64695615}
+      pivot: {x: 0.5772805, y: 0.6628763}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -157,12 +157,12 @@ TextureImporter:
       name: Eosinophil_AttackDownLeft_2
       rect:
         serializedVersion: 2
-        x: 32
-        y: 50
-        width: 452
-        height: 455
+        x: 34
+        y: 60
+        width: 561
+        height: 575
       alignment: 9
-      pivot: {x: 0.6009691, y: 0.6697442}
+      pivot: {x: 0.64571226, y: 0.7173664}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []

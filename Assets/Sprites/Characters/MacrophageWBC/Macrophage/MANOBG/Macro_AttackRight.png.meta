@@ -113,12 +113,12 @@ TextureImporter:
       name: Macro_AttackRight_0
       rect:
         serializedVersion: 2
-        x: 533
-        y: 548
-        width: 423
-        height: 413
-      alignment: 9
-      pivot: {x: 0.49170065, y: 0.54250145}
+        x: 255
+        y: 271
+        width: 218
+        height: 212
+      alignment: 0
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -135,12 +135,12 @@ TextureImporter:
       name: Macro_AttackRight_1
       rect:
         serializedVersion: 2
-        x: 62
-        y: 543
-        width: 423
-        height: 413
+        x: 26
+        y: 269
+        width: 218
+        height: 212
       alignment: 9
-      pivot: {x: 0.49170065, y: 0.54250145}
+      pivot: {x: 0.5362335, y: 0.5041397}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -157,12 +157,12 @@ TextureImporter:
       name: Macro_AttackRight_2
       rect:
         serializedVersion: 2
-        x: 559
-        y: 92
-        width: 423
-        height: 413
+        x: 259
+        y: 33
+        width: 241
+        height: 210
       alignment: 9
-      pivot: {x: 0.45435363, y: 0.54250145}
+      pivot: {x: 0.4672245, y: 0.5501517}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -179,12 +179,12 @@ TextureImporter:
       name: Macro_AttackRight_3
       rect:
         serializedVersion: 2
-        x: 62
-        y: 101
-        width: 423
-        height: 413
+        x: 38
+        y: 44
+        width: 206
+        height: 207
       alignment: 9
-      pivot: {x: 0.4958504, y: 0.5127504}
+      pivot: {x: 0.5085211, y: 0.5127196}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []

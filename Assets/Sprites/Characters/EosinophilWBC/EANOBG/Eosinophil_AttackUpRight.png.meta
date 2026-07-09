@@ -114,11 +114,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 38
-        y: 525
-        width: 439
-        height: 366
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+        y: 632
+        width: 518
+        height: 450
+      alignment: 9
+      pivot: {x: 0.41499385, y: 0.52295476}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -135,12 +135,12 @@ TextureImporter:
       name: Eosinophil_AttackUpRight_1
       rect:
         serializedVersion: 2
-        x: 514
-        y: 554
-        width: 435
-        height: 387
+        x: 617
+        y: 649
+        width: 512
+        height: 489
       alignment: 9
-      pivot: {x: 0.5000001, y: 0.47732157}
+      pivot: {x: 0.40210927, y: 0.508134}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -157,12 +157,12 @@ TextureImporter:
       name: Eosinophil_AttackUpRight_2
       rect:
         serializedVersion: 2
-        x: 44
-        y: 84
-        width: 416
-        height: 348
+        x: 37
+        y: 85
+        width: 539
+        height: 451
       alignment: 9
-      pivot: {x: 0.5084391, y: 0.489912}
+      pivot: {x: 0.4025994, y: 0.5152102}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -179,12 +179,12 @@ TextureImporter:
       name: Eosinophil_AttackUpRight_3
       rect:
         serializedVersion: 2
-        x: 467
-        y: 87
-        width: 503
-        height: 416
+        x: 557
+        y: 90
+        width: 601
+        height: 503
       alignment: 9
-      pivot: {x: 0.38833016, y: 0.40295157}
+      pivot: {x: 0.31129727, y: 0.4415931}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []

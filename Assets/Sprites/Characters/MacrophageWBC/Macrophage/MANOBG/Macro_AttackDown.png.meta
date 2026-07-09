@@ -113,10 +113,10 @@ TextureImporter:
       name: Macro_AttackDown_0
       rect:
         serializedVersion: 2
-        x: 44
-        y: 550
-        width: 418
-        height: 398
+        x: 18
+        y: 271
+        width: 217
+        height: 206
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -135,10 +135,10 @@ TextureImporter:
       name: Macro_AttackDown_1
       rect:
         serializedVersion: 2
-        x: 525
-        y: 555
-        width: 418
-        height: 398
+        x: 258
+        y: 271
+        width: 217
+        height: 206
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -157,12 +157,12 @@ TextureImporter:
       name: Macro_AttackDown_2
       rect:
         serializedVersion: 2
-        x: 35
-        y: 16
-        width: 418
-        height: 447
+        x: 10
+        y: 8
+        width: 221
+        height: 229
       alignment: 9
-      pivot: {x: 0.512598, y: 0.57068354}
+      pivot: {x: 0.51985645, y: 0.5613208}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -179,12 +179,12 @@ TextureImporter:
       name: Macro_AttackDown_3
       rect:
         serializedVersion: 2
-        x: 488
-        y: 62
-        width: 471
-        height: 398
+        x: 243
+        y: 32
+        width: 237
+        height: 206
       alignment: 9
-      pivot: {x: 0.52608764, y: 0.5308721}
+      pivot: {x: 0.5222191, y: 0.51704174}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []

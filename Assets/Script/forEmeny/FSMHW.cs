@@ -27,6 +27,10 @@ public class EnemyFSM : MonoBehaviour
     [Header("Attack")]
     [SerializeField] private float attackCooldown = 1.5f;
 
+    [Header("Turning")]
+    [Tooltip("How long a turn-around takes, in seconds. Used for every state change, not just detaching.")]
+    [SerializeField] private float turnDuration = 0.5f;
+
     [Header("Flee")]
     [SerializeField] private float fleeDuration = 3f;
 
@@ -54,6 +58,8 @@ public class EnemyFSM : MonoBehaviour
     [Header("HP Bar")]
     public UnityEngine.UI.Slider hpBarSlider;
 
+    public Animator anim;
+
     [Header("Freeze / Stagger")]
     [Tooltip("Read-only: time remaining (in seconds) that this enemy is frozen for.")]
     [SerializeField] private float freezeTimer = 0f;
@@ -63,6 +69,11 @@ public class EnemyFSM : MonoBehaviour
     [SerializeField] private float slowMultiplier = 1f;
     [Tooltip("Read-only: time remaining (in seconds) that the slow is active for.")]
     [SerializeField] private float slowTimer = 0f;
+
+    [Header("Damage Floor")]
+    [Tooltip("Normal damage (spear/rapid attack) will never reduce HP below this value. " +
+             "Only a super attack calling SuperKill() can actually kill this enemy.")]
+    [SerializeField] private int minHealthFloor = 10;
 
     // ── FSM ───────────────────────────────────────────────────────────────────
     private enum State { Patrol, Chase, Attack, Flee, Dead }
@@ -76,15 +87,29 @@ public class EnemyFSM : MonoBehaviour
     private float _splineT;
     private float _splineLength;
     private float _fleeTimer;
+    private Coroutine _dotRoutine;
+    private Coroutine _turnRoutine;
+    private bool _isTurning;
+    private Quaternion _turnTargetRot;
+    private bool _turnPlaysDetachAnim;
+    private int _lastTurnDirection;
+
+    // Logical facing direction, tracked independently of transform.rotation
+    // since the billboard script owns transform.rotation to keep the sprite
+    // facing the camera. All facing/turning logic reads and writes this
+    // instead of touching the actual Transform.
+    private Vector3 _facingDir = Vector3.forward;
 
     public bool IsFrozen => freezeTimer > 0f;
     public bool IsSlowed => slowTimer > 0f;
 
-    private Coroutine _dotRoutine;
-
     void Start()
     {
         currentHealth = maxHealth;
+
+        _facingDir = transform.forward;
+        if (_facingDir.sqrMagnitude < 0.001f)
+            _facingDir = Vector3.forward;
 
         if (splineContainer != null)
         {
@@ -104,9 +129,27 @@ public class EnemyFSM : MonoBehaviour
         _state = State.Patrol;
     }
 
+    /// <summary>
+    /// Pushes the current logical facing direction into the "LastX" and
+    /// "LastY" animator floats (world X and Z respectively — LastY maps to
+    /// world Z since this is a top-down/isometric game with no meaningful Y
+    /// facing component). Typically used to drive an 8-directional idle/walk
+    /// blend tree. Called every frame regardless of FSM state so it stays in
+    /// sync even while frozen or turning.
+    /// </summary>
+    void UpdateFacingAnimatorParams()
+    {
+        if (anim == null) return;
+
+        anim.SetFloat("LastX", _facingDir.x);
+        anim.SetFloat("LastY", _facingDir.z);
+    }
+
     void Update()
     {
         if (_isDead) return;
+
+        UpdateFacingAnimatorParams();
 
         // ── Freeze / Stagger ──
         // While frozen: no movement, no state transitions, no attack timer
@@ -117,6 +160,12 @@ public class EnemyFSM : MonoBehaviour
             freezeTimer -= Time.deltaTime;
             return;
         }
+
+        // While turning: movement/state logic is paused so the turn-around
+        // rotation in TurnRoutine isn't fought every frame by FaceTarget
+        // calls from HandleFlee/HandlePatrol/etc.
+        if (_isTurning)
+            return;
 
         if (_attackTimer > 0f)
             _attackTimer -= Time.deltaTime;
@@ -167,6 +216,7 @@ public class EnemyFSM : MonoBehaviour
         if (found != null)
         {
             _currentTarget = found;
+            BeginTurn(false);
             _state = State.Chase;
         }
     }
@@ -175,6 +225,7 @@ public class EnemyFSM : MonoBehaviour
     {
         if (_currentTarget == null || _currentTarget.IsDead)
         {
+            BeginTurn(false);
             _state = State.Patrol;
             return;
         }
@@ -186,6 +237,7 @@ public class EnemyFSM : MonoBehaviour
 
         if (dist <= stoppingDistance)
         {
+            BeginTurn(false);
             _state = State.Attack;
             return;
         }
@@ -204,15 +256,23 @@ public class EnemyFSM : MonoBehaviour
     {
         if (_currentTarget == null || _currentTarget.IsDead)
         {
+            // Target died while we were sucking on it — stop sucking and
+            // play the detach animation before returning to patrol.
+            SetSucking(false);
+            BeginTurn(true);
             _state = State.Patrol;
             return;
         }
+
+        SetSucking(true);
 
         FaceTarget(_currentTarget.transform.position);
 
         float dist = GetDistanceToTarget(_currentTarget);
         if (dist > stoppingDistance * 1.5f)
         {
+            SetSucking(false);
+            BeginTurn(false);
             _state = State.Chase;
             return;
         }
@@ -259,23 +319,22 @@ public class EnemyFSM : MonoBehaviour
             if (next != null)
             {
                 _currentTarget = next;
+                BeginTurn(false);
                 _state = State.Chase;
             }
             else
             {
+                BeginTurn(false);
                 _state = State.Patrol;
             }
         }
     }
 
-    [Header("Damage Floor")]
-    [Tooltip("Normal damage (spear/rapid attack) will never reduce HP below this value. " +
-             "Only a super attack calling SuperKill() can actually kill this enemy.")]
-    [SerializeField] private int minHealthFloor = 10;
-
     public void TakeDamage(int dmg)
     {
         if (_isDead) return;
+
+        bool wasSucking = _state == State.Attack;
 
         currentHealth -= dmg;
 
@@ -289,6 +348,16 @@ public class EnemyFSM : MonoBehaviour
 
         StopCoroutine(nameof(FlashRed));
         StartCoroutine(FlashRed());
+
+        if (wasSucking)
+        {
+            SetSucking(false);
+            BeginTurn(true);
+        }
+        else
+        {
+            BeginTurn(false);
+        }
 
         _attackTimer = attackCooldown;
         _lastTarget = _currentTarget;
@@ -395,6 +464,76 @@ public class EnemyFSM : MonoBehaviour
         spriteRenderer.color = originalColor;
     }
 
+    /// <summary>
+    /// Sets the IsSucking animator bool. Call this whenever this enemy is
+    /// actively latched onto and attacking its target.
+    /// </summary>
+    void SetSucking(bool value)
+    {
+        if (anim != null)
+            anim.SetBool("IsSucking", value);
+    }
+
+    /// <summary>
+    /// Turns the enemy around to face the opposite of whatever direction it
+    /// was already facing when the turn began — it doesn't turn toward/away
+    /// from any target, just flips based on its own current facing. Called
+    /// on every FSM state change. Also sets the "TurnDirection" animator int
+    /// (-1 = turning left, 1 = turning right) so Animator states/blend trees
+    /// can play a directional turn animation.
+    /// If playDetachAnim is true, also toggles the "IsDetaching" animator
+    /// bool for the duration of the turn — reserved for the two genuine
+    /// detach cases (target died mid-suck, or took damage while sucking).
+    /// </summary>
+    void BeginTurn(bool playDetachAnim)
+    {
+        Vector3 flippedForward = -_facingDir;
+        flippedForward.y = 0f;
+        Quaternion targetRot = flippedForward.sqrMagnitude > 0.001f
+            ? Quaternion.LookRotation(flippedForward.normalized)
+            : Quaternion.LookRotation(_facingDir);
+
+        // Sign of the turn relative to current facing: positive = right, negative = left.
+        // If this comes out backwards for your sprite setup, flip the comparison below.
+        float turnAngle = Vector3.SignedAngle(_facingDir, flippedForward, Vector3.up);
+        int direction = turnAngle >= 0f ? 1 : -1;
+        _lastTurnDirection = direction;
+        if (anim != null)
+            anim.SetInteger("TurnDirection", direction);
+
+        if (playDetachAnim && anim != null)
+            anim.SetBool("IsDetaching", true);
+
+        _turnTargetRot = targetRot;
+        _turnPlaysDetachAnim = playDetachAnim;
+        _isTurning = true;
+
+        if (_turnRoutine != null)
+            StopCoroutine(_turnRoutine);
+        _turnRoutine = StartCoroutine(TurnRoutine());
+    }
+
+    private IEnumerator TurnRoutine()
+    {
+        float elapsed = 0f;
+        while (elapsed < turnDuration)
+        {
+            elapsed += Time.deltaTime;
+            Quaternion current = Quaternion.LookRotation(_facingDir);
+            Quaternion next = Quaternion.Slerp(current, _turnTargetRot, rotationSpeed * Time.deltaTime);
+            _facingDir = next * Vector3.forward;
+            yield return null;
+        }
+
+        _facingDir = _turnTargetRot * Vector3.forward;
+
+        if (_turnPlaysDetachAnim && anim != null)
+            anim.SetBool("IsDetaching", false);
+
+        _isTurning = false;
+        _turnRoutine = null;
+    }
+
     void ApplySplineHeight()
     {
         if (splineContainer == null) return;
@@ -427,8 +566,9 @@ public class EnemyFSM : MonoBehaviour
         if (dir.sqrMagnitude < 0.001f) return;
 
         Quaternion targetRot = Quaternion.LookRotation(dir.normalized);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot,
-                                               rotationSpeed * Time.deltaTime);
+        Quaternion currentRot = Quaternion.LookRotation(_facingDir);
+        Quaternion newRot = Quaternion.Slerp(currentRot, targetRot, rotationSpeed * Time.deltaTime);
+        _facingDir = newRot * Vector3.forward;
     }
 
     Attackable ScanForTarget(Attackable exclude)
@@ -473,6 +613,11 @@ public class EnemyFSM : MonoBehaviour
         _state = State.Dead;
         StopAllCoroutines();
 
+        SetSucking(false);
+        if (anim != null)
+            anim.SetBool("IsDetaching", false);
+        _isTurning = false;
+
         if (spriteRenderer != null)
             spriteRenderer.color = Color.white;
 
@@ -495,12 +640,47 @@ public class EnemyFSM : MonoBehaviour
             missionManager.CompleteMissionByIndex(missionIndex);
     }
 
+    /// <summary>
+    /// Draws a small V-shaped arrowhead at tip, pointing along dir. Used by
+    /// OnDrawGizmos to visualize facing/turn-direction arrows in the Scene view.
+    /// </summary>
+    void DrawGizmoArrowhead(Vector3 tip, Vector3 dir, Color color)
+    {
+        if (dir.sqrMagnitude < 0.0001f) return;
+
+        Gizmos.color = color;
+        Vector3 back = -dir.normalized;
+        Vector3 right = Vector3.Cross(Vector3.up, dir.normalized);
+        Gizmos.DrawLine(tip, tip + (back + right) * 0.25f);
+        Gizmos.DrawLine(tip, tip + (back - right) * 0.25f);
+    }
+
     void OnDrawGizmos()
     {
         Vector3 pos = transform.position;
 
         Gizmos.color = new Color(1f, 0.5f, 0f, 0.15f);
         Gizmos.DrawWireSphere(pos, detectionRadius);
+
+        // Current logical facing direction — always visible. Note this is
+        // _facingDir, not transform.forward, since the billboard script owns
+        // transform.rotation to keep the sprite facing the camera.
+        Vector3 facingTip = pos + _facingDir * 1.5f;
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawLine(pos, facingTip);
+        DrawGizmoArrowhead(facingTip, _facingDir, Color.cyan);
+
+        // While turning, show where it's turning TO, color-coded by direction:
+        // blue = turning right, magenta = turning left.
+        if (_isTurning)
+        {
+            Vector3 targetDir = _turnTargetRot * Vector3.forward;
+            Vector3 targetTip = pos + targetDir * 1.5f;
+            Color turnColor = _lastTurnDirection > 0 ? Color.blue : Color.magenta;
+            Gizmos.color = turnColor;
+            Gizmos.DrawLine(pos, targetTip);
+            DrawGizmoArrowhead(targetTip, targetDir, turnColor);
+        }
 
         if (splineContainer != null && Application.isPlaying)
         {
@@ -535,7 +715,8 @@ public class EnemyFSM : MonoBehaviour
                      + $"\nLast: {(_lastTarget != null ? _lastTarget.name : "none")}"
                      + $"\nSplineT: {_splineT:F2}"
                      + $"\nFrozen: {(IsFrozen ? freezeTimer.ToString("F2") : "no")}"
-                     + $"\nSlowed: {(IsSlowed ? $"{slowMultiplier:F2}x for {slowTimer:F2}s" : "no")}";
+                     + $"\nSlowed: {(IsSlowed ? $"{slowMultiplier:F2}x for {slowTimer:F2}s" : "no")}"
+                     + $"\nTurning: {(_isTurning ? (_lastTurnDirection > 0 ? "Right" : "Left") : "no")}";
         UnityEditor.Handles.Label(pos + Vector3.up * 3f, label);
 #endif
     }

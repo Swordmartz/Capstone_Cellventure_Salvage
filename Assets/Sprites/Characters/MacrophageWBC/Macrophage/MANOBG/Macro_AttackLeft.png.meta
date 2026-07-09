@@ -113,10 +113,10 @@ TextureImporter:
       name: Macro_AttackLeft_0
       rect:
         serializedVersion: 2
-        x: 49
-        y: 543
-        width: 416
-        height: 416
+        x: 24
+        y: 273
+        width: 217
+        height: 213
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -135,12 +135,12 @@ TextureImporter:
       name: Macro_AttackLeft_1
       rect:
         serializedVersion: 2
-        x: 514
-        y: 544
-        width: 416
-        height: 416
-      alignment: 9
-      pivot: {x: 0.4704637, y: 0.47890252}
+        x: 255
+        y: 271
+        width: 217
+        height: 213
+      alignment: 0
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -157,12 +157,12 @@ TextureImporter:
       name: Macro_AttackLeft_2
       rect:
         serializedVersion: 2
-        x: 5
-        y: 77
-        width: 430
-        height: 416
+        x: 1
+        y: 39
+        width: 217
+        height: 213
       alignment: 9
-      pivot: {x: 0.54802376, y: 0.48312202}
+      pivot: {x: 0.556623, y: 0.54120445}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -171,6 +171,28 @@ TextureImporter:
       bones: []
       spriteID: bdd6ed31192997241b2d0f847b8bc793
       internalID: 511883116
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Macro_AttackLeft_3
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 43
+        width: 199
+        height: 199
+      alignment: 9
+      pivot: {x: 0.53087246, y: 0.5396929}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5f2886358eec25e44afd2c2ec5202d2f
+      internalID: -150075062
       vertices: []
       indices: 
       edges: []
