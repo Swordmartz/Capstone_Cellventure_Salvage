@@ -269,11 +269,11 @@ PlayerSettings:
   useCustomGradlePropertiesTemplate: 0
   useCustomGradleSettingsTemplate: 0
   useCustomProguardFile: 0
-  AndroidTargetArchitectures: 2
+  AndroidTargetArchitectures: 3
   AndroidAllowedArchitectures: -13
   AndroidSplashScreenScale: 0
   androidSplashScreen: {fileID: 0}
-  AndroidKeystoreName: C:/Keystore/KimAJ.keystore
+  AndroidKeystoreName: C:/Users/Swordmartz/Documents/KeyStore/user.keystore
   AndroidKeyaliasName: cellventure
   AndroidEnableArmv9SecurityFeatures: 0
   AndroidEnableArm64MTE: 0

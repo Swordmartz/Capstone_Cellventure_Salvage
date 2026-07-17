@@ -63,7 +63,7 @@ public class ProjectileBehaviour : MonoBehaviour
         if (enemy != null)
         {
             enemy.TakeDamage(damage);
-            enemy.ApplyStop(stopDuration);
+            enemy.SetTrapped(true);   // Stops the enemy and stays stopped until manually released elsewhere
             enemy.MarkAsHit();
 
             comboCounter?.RegisterExternalHit();

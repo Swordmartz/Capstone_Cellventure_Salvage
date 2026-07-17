@@ -21,12 +21,16 @@ public class SuperEat : MonoBehaviour
 
     private bool isEating = false;
 
+    public Animator anim;
     public void ActivateSuperEat()
     {
         if (!superBar.IsFull) return;
 
         List<DetectionFSM> deadEnemies = GetDeadEnemiesInRadius();
         if (deadEnemies.Count == 0) return;
+
+        if (anim != null)
+            anim.SetBool("Super", true);
 
         StartCoroutine(SuckEnemies(deadEnemies));
         superBar.ConsumeBar();
@@ -47,6 +51,10 @@ public class SuperEat : MonoBehaviour
         return dead;
     }
 
+    public void FinishSuper()
+    {
+        anim.SetBool("Super", false);
+    }
     private IEnumerator SuckEnemies(List<DetectionFSM> enemies)
     {
         isEating = true;
@@ -77,6 +85,14 @@ public class SuperEat : MonoBehaviour
                 if (IsInsideCapsule(enemy.transform.position))
                 {
                     enemy.gameObject.SetActive(false);
+
+                    // Tick IsDead now that this enemy has been successfully
+                    // disabled (eaten), then let WinConditionManager know.
+                    enemy.isDead = true;
+
+                    if (WinConditionManager.Instance != null)
+                        WinConditionManager.Instance.ReportEnemyDefeated(enemy.gameObject);
+
                     active.RemoveAt(i);
                 }
             }

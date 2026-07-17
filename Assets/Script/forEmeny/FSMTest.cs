@@ -36,8 +36,20 @@ public class DetectionFSM : MonoBehaviour
     public int currentHealth;
     public bool isInvincible = false;
 
+    [Header("Death")]
+    [Tooltip("True once this enemy has died. Set inside Die() and reported to " +
+             "WinConditionManager at the same time, so anything checking this " +
+             "flag and anything listening for the win-condition report stay in sync.")]
+    public bool isDead = false;
+
     [Header("Attacked")]
     public bool isMarked { get; private set; } = false;
+
+    [Header("Trapped State")]
+    [Tooltip("True when this enemy is trapped (e.g. caught by a projectile) and unable to act normally. " +
+             "Mirrored into the Animator as a Bool parameter named 'IsTrapped'. " +
+             "While true, movement and FSM state logic are paused. Call SetTrapped(false) to release.")]
+    public bool isTrapped = false;
 
     [Header("Hit Flash")]
     public SpriteRenderer spriteRenderer;
@@ -46,6 +58,20 @@ public class DetectionFSM : MonoBehaviour
 
     [Header("HP Bar")]
     public Slider hpBarSlider;
+
+    [Header("Facing / Look Direction")]
+    [Tooltip("Current direction the enemy is facing, derived from movement velocity. " +
+             "This is plain data (not a transform rotation), so a Billboard script " +
+             "that rotates this object toward the camera won't conflict with it.")]
+    public Vector3 lookDirection = Vector3.forward;
+    [Tooltip("Minimum horizontal speed required before the look direction updates. " +
+             "Prevents flip jitter when the agent is nearly stationary.")]
+    public float lookDirectionThreshold = 0.05f;
+
+    [Header("Animator")]
+    [Tooltip("Drives LastX / LastY float parameters for a directional blend tree, " +
+             "plus the IsTrapped bool. Auto-assigned from this object or its children if left empty.")]
+    public Animator anim;
 
     private Coroutine _flashCoroutine;
 
@@ -58,9 +84,13 @@ public class DetectionFSM : MonoBehaviour
             agent.SetDestination(originalTarget.position);
 
         currentHealth = maxHealth;
+        isDead = false;
 
         if (spriteRenderer == null)
             spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+
+        if (anim == null)
+            anim = GetComponentInChildren<Animator>();
 
         if (hpBarSlider != null)
         {
@@ -78,6 +108,13 @@ public class DetectionFSM : MonoBehaviour
                 player = activePlayer.transform;
         }
 
+        UpdateLookDirection();
+
+        // Trapped enemies don't run normal FSM logic (no detecting/hiding/returning)
+        // until they're released via SetTrapped(false).
+        if (isTrapped)
+            return;
+
         switch (currentState)
         {
             case EnemyState.Idle: HandleIdle(); break;
@@ -85,6 +122,84 @@ public class DetectionFSM : MonoBehaviour
             case EnemyState.Hiding: HandleHiding(); break;
             case EnemyState.Returning: HandleReturning(); break;
             case EnemyState.Dead: break;
+        }
+    }
+
+    /// <summary>
+    /// Computes facing direction from the agent's current movement velocity.
+    /// Deliberately does NOT touch transform.rotation, so it stays independent
+    /// of any Billboard script rotating this object toward the camera.
+    /// Sprite flip (a scale/flipX operation, not a rotation) is safe to apply here.
+    /// </summary>
+    private void UpdateLookDirection()
+    {
+        if (agent == null || currentState == EnemyState.Dead) return;
+
+        Vector3 vel = agent.velocity;
+        vel.y = 0f;
+
+        if (vel.magnitude > lookDirectionThreshold)
+        {
+            lookDirection = vel.normalized;
+
+            if (spriteRenderer != null)
+                spriteRenderer.flipX = lookDirection.x < 0f;
+        }
+
+        UpdateAnimatorDirection();
+    }
+
+    /// <summary>
+    /// Pushes the current facing direction into the Animator as LastX / LastY
+    /// floats for a directional blend tree. Keeps its previous value while
+    /// the agent is stationary, so idle animations continue facing the
+    /// last direction moved (standard "LastX/LastY" blend tree pattern).
+    /// </summary>
+    private void UpdateAnimatorDirection()
+    {
+        if (anim == null) return;
+
+        anim.SetFloat("LastX", lookDirection.x);
+        anim.SetFloat("LastY", lookDirection.z);
+    }
+
+    /// <summary>
+    /// Public accessor for other scripts (e.g. attack aiming, gizmos, UI) that
+    /// need to know which way this enemy is currently facing.
+    /// </summary>
+    public Vector3 GetLookDirection()
+    {
+        return lookDirection;
+    }
+
+    /// <summary>
+    /// Sets the trapped state and mirrors it to the Animator's "IsTrapped" bool
+    /// parameter. Call this from whatever catches the enemy (e.g. a projectile
+    /// script that already holds a reference to this component) — and call
+    /// SetTrapped(false) from whatever releases it later, since trapped
+    /// enemies stay trapped until explicitly freed.
+    /// </summary>
+    public void SetTrapped(bool trapped)
+    {
+        // Don't let a projectile "trap" (or un-trap) an already-dead enemy.
+        if (currentState == EnemyState.Dead) return;
+
+        isTrapped = trapped;
+
+        if (anim != null)
+            anim.SetBool("IsTrapped", trapped);
+
+        if (agent == null) return;
+
+        if (trapped)
+        {
+            agent.isStopped = true;
+            agent.velocity = Vector3.zero;
+        }
+        else
+        {
+            agent.isStopped = false;
+            agent.speed = normalSpeed;
         }
     }
 
@@ -132,6 +247,7 @@ public class DetectionFSM : MonoBehaviour
     public void TakeDamage(int amount)
     {
         if (isInvincible) return;
+        if (isDead) return; // already dead, ignore further hits
 
         currentHealth -= amount;
         currentHealth = Mathf.Max(currentHealth, 0);
@@ -184,8 +300,18 @@ public class DetectionFSM : MonoBehaviour
 
     public void Die()
     {
+        if (isDead) return; // guard against Die() firing more than once
+
+        isDead = true;
         currentState = EnemyState.Dead;
         currentHealth = 0;
+        isTrapped = false;
+
+        if (anim != null)
+        {
+            anim.SetBool("IsTrapped", false);
+            anim.SetBool("IsDead", true); // mirror into Animator, in case a death animation depends on it
+        }
 
         if (_flashCoroutine != null)
         {
@@ -335,5 +461,9 @@ public class DetectionFSM : MonoBehaviour
             Gizmos.color = Color.green;
             Gizmos.DrawLine(transform.position, currentTarget.position);
         }
+
+        // Visualize current look/facing direction
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawLine(transform.position, transform.position + lookDirection * 1.5f);
     }
 }

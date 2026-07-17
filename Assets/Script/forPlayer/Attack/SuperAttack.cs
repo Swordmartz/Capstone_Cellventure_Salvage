@@ -12,6 +12,7 @@ public class SuperMove : MonoBehaviour
     public CinemachineCamera vcam2;
     public MinimapFollow minimapFollow;
     public string minimapTargetChildName = "MinimapTarget";
+    public AIforDialogue aiScript;
 
     [Header("UI to Deactivate")]
     public GameObject[] objectsToDeactivate;
@@ -129,6 +130,13 @@ public class SuperMove : MonoBehaviour
         if (delay > 0f)
             yield return new WaitForSeconds(delay);
 
+        // Play the dialogue and wait for it to fully finish before touching
+        // the camera priority swap below.
+        if (aiScript != null)
+            yield return aiScript.StartCoroutine(aiScript.Dialogue4IWBCE());
+        else
+            Debug.LogWarning("AI script not assigned!");
+
         // Teleport and camera swap happen together, on the same frame,
         // so there's no in-between frame where things look mismatched.
         if (nextCharacter != null)
@@ -145,6 +153,11 @@ public class SuperMove : MonoBehaviour
 
         if (vcam1 != null) vcam1.Priority = 0;
         if (vcam2 != null) vcam2.Priority = 10;
+
+        if (aiScript != null)
+            aiScript.StartCoroutine(aiScript.Dialogue5IWBCE());
+        else
+            Debug.LogWarning("AI script not assigned!");
 
         gameObject.SetActive(false);
     }

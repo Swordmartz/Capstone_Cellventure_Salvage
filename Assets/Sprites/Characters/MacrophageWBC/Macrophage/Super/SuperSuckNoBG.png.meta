@@ -1,0 +1,475 @@
+fileFormatVersion: 2
+guid: a13d214c9ab94864e99c40fb409aa439
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 0
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: SuperSuckNoBG_0
+      rect:
+        serializedVersion: 2
+        x: 76
+        y: 2569
+        width: 314
+        height: 435
+      alignment: 9
+      pivot: {x: 0.5089436, y: 0.6936776}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8a665aa1fa954a6449350d2557f0bf8f
+      internalID: 1722189270
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SuperSuckNoBG_1
+      rect:
+        serializedVersion: 2
+        x: 573
+        y: 2538
+        width: 314
+        height: 477
+      alignment: 9
+      pivot: {x: 0.53577477, y: 0.69956523}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 375f0d4b40965e44ea851a17b700f533
+      internalID: 1667705356
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SuperSuckNoBG_2
+      rect:
+        serializedVersion: 2
+        x: 1067
+        y: 2456
+        width: 314
+        height: 553
+      alignment: 9
+      pivot: {x: 0.5268302, y: 0.7503483}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: af548c456f5bc6b4683561e8244e43ab
+      internalID: -190231544
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SuperSuckNoBG_3
+      rect:
+        serializedVersion: 2
+        x: 2017
+        y: 2435
+        width: 401
+        height: 629
+      alignment: 9
+      pivot: {x: 0.55396175, y: 0.69134647}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c7d2e282c1a722e459eb88bbcf52d804
+      internalID: -518622531
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SuperSuckNoBG_4
+      rect:
+        serializedVersion: 2
+        x: 2578
+        y: 2432
+        width: 382
+        height: 623
+      alignment: 9
+      pivot: {x: 0.5163459, y: 0.7104896}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a81274db02c681747910e91d433788ca
+      internalID: 1420965731
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SuperSuckNoBG_5
+      rect:
+        serializedVersion: 2
+        x: 2032
+        y: 1786
+        width: 397
+        height: 508
+      alignment: 9
+      pivot: {x: 0.50799453, y: 0.38755426}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e55b0b5c3808b604c88304ee30b50da8
+      internalID: -1925845853
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SuperSuckNoBG_6
+      rect:
+        serializedVersion: 2
+        x: 2578
+        y: 1796
+        width: 397
+        height: 508
+      alignment: 9
+      pivot: {x: 0.5000006, y: 0.38130704}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8d280d785db667c4a8d2b04dc0b0c5ff
+      internalID: -1281210906
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SuperSuckNoBG_7
+      rect:
+        serializedVersion: 2
+        x: 1842
+        y: 3932
+        width: 555
+        height: 406
+      alignment: 9
+      pivot: {x: 0.73443705, y: 0.5156334}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9422967c7a12d934687d8a9dd0c61411
+      internalID: 745419472
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SuperSuckNoBG_8
+      rect:
+        serializedVersion: 2
+        x: 2406
+        y: 3932
+        width: 480
+        height: 406
+      alignment: 9
+      pivot: {x: 0.68154603, y: 0.52345073}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f60713368b32db54a92fb69c0b1cc38c
+      internalID: 978910575
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SuperSuckNoBG_9
+      rect:
+        serializedVersion: 2
+        x: 2120
+        y: 3298
+        width: 445
+        height: 381
+      alignment: 9
+      pivot: {x: 0.38589856, y: 0.54164743}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b7b47de31bf0ec642934c1c385e1f667
+      internalID: -674998636
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SuperSuckNoBG_10
+      rect:
+        serializedVersion: 2
+        x: 1587
+        y: 3295
+        width: 445
+        height: 381
+      alignment: 9
+      pivot: {x: 0.38589856, y: 0.54164743}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c61eaa299bd2bb143928a815e24d768c
+      internalID: -1712117305
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SuperSuckNoBG_11
+      rect:
+        serializedVersion: 2
+        x: 1959
+        y: 1117
+        width: 407
+        height: 481
+      alignment: 9
+      pivot: {x: 0.6504224, y: 0.3218083}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b0cbf3a257acc954a89f646077777cd6
+      internalID: -1671811256
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SuperSuckNoBG_12
+      rect:
+        serializedVersion: 2
+        x: 2424
+        y: 1126
+        width: 407
+        height: 481
+      alignment: 9
+      pivot: {x: 0.6504224, y: 0.3218083}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 64fc994b674491341b21270e24969ad9
+      internalID: 1880562067
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SuperSuckNoBG_13
+      rect:
+        serializedVersion: 2
+        x: 2120
+        y: 485
+        width: 425
+        height: 424
+      alignment: 9
+      pivot: {x: 0.3444514, y: 0.2486971}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: faa890d0256b4d546913ed87a8fe5fb8
+      internalID: -1184264953
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SuperSuckNoBG_14
+      rect:
+        serializedVersion: 2
+        x: 2576
+        y: 488
+        width: 424
+        height: 424
+      alignment: 9
+      pivot: {x: 0.374248, y: 0.25235906}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bb183be27b900dd499f139c8bdc1af92
+      internalID: 1561946960
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 8e29d15c75e10114a8d8ef296bffafd0
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      SuperSuckNoBG_0: 1722189270
+      SuperSuckNoBG_1: 1667705356
+      SuperSuckNoBG_10: -1712117305
+      SuperSuckNoBG_11: -1671811256
+      SuperSuckNoBG_12: 1880562067
+      SuperSuckNoBG_13: -1184264953
+      SuperSuckNoBG_14: 1561946960
+      SuperSuckNoBG_2: -190231544
+      SuperSuckNoBG_3: -518622531
+      SuperSuckNoBG_4: 1420965731
+      SuperSuckNoBG_5: -1925845853
+      SuperSuckNoBG_6: -1281210906
+      SuperSuckNoBG_7: 745419472
+      SuperSuckNoBG_8: 978910575
+      SuperSuckNoBG_9: -674998636
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

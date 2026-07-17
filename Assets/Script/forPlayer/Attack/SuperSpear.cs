@@ -28,11 +28,18 @@ public class SuperAttack : MonoBehaviour
     [Range(0f, 1f)]
     public float slowMultiplier = 0.5f;
 
+    public Animator anim;
+
     /// <summary>
     /// Call this to fire the super attack. Returns the number of enemies hit.
     /// </summary>
     public int PerformSuperAttack()
     {
+        if (anim != null)
+        {
+            anim.SetBool("IsSuper", true);
+        }
+
         Collider[] hits = Physics.OverlapSphere(transform.position, radius, enemyLayer);
 
         var hitObjects = new HashSet<GameObject>();
@@ -78,9 +85,16 @@ public class SuperAttack : MonoBehaviour
         return false;
     }
 
+    public void FinishAttackSuper()
+    {      
+            anim.SetBool("IsSuper", false);
+    }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(0.6f, 0f, 1f, 0.5f);
         Gizmos.DrawWireSphere(transform.position, radius);
     }
+
+
 }

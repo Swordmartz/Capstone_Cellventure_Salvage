@@ -44,6 +44,9 @@ public class MeleeAttack2 : MonoBehaviour
             {
                 hit.gameObject.SetActive(false);
 
+                // Tick IsDead now that the GameObject has been successfully disabled.
+                enemy.isDead = true;
+
                 if (WinConditionManager.Instance != null)
                     WinConditionManager.Instance.ReportEnemyDefeated(hit.gameObject);
             }

@@ -20,6 +20,10 @@ public class AIforDialogue : MonoBehaviour
     public LayerMask enemyLayer;
     public GameObject CL;
 
+
+    [Header("Enemy To Activate")]
+    public GameObject enemyToActivate;
+
     [Header("Audio")]
     public AudioSource dialogueAudioSource;
 
@@ -434,29 +438,11 @@ public class AIforDialogue : MonoBehaviour
         if (targetObject != null)
             targetObject.SetActive(false);
 
-        // 6. Play dialogue set index 2 after teleport
-        if (dialogueSets.Count > 2)
-        {
-            if (dialoguePanel != null)
-                dialoguePanel.SetActive(true);
-
-            if (nextButton != null)
-                nextButton.gameObject.SetActive(true);
-
-            dialogueFinished = false;
-            TriggerDialogue(dialogueSets[2].setName);
-            yield return new WaitUntil(() => dialogueFinished);
-        }
-        else
-        {
-            Debug.LogWarning("Dialogue Set 2 not found!");
-        }
-
-        // 7. Only reactivate target object after ALL dialogues are finished
+        // 6. Reactivate target object now that dialogue is finished
         if (targetObject != null)
             targetObject.SetActive(true);
 
-        // 8. Only resume mission timer after ALL dialogues are finished
+        // 7. Resume mission timer now that dialogue is finished
         if (missionTimer != null)
             missionTimer.ResumeTimer();
     }
@@ -483,26 +469,247 @@ public class AIforDialogue : MonoBehaviour
             Debug.LogWarning("Dialogue Set 1 not found or dialogueSystem is null!");
         }
 
-        // 3️⃣ Activate all GameObjects in the enemy layer
-        GameObject[] allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
-        foreach (GameObject obj in allObjects)
-        {
-            if (((1 << obj.layer) & enemyLayer) != 0)
-            {
-                obj.SetActive(true);
-                Debug.Log("Activated enemy: " + obj.name);
-            }
-        }
-
-
-
-        // 4️⃣ Re‑enable the first object
+        // 3️⃣ Re‑enable the first object
         if (targetObject != null)
             targetObject.SetActive(true);
 
         if (missionTimer != null)
             missionTimer.ResumeTimer();
     }
+
+    public IEnumerator Dialogue2IWBCE()
+    {
+        if (missionTimer != null)
+            missionTimer.StopTimer();
+
+        // 1️⃣ Disable the target object
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 2️⃣ Play dialogue at index 2
+        if (dialogueSets.Count > 2)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[2].setName);
+
+            // Wait until dialogue finishes
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 2 not found or dialogueSystem is null!");
+        }
+
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 3️⃣ Play dialogue at index 3
+        if (dialogueSets.Count > 3)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[3].setName);
+
+            // Wait until dialogue finishes
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 3 not found or dialogueSystem is null!");
+        }
+
+        // 4️⃣ Activate the assigned enemy GameObject
+        if (enemyToActivate != null)
+        {
+            enemyToActivate.SetActive(true);
+            Debug.Log("Activated enemy: " + enemyToActivate.name);
+        }
+        else
+        {
+            Debug.LogWarning("enemyToActivate is not assigned!");
+        }
+
+        // 5️⃣ Re-enable the target object
+        if (targetObject != null)
+            targetObject.SetActive(true);
+
+        if (missionTimer != null)
+            missionTimer.ResumeTimer();
+    }
+
+    public IEnumerator Dialogue3IWBCE()
+    {
+        if (missionTimer != null)
+            missionTimer.StopTimer();
+
+        // 1️⃣ Disable the target object
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 2️⃣ Play dialogue at index 4
+        if (dialogueSets.Count > 4)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[4].setName);
+
+            // Wait until dialogue finishes
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 4 not found or dialogueSystem is null!");
+        }
+
+        // 3️⃣ Re-enable the target object
+        if (targetObject != null)
+            targetObject.SetActive(true);
+
+        if (missionTimer != null)
+            missionTimer.ResumeTimer();
+    }
+
+    public IEnumerator Dialogue4IWBCE()
+    {
+        if (missionTimer != null)
+            missionTimer.StopTimer();
+
+        // 1️⃣ Disable the target object
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 2️⃣ Play dialogue at index 5
+        if (dialogueSets.Count > 5)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[5].setName);
+
+            // Wait until dialogue finishes
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 5 not found or dialogueSystem is null!");
+        }
+
+        // 3️⃣ Re-enable the target object
+        if (targetObject != null)
+            targetObject.SetActive(true);
+
+        if (missionTimer != null)
+            missionTimer.ResumeTimer();
+    }
+
+    public IEnumerator Dialogue5IWBCE()
+    {
+        if (missionTimer != null)
+            missionTimer.StopTimer();
+
+        // 1️⃣ Disable the target object
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 2️⃣ Play dialogue at index 6
+        if (dialogueSets.Count > 6)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[6].setName);
+
+            // Wait until dialogue finishes
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 6 not found or dialogueSystem is null!");
+        }
+
+        // 1️⃣ Disable the target object
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+
+        // 3️⃣ Play dialogue at index 7
+        if (dialogueSets.Count > 7)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[7].setName);
+
+            // Wait until dialogue finishes
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 7 not found or dialogueSystem is null!");
+        }
+
+        // 4️⃣ Re-enable the target object
+        if (targetObject != null)
+            targetObject.SetActive(true);
+
+        if (missionTimer != null)
+            missionTimer.ResumeTimer();
+    }
+    public IEnumerator Dialogue6IWBCE()
+    {
+        if (missionTimer != null)
+            missionTimer.StopTimer();
+
+        // 1️⃣ Disable the target object
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 2️⃣ Play dialogue at index 8
+        if (dialogueSets.Count > 8)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[8].setName);
+
+            // Wait until dialogue finishes
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 8 not found or dialogueSystem is null!");
+        }
+
+        // 3️⃣ Re-enable the target object
+        if (targetObject != null)
+            targetObject.SetActive(true);
+
+        if (missionTimer != null)
+            missionTimer.ResumeTimer();
+    }
+
+    public IEnumerator Dialogue7IWBCE()
+    {
+        if (missionTimer != null)
+            missionTimer.StopTimer();
+
+        // 1️⃣ Disable the target object
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 2️⃣ Play dialogue at index 9
+        if (dialogueSets.Count > 9)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[9].setName);
+
+            // Wait until dialogue finishes
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 9 not found or dialogueSystem is null!");
+        }
+
+        // 3️⃣ Re-enable the target object
+        if (targetObject != null)
+            targetObject.SetActive(true);
+
+        if (missionTimer != null)
+            missionTimer.ResumeTimer();
+    }
+
+    //-----------------------------------------------------------------------------------------------------------
 
     public IEnumerator DialogueSequenceIRBCT2105()
     {
@@ -1577,6 +1784,48 @@ public class AIforDialogue : MonoBehaviour
         // 4️⃣ Re‑enable the GameObject
         if (targetObject != null)
             targetObject.SetActive(true);
+
+        if (missionTimer != null)
+            missionTimer.ResumeTimer();
+    }
+    public IEnumerator DialogueSequenceIRB10()
+    {
+        if (missionTimer != null)
+            missionTimer.StopTimer();
+
+        // 1️⃣ Disable the target GameObject
+        if (targetGameObject != null)
+        {
+            // If your joystick is a VariableJoystick/FixedJoystick from the Joystick Pack:
+            Joystick joystick = targetGameObject.GetComponentInChildren<Joystick>();
+            if (joystick != null)
+            {
+                joystick.OnPointerUp(null); // Force-release the joystick
+            }
+
+            // Small delay to let input system process the release
+            yield return new WaitForEndOfFrame();
+
+            targetGameObject.SetActive(false);
+        }
+
+        // 2️⃣ Play dialogue at index 30
+        if (dialogueSets.Count > 30)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[30].setName);
+
+            // 3️⃣ Wait until dialogue finishes
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("DialogueSystem is not assigned!");
+        }
+
+        // 4️⃣ Re-enable the GameObject
+        if (targetGameObject != null)
+            targetGameObject.SetActive(true);
 
         if (missionTimer != null)
             missionTimer.ResumeTimer();

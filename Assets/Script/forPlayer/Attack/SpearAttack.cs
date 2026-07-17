@@ -98,7 +98,10 @@ public class SpearMeleeAttack : MonoBehaviour
     {
         anim.SetBool("IsNSAttack", false);
     }
-
+    public void FinishAttackSuper()
+    {
+        anim.SetBool("IsSuper", false);
+    }
     void OnDrawGizmosSelected()
     {
         Vector3 dir = Application.isPlaying

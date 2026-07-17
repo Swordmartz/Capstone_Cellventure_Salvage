@@ -13,7 +13,7 @@ public class MeleeAttack : MonoBehaviour
     public Animator anim;
 
     [Tooltip("Optional: wire up the ComboCounterUI to track melee hits.")]
-    public ComboCounterUI comboCounter;   // ← NEW
+    public ComboCounterUI comboCounter;
 
     private PlayerMovementTry playerMovement;
 
@@ -25,6 +25,8 @@ public class MeleeAttack : MonoBehaviour
 
     public void PerformAttack()
     {
+        Debug.Log("PerformAttack called");
+
         if (Time.time < lastMeleeTime + meleeCooldown)
         {
             Debug.Log("Melee attack on cooldown!");
@@ -35,22 +37,31 @@ public class MeleeAttack : MonoBehaviour
         lastMeleeTime = Time.time;
 
         Vector3 attackDir = (playerMovement != null && playerMovement.lastInputDirection.sqrMagnitude > 0.01f)
-            ? playerMovement.lastInputDirection
+            ? playerMovement.lastInputDirection.normalized
             : transform.forward;
 
         Vector3 attackOrigin = transform.position + attackDir * attackRange;
 
         Collider[] hits = Physics.OverlapSphere(attackOrigin, attackRadius, enemyLayer);
+        Debug.Log($"OverlapSphere found {hits.Length} colliders on enemyLayer at {attackOrigin}");
 
         foreach (Collider hit in hits)
         {
-            DetectionFSM enemy = hit.GetComponent<DetectionFSM>();
+            Debug.Log($"Checking collider: {hit.name} (layer: {LayerMask.LayerToName(hit.gameObject.layer)})");
+
+            // Use GetComponentInParent in case the collider is on a child
+            // object (hitbox/capsule) while DetectionFSM lives on the root.
+            DetectionFSM enemy = hit.GetComponentInParent<DetectionFSM>();
             if (enemy != null)
             {
                 enemy.TakeDamage(damage);
                 Debug.Log($"Hit {enemy.name} with melee attack!");
 
-                comboCounter?.RegisterExternalHit();   // ← NEW: one tick per enemy hit
+                comboCounter?.RegisterExternalHit();
+            }
+            else
+            {
+                Debug.Log($"{hit.name} has no DetectionFSM in its hierarchy — check where the script lives.");
             }
         }
     }
@@ -65,7 +76,7 @@ public class MeleeAttack : MonoBehaviour
         Gizmos.color = Color.red;
         Vector3 dir = Application.isPlaying
             ? (playerMovement?.lastInputDirection.sqrMagnitude > 0.01f == true
-                ? playerMovement.lastInputDirection
+                ? playerMovement.lastInputDirection.normalized
                 : transform.forward)
             : transform.forward;
         Gizmos.DrawWireSphere(transform.position + dir * attackRange, attackRadius);

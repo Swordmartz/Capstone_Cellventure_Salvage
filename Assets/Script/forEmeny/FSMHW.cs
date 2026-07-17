@@ -615,7 +615,10 @@ public class EnemyFSM : MonoBehaviour
 
         SetSucking(false);
         if (anim != null)
+        {
             anim.SetBool("IsDetaching", false);
+            anim.SetBool("Dead", true);
+        }
         _isTurning = false;
 
         if (spriteRenderer != null)
