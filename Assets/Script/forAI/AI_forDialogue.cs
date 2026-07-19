@@ -141,11 +141,21 @@ public class AIforDialogue : MonoBehaviour
     {
         if (dialogueText == null) yield break;
 
-        dialogueText.text = "";
+        // Set the FULL text immediately so TMP calculates layout/wrapping only once.
+        // This stops the box from resizing/reflowing as letters appear.
+        dialogueText.text = message;
+        dialogueText.maxVisibleCharacters = 0;
 
-        foreach (char c in message)
+        // Force TMP to build its text info now so character counts are ready.
+        dialogueText.ForceMeshUpdate();
+
+        int totalVisibleCharacters = dialogueText.textInfo.characterCount;
+        int counter = 0;
+
+        while (counter <= totalVisibleCharacters)
         {
-            dialogueText.text += c;
+            dialogueText.maxVisibleCharacters = counter;
+            counter++;
             yield return new WaitForSeconds(1f / lettersPerSecond);
         }
 
@@ -163,7 +173,8 @@ public class AIforDialogue : MonoBehaviour
             if (dialogueAudioSource != null && dialogueAudioSource.isPlaying)
                 dialogueAudioSource.Stop();
 
-            dialogueText.text = activeDialogueSet.lines[currentMessage - 1].message;
+            // Text is already set in full by TypeText, so just reveal all of it
+            dialogueText.maxVisibleCharacters = dialogueText.textInfo.characterCount;
         }
         else
         {

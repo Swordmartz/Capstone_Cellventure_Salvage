@@ -28,6 +28,7 @@ public class EatSkill : MonoBehaviour
              "Enemies above this threshold cannot be eaten.")]
     public int eatHpThreshold = 30;
 
+
     [Header("Range")]
     [Tooltip("How far in front of the player to search for an eatable enemy.")]
     public float eatRange = 2f;
@@ -96,7 +97,10 @@ public class EatSkill : MonoBehaviour
         }
 
         if (anim != null)
+        {
             anim.SetTrigger("Eat"); // Adjust to SetBool(...) if your Animator uses a bool instead
+            anim.SetBool("IsNEating", true); // Tick before the eat itself happens
+        }
 
         EatTarget(bestTarget);
         return true;
@@ -152,7 +156,10 @@ public class EatSkill : MonoBehaviour
 
         enemyObj.SetActive(false);
     }
-
+    public void FinishNEating()
+    {
+        anim.SetBool("IsNEating", false);
+    }
     void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(1f, 0.2f, 0.2f, 0.4f);

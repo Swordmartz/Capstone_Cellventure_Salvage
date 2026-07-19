@@ -38,11 +38,43 @@ public class SpearMeleeAttack : MonoBehaviour
         return Vector3.forward;
     }
 
+    /// <summary>
+    /// Normal single attack — used by regular attack input. Respects the
+    /// melee cooldown and drives the "IsNSAttack" Animator bool.
+    /// Completely independent from PerformRapidAttackHit() below.
+    /// </summary>
     public void PerformAttack()
     {
         if (Time.time < lastMeleeTime + meleeCooldown) return;
         lastMeleeTime = Time.time;
 
+        DoAttackHit();
+
+        if (anim != null)
+            anim.SetBool("IsNSAttack", true);
+    }
+
+    /// <summary>
+    /// Rapid attack burst hit — used exclusively by RapidAttackStackUI's
+    /// burst loop. Respects the same melee cooldown as PerformAttack (so
+    /// damage can't be dealt faster than the weapon allows), but does NOT
+    /// touch "IsNSAttack" at all. RapidAttackStackUI owns "IsRAttacking"
+    /// separately, so the two animation states never overlap.
+    /// </summary>
+    public void PerformRapidAttackHit()
+    {
+        if (Time.time < lastMeleeTime + meleeCooldown) return;
+        lastMeleeTime = Time.time;
+
+        DoAttackHit();
+    }
+
+    /// <summary>
+    /// Shared hit-detection and damage logic used by both attack entry
+    /// points above. Contains no Animator or cooldown logic of its own.
+    /// </summary>
+    private void DoAttackHit()
+    {
         Vector3 attackDir = GetAttackDirection();
         Vector3 capsuleStart = transform.position;
         Vector3 capsuleEnd = transform.position + attackDir * attackRange;
@@ -63,8 +95,6 @@ public class SpearMeleeAttack : MonoBehaviour
 
         if (hitAtLeastOneEnemy)
             rapidAttackStack++;
-
-        anim.SetBool("IsNSAttack", true);
     }
 
     // Checks for EACH known enemy script type on the hit collider (or its parents)

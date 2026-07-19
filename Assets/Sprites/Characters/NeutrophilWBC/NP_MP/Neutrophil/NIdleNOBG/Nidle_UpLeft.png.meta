@@ -113,20 +113,20 @@ TextureImporter:
       name: Nidle_UpLeft_0
       rect:
         serializedVersion: 2
-        x: 75
-        y: 572
-        width: 420
-        height: 364
+        x: 83
+        y: 586
+        width: 402
+        height: 362
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 3998ee8161747e54b8d56d2a95f5c0f3
-      internalID: -652118153
+      spriteID: f8642394ee0254c46a008264c3cd319d
+      internalID: 995617823
       vertices: []
       indices: 
       edges: []
@@ -135,20 +135,20 @@ TextureImporter:
       name: Nidle_UpLeft_1
       rect:
         serializedVersion: 2
-        x: 567
-        y: 585
-        width: 420
-        height: 364
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 566
+        y: 584
+        width: 402
+        height: 362
+      alignment: 9
+      pivot: {x: 0.5130998, y: 0.4612086}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 2c867328c41809c42a019aaa74fc51fa
-      internalID: -2028872373
+      spriteID: 67a9a6fbcb8e2224a80493690e31979a
+      internalID: -1658682512
       vertices: []
       indices: 
       edges: []
@@ -157,20 +157,20 @@ TextureImporter:
       name: Nidle_UpLeft_2
       rect:
         serializedVersion: 2
-        x: 59
-        y: 62
-        width: 420
-        height: 364
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 73
+        y: 72
+        width: 402
+        height: 362
+      alignment: 9
+      pivot: {x: 0.44323632, y: 0.56788486}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 0533108abaf793e4b9433d721aa2e32d
-      internalID: -1306977611
+      spriteID: 62c88894c1490814383f586881ba3063
+      internalID: 107076269
       vertices: []
       indices: 
       edges: []
@@ -179,7 +179,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: b5f35dc19861625438863c9ced701e5c
+    spriteID: 820dbd02290cb554bb512b2a347a1571
     internalID: 0
     vertices: []
     indices: 
@@ -189,9 +189,9 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Nidle_UpLeft_0: -652118153
-      Nidle_UpLeft_1: -2028872373
-      Nidle_UpLeft_2: -1306977611
+      Nidle_UpLeft_0: 995617823
+      Nidle_UpLeft_1: -1658682512
+      Nidle_UpLeft_2: 107076269
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

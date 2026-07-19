@@ -110,37 +110,15 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Nidle_UpRight_0
-      rect:
-        serializedVersion: 2
-        x: 47
-        y: 587
-        width: 409
-        height: 345
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: f7018f4f363eacf45a2f85196ccac55a
-      internalID: -2133745865
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
       name: Nidle_UpRight_1
       rect:
         serializedVersion: 2
-        x: 528
-        y: 596
+        x: 530
+        y: 589
         width: 409
         height: 345
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -157,12 +135,12 @@ TextureImporter:
       name: Nidle_UpRight_2
       rect:
         serializedVersion: 2
-        x: 17
-        y: 77
+        x: 49
+        y: 584
         width: 409
         height: 345
-      alignment: 0
-      pivot: {x: 0, y: 0}
+      alignment: 9
+      pivot: {x: 0.50429183, y: 0.6017573}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -171,6 +149,28 @@ TextureImporter:
       bones: []
       spriteID: 161b40266710a12438bedad0c6f9db4f
       internalID: 1084537280
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nidle_UpRight_0
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 93
+        width: 409
+        height: 345
+      alignment: 9
+      pivot: {x: 0.5214587, y: 0.39824298}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4dd731b642de7b04a962b3a713319dc6
+      internalID: -2133745865
       vertices: []
       indices: 
       edges: []

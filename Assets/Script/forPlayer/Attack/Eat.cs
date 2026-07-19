@@ -13,6 +13,8 @@ public class MeleeAttack2 : MonoBehaviour
     private float lastMeleeTime = -999f;
     private PlayerMovementTry playerMovement;
 
+    public Animator anim;
+
     void Start()
     {
         playerMovement = GetComponent<PlayerMovementTry>();
@@ -23,6 +25,9 @@ public class MeleeAttack2 : MonoBehaviour
 
     public void PerformAttack()
     {
+        if (anim != null)
+            anim.SetBool("IsEating", true);
+
         if (Time.time < lastMeleeTime + meleeCooldown) return;
 
         lastMeleeTime = Time.time;
@@ -51,6 +56,10 @@ public class MeleeAttack2 : MonoBehaviour
                     WinConditionManager.Instance.ReportEnemyDefeated(hit.gameObject);
             }
         }
+    }
+    public void FinishMEat()
+    {
+        anim.SetBool("IsEating", false);
     }
 
     void OnDrawGizmosSelected()

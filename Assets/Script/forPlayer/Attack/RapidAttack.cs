@@ -39,6 +39,7 @@ public class RapidAttackStackUI : MonoBehaviour
 
     private bool isRapidAttacking = false;
 
+    public Animator anim;
     void Start()
     {
         if (stackSlider != null)
@@ -84,6 +85,9 @@ public class RapidAttackStackUI : MonoBehaviour
     {
         isRapidAttacking = true;
 
+        if (anim != null)
+            anim.SetBool("IsRAttacking", true);
+
         if (playerMovement != null)
             playerMovement.SetAttackLock(true);
 
@@ -109,7 +113,7 @@ public class RapidAttackStackUI : MonoBehaviour
 
         while (elapsed < rapidAttackDuration)
         {
-            spearAttack.PerformAttack();
+            spearAttack.PerformRapidAttackHit();
             FreezeEnemiesInRange();
 
             yield return new WaitForSeconds(rapidAttackInterval);
@@ -185,6 +189,11 @@ public class RapidAttackStackUI : MonoBehaviour
                     superAttackBar.AddCombo();
             }
         }
+    }
+
+    public void FisishRapidAttack()
+    {
+        anim.SetBool("IsRAttacking", false);
     }
 
     // Checks for EACH known enemy script type on the hit collider (or its
