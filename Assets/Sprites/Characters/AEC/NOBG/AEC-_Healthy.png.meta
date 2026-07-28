@@ -108,12 +108,78 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: AEC-_Healthy_0
+      rect:
+        serializedVersion: 2
+        x: 7
+        y: 242
+        width: 236
+        height: 252
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 25bbd5c0fbeabce4abd1e4f56281fac1
+      internalID: 871461641
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AEC-_Healthy_1
+      rect:
+        serializedVersion: 2
+        x: 252
+        y: 242
+        width: 236
+        height: 252
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 929424a7cb03af748a7381b8e2fdc57d
+      internalID: -1620062793
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AEC-_Healthy_2
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 0
+        width: 236
+        height: 252
+      alignment: 9
+      pivot: {x: 0.4962812, y: 0.48606887}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 73d9a7210a589324986d62c70f2b0b30
+      internalID: 1911938910
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 8d450cbfa6b780f4d8c6a18385a6a975
     internalID: 0
     vertices: []
     indices: 
@@ -122,7 +188,11 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      AEC-_Healthy_0: 871461641
+      AEC-_Healthy_1: -1620062793
+      AEC-_Healthy_2: 1911938910
+      AEC-_Healthy_3: 557941666
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
