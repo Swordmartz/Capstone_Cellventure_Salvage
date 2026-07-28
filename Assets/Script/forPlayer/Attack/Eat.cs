@@ -42,21 +42,49 @@ public class MeleeAttack2 : MonoBehaviour
 
         foreach (Collider hit in hits)
         {
+            // Infected cells can be eaten directly — being infected is enough,
+            // they don't need to be "dead" first the way a regular enemy does.
+            InfectedCell infectedCell = hit.GetComponent<InfectedCell>();
+            if (infectedCell != null && infectedCell.IsInfected)
+            {
+                EatTarget(hit.gameObject, InfectionManager.FoodType.InfectedCell);
+                continue;
+            }
+
             DetectionFSM enemy = hit.GetComponent<DetectionFSM>();
             if (enemy == null) continue;
 
             if (enemy.currentHealth <= 0 || enemy.currentState == DetectionFSM.EnemyState.Dead)
             {
-                hit.gameObject.SetActive(false);
-
-                // Tick IsDead now that the GameObject has been successfully disabled.
-                enemy.isDead = true;
-
-                if (WinConditionManager.Instance != null)
-                    WinConditionManager.Instance.ReportEnemyDefeated(hit.gameObject);
+                EatTarget(hit.gameObject, InfectionManager.FoodType.Enemy);
             }
         }
     }
+
+    /// <summary>
+    /// Shared "consume this target" logic: bumps the Infection meter, disables
+    /// the GameObject, and — if it also has a DetectionFSM (i.e. it's an
+    /// enemy, infected or not) — marks it dead and reports it to
+    /// WinConditionManager the same as before.
+    /// </summary>
+    private void EatTarget(GameObject target, InfectionManager.FoodType foodType)
+    {
+        if (InfectionManager.Instance != null)
+            InfectionManager.Instance.RegisterEaten(foodType);
+
+        target.SetActive(false);
+
+        DetectionFSM enemy = target.GetComponent<DetectionFSM>();
+        if (enemy != null)
+        {
+            // Tick IsDead now that the GameObject has been successfully disabled.
+            enemy.isDead = true;
+
+            if (WinConditionManager.Instance != null)
+                WinConditionManager.Instance.ReportEnemyDefeated(target);
+        }
+    }
+
     public void FinishMEat()
     {
         anim.SetBool("IsEating", false);

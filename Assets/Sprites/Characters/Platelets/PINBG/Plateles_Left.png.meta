@@ -113,12 +113,12 @@ TextureImporter:
       name: Plateles_Left_0
       rect:
         serializedVersion: 2
-        x: 526
-        y: 561
-        width: 371
-        height: 359
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+        x: 519
+        y: 524
+        width: 401
+        height: 412
+      alignment: 9
+      pivot: {x: 0.49124533, y: 0.42757216}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -135,12 +135,12 @@ TextureImporter:
       name: Plateles_Left_1
       rect:
         serializedVersion: 2
-        x: 521
-        y: 122
-        width: 371
-        height: 359
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+        x: 519
+        y: 83
+        width: 393
+        height: 416
+      alignment: 9
+      pivot: {x: 0.4866007, y: 0.42826864}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -157,12 +157,12 @@ TextureImporter:
       name: Plateles_Left_2
       rect:
         serializedVersion: 2
-        x: 119
-        y: 566
-        width: 371
-        height: 359
+        x: 96
+        y: 522
+        width: 399
+        height: 417
       alignment: 9
-      pivot: {x: 0.45741844, y: 0.5342261}
+      pivot: {x: 0.4530193, y: 0.43320104}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -179,10 +179,10 @@ TextureImporter:
       name: Plateles_Left_3
       rect:
         serializedVersion: 2
-        x: 117
-        y: 112
-        width: 371
-        height: 359
+        x: 96
+        y: 90
+        width: 402
+        height: 413
       alignment: 9
       pivot: {x: 0.4716123, y: 0.42665845}
       border: {x: 0, y: 0, z: 0, w: 0}

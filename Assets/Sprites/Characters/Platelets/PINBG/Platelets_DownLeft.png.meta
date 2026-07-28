@@ -113,12 +113,12 @@ TextureImporter:
       name: Platelets_DownLeft_0
       rect:
         serializedVersion: 2
-        x: 67
-        y: 527
-        width: 440
-        height: 426
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+        x: 72
+        y: 511
+        width: 428
+        height: 393
+      alignment: 9
+      pivot: {x: 0.4753928, y: 0.5178659}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -135,12 +135,12 @@ TextureImporter:
       name: Platelets_DownLeft_1
       rect:
         serializedVersion: 2
-        x: 65
-        y: 70
-        width: 440
-        height: 426
+        x: 74
+        y: 79
+        width: 423
+        height: 399
       alignment: 9
-      pivot: {x: 0.48404256, y: 0.46703643}
+      pivot: {x: 0.44254586, y: 0.493432}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -157,12 +157,12 @@ TextureImporter:
       name: Platelets_DownLeft_2
       rect:
         serializedVersion: 2
-        x: 513
-        y: 88
-        width: 440
-        height: 426
+        x: 524
+        y: 67
+        width: 394
+        height: 403
       alignment: 9
-      pivot: {x: 0.4880321, y: 0.50412047}
+      pivot: {x: 0.46575665, y: 0.5041204}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -180,11 +180,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 515
-        y: 511
-        width: 440
-        height: 426
+        y: 490
+        width: 436
+        height: 404
       alignment: 9
-      pivot: {x: 0.51196814, y: 0.46703643}
+      pivot: {x: 0.41937158, y: 0.48007098}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []

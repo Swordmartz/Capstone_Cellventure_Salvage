@@ -7,21 +7,26 @@ public class CharacterSwitchManager : MonoBehaviour
     public GameObject character1;
     public GameObject character2;
     public GameObject character3;
+    [Tooltip("Optional — leave empty if you only have 3 characters. If assigned, it's included in the switch cycle like the others.")]
+    public GameObject character4;
 
     [Header("Extra Objects (also toggled on switch)")]
     public GameObject extraObject1;
     public GameObject extraObject2;
     public GameObject extraObject3;
+    public GameObject extraObject4;
 
     [Header("Cameras (CM Cameras)")]
     public CinemachineCamera camera1;
     public CinemachineCamera camera2;
     public CinemachineCamera camera3;
+    public CinemachineCamera camera4;
 
     [Header("Timers")]
     public GameTimer missionTimer;
     public GameTimer missionTimer2;
     public GameTimer missionTimer3;
+    public GameTimer missionTimer4;
 
     [Header("Priority Settings")]
     public int activePriority = 10;
@@ -50,10 +55,15 @@ public class CharacterSwitchManager : MonoBehaviour
     {
         if (initialized) return;
 
-        characters = new GameObject[] { character1, character2, character3 };
-        extraObjects = new GameObject[] { extraObject1, extraObject2, extraObject3 };
-        cameras = new CinemachineCamera[] { camera1, camera2, camera3 };
-        timers = new GameTimer[] { missionTimer, missionTimer2, missionTimer3 };
+        // character4/extraObject4/camera4/missionTimer4 are optional — leaving
+        // them unassigned in the Inspector just means SwitchCharacter() cycles
+        // through the first 3 as before, since every array access below is
+        // already null-checked. Assign character4 to actually add a 4th slot
+        // to the cycle.
+        characters = new GameObject[] { character1, character2, character3, character4 };
+        extraObjects = new GameObject[] { extraObject1, extraObject2, extraObject3, extraObject4 };
+        cameras = new CinemachineCamera[] { camera1, camera2, camera3, camera4 };
+        timers = new GameTimer[] { missionTimer, missionTimer2, missionTimer3, missionTimer4 };
 
         initialized = true;
 
@@ -62,16 +72,27 @@ public class CharacterSwitchManager : MonoBehaviour
     }
 
     // Assign this method to your UI Button's OnClick() event, or call it from another script.
-    // Can be called unlimited times — cycles 1 -> 2 -> 3 -> 1 -> 2 -> 3 -> ...
+    // Can be called unlimited times — cycles 1 -> 2 -> 3 -> 4 -> 1 -> 2 -> 3 -> 4 -> ...
+    // (or 1 -> 2 -> 3 -> 1 -> ... if character4 is left unassigned — see note below)
     public void SwitchCharacter()
     {
         EnsureInitialized();
         int nextIndex = (activeIndex + 1) % characters.Length;
+
+        // Only the optional 4th slot gets skipped when unassigned. Slots 1-3
+        // always stay in the cycle regardless of whether their `character`
+        // field happens to be empty — camera/timer for that slot may still
+        // be fully wired up, and skipping them would be a behavior change
+        // from before character4 was added.
+        if (nextIndex == 3 && character4 == null)
+            nextIndex = (nextIndex + 1) % characters.Length;
+
         ApplySwitch(nextIndex);
     }
 
     // Optional: call this directly if you want a specific character
-    // e.g. SwitchToIndex(0) = character1, SwitchToIndex(1) = character2, SwitchToIndex(2) = character3
+    // e.g. SwitchToIndex(0) = character1, SwitchToIndex(1) = character2,
+    // SwitchToIndex(2) = character3, SwitchToIndex(3) = character4
     public void SwitchToIndex(int index)
     {
         EnsureInitialized();

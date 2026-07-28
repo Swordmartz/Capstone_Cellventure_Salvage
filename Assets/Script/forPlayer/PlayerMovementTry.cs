@@ -36,7 +36,19 @@ public class PlayerMovementTry : MonoBehaviour
     private Vector2 movementInput;
     private Vector3 targetVelocity;
 
+    // Optional — only needed if this GameObject also has a PlayerSpeedModifier
+    // component (e.g. for slow zones). Safe to leave the component off; the
+    // null check below just means speed stays unmodified.
+    private PlayerSpeedModifier speedModifier;
+
     public Vector3 lastInputDirection = Vector3.forward;
+
+    // ── Boost ────────────────────────────────────────────────────────────────
+    // Multiplies moveSpeed on top of speedModifier's own multiplier. Driven by
+    // BoostAbility (or anything else) — 1 = no change, 1.5 = +50% speed, etc.
+    // Left public so a boost script can just set it directly and restore it to
+    // 1f when the boost ends.
+    public float BoostMultiplier { get; set; } = 1f;
 
     // ── Attack Lock ──────────────────────────────────────────────────────────
     // When true, movement input is ignored and velocity is held still.
@@ -49,6 +61,7 @@ public class PlayerMovementTry : MonoBehaviour
         anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
+        speedModifier = GetComponent<PlayerSpeedModifier>();
     }
 
     void Start()
@@ -74,7 +87,10 @@ public class PlayerMovementTry : MonoBehaviour
             return;
         }
 
-        targetVelocity = new Vector3(movementInput.x, 0, movementInput.y) * moveSpeed;
+        float currentMoveSpeed = moveSpeed
+            * (speedModifier != null ? speedModifier.SpeedMultiplier : 1f)
+            * BoostMultiplier;
+        targetVelocity = new Vector3(movementInput.x, 0, movementInput.y) * currentMoveSpeed;
 
         // ✅ Track last movement direction for idle facing
         if (movementInput.sqrMagnitude > 0.01f)

@@ -12,6 +12,13 @@ public class PasserbyMultiCurvePath : MonoBehaviour
 
         [Header("Reset Inventory at this point")]
         public bool resetInventoryHere = false;
+
+        [Header("Infection")]
+        [Tooltip("If true, passing through this waypoint rolls a chance (Infection Chance below) of this passerby becoming infected.")]
+        public bool isInfected = false;
+
+        [Tooltip("If true, passing through this waypoint immediately cures any active infection (e.g. a wash station/clean zone on the route).")]
+        public bool curesInfectionHere = false;
     }
 
     [Header("Path Points")]
@@ -25,6 +32,12 @@ public class PasserbyMultiCurvePath : MonoBehaviour
     public SpriteRenderer spriteRenderer;
     public bool flipSpriteBasedOnDirection = true;
 
+    [Header("Infection")]
+    [Tooltip("Chance (0-1) of becoming infected each time an isInfected waypoint is reached. Only rolled if not already infected.")]
+    [Range(0f, 1f)] public float infectionChance = 0.3f;
+    [Tooltip("Sprite shown while infected. Reverts to the normal sprite only when actually cured (a curesInfectionHere waypoint) or eaten — it does not clear on its own.")]
+    public Sprite infectedSprite;
+
     [Header("References")]
     public Inventory passerbyInventory;
     public PasserbyItemPickup passerbyItemPickup;
@@ -33,10 +46,35 @@ public class PasserbyMultiCurvePath : MonoBehaviour
     private Vector3 lastPosition;
     private int lastWaypointIndex = -1;
 
+    private InfectedCell infectedCell;
+    private Sprite originalSprite;
+
+    private void Awake()
+    {
+        // Reuse the same InfectedCell component the eating/inflammation
+        // systems already understand — add one if this prefab doesn't have
+        // it yet, so infected passerbys are automatically eatable and count
+        // toward inflammation just like any other infected cell.
+        infectedCell = GetComponent<InfectedCell>();
+        if (infectedCell == null)
+            infectedCell = gameObject.AddComponent<InfectedCell>();
+
+        infectedCell.OnInfectionStateChanged += HandleInfectionStateChanged;
+    }
+
+    private void OnDestroy()
+    {
+        if (infectedCell != null)
+            infectedCell.OnInfectionStateChanged -= HandleInfectionStateChanged;
+    }
+
     private void Start()
     {
         if (spriteRenderer == null)
             spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+
+        if (spriteRenderer != null)
+            originalSprite = spriteRenderer.sprite;
 
         if (pathPoints != null && pathPoints.Length > 0 && pathPoints[0].point != null)
             transform.position = pathPoints[0].point.position;
@@ -101,7 +139,11 @@ public class PasserbyMultiCurvePath : MonoBehaviour
 
         PathPoint wp = pathPoints[index];
 
+        if (wp.isInfected)
+            TryTriggerInfection();
 
+        if (wp.curesInfectionHere)
+            infectedCell?.Cure();
 
         if (!wp.resetInventoryHere) return;
 
@@ -118,13 +160,40 @@ public class PasserbyMultiCurvePath : MonoBehaviour
         if (passerbyItemPickup != null)
         {
             passerbyItemPickup.ResetPickup();
-        
+
         }
         else
         {
             Debug.LogError("passerbyItemPickup is not assigned!");
         }
     }
+
+    /// <summary>
+    /// Rolls infectionChance and, on success, infects this passerby via its
+    /// InfectedCell component. No-ops if already infected — reaching another
+    /// isInfected waypoint doesn't stack or restart the timer early.
+    /// </summary>
+    private void TryTriggerInfection()
+    {
+        if (infectedCell == null || infectedCell.IsInfected) return;
+
+        if (Random.value <= infectionChance)
+            infectedCell.Infect();
+    }
+
+    /// <summary>
+    /// Swaps the sprite whenever InfectedCell's infection state changes —
+    /// whether that came from TryTriggerInfection above, a curesInfectionHere
+    /// waypoint, or something external entirely (getting eaten elsewhere).
+    /// There's no auto-clear timer: infection persists until something
+    /// actually cures or eats it.
+    /// </summary>
+    private void HandleInfectionStateChanged(bool infected)
+    {
+        if (spriteRenderer != null && infectedSprite != null)
+            spriteRenderer.sprite = infected ? infectedSprite : originalSprite;
+    }
+
     private float GetCurrentSpeed()
     {
         int targetIndex = Mathf.Clamp(Mathf.FloorToInt(progress) + 1, 0, pathPoints.Length - 1);

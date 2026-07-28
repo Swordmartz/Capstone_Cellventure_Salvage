@@ -109,7 +109,7 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RevealRadius: 8
+    - _RevealRadius: 10
     - _Smoothness: 1
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
@@ -123,10 +123,10 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.8980393, g: 0.5568628, b: 0.5254902, a: 1}
-    - _CameraPos: {r: 245.23747, g: 44.578053, b: 1520.6082, a: 0}
+    - _CameraPos: {r: 1347.14, g: 24.368906, b: 471.85455, a: 0}
     - _Color: {r: 0.8980393, g: 0.5568628, b: 0.5254902, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _PlayerPos: {r: 245.23746, g: 27.378052, b: 1526.6082, a: 0}
+    - _PlayerPos: {r: 1347.1544, g: 5.3733044, b: 480.29407, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _ViewDir: {r: 0, g: 0, b: 1, a: 0}
   m_BuildTextureStacks: []

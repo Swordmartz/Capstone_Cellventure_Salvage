@@ -26,41 +26,55 @@ public class SuperEat : MonoBehaviour
     {
         if (!superBar.IsFull) return;
 
-        List<DetectionFSM> deadEnemies = GetDeadEnemiesInRadius();
-        if (deadEnemies.Count == 0) return;
+        List<GameObject> targets = GetEatableTargetsInRadius();
+        if (targets.Count == 0) return;
 
         if (anim != null)
             anim.SetBool("Super", true);
 
-        StartCoroutine(SuckEnemies(deadEnemies));
+        StartCoroutine(SuckTargets(targets));
         superBar.ConsumeBar();
     }
 
-    private List<DetectionFSM> GetDeadEnemiesInRadius()
+    /// <summary>
+    /// Gathers everything within suckRadius that's currently eatable:
+    /// dead DetectionFSM enemies (original behavior), plus any InfectedCell
+    /// that's currently infected — infected cells don't need to be "dead"
+    /// first, being infected is enough.
+    /// </summary>
+    private List<GameObject> GetEatableTargetsInRadius()
     {
-        List<DetectionFSM> dead = new List<DetectionFSM>();
+        List<GameObject> targets = new List<GameObject>();
         Collider[] hits = Physics.OverlapSphere(transform.position, suckRadius, ~0, QueryTriggerInteraction.Collide);
 
         foreach (Collider hit in hits)
         {
+            InfectedCell infectedCell = hit.GetComponent<InfectedCell>();
+            if (infectedCell != null && infectedCell.IsInfected)
+            {
+                targets.Add(hit.gameObject);
+                continue;
+            }
+
             DetectionFSM enemy = hit.GetComponent<DetectionFSM>();
             if (enemy != null && enemy.currentState == DetectionFSM.EnemyState.Dead)
-                dead.Add(enemy);
+                targets.Add(hit.gameObject);
         }
 
-        return dead;
+        return targets;
     }
 
     public void FinishSuper()
     {
         anim.SetBool("Super", false);
     }
-    private IEnumerator SuckEnemies(List<DetectionFSM> enemies)
+
+    private IEnumerator SuckTargets(List<GameObject> targets)
     {
         isEating = true;
         float elapsed = 0f;
 
-        List<DetectionFSM> active = new List<DetectionFSM>(enemies);
+        List<GameObject> active = new List<GameObject>(targets);
 
         while (active.Count > 0 && elapsed < eatDuration)
         {
@@ -68,31 +82,23 @@ public class SuperEat : MonoBehaviour
 
             for (int i = active.Count - 1; i >= 0; i--)
             {
-                DetectionFSM enemy = active[i];
+                GameObject target = active[i];
 
-                if (enemy == null || !enemy.gameObject.activeSelf)
+                if (target == null || !target.activeSelf)
                 {
                     active.RemoveAt(i);
                     continue;
                 }
 
-                enemy.transform.position = Vector3.MoveTowards(
-                    enemy.transform.position,
+                target.transform.position = Vector3.MoveTowards(
+                    target.transform.position,
                     transform.position,
                     suckSpeed * Time.deltaTime
                 );
 
-                if (IsInsideCapsule(enemy.transform.position))
+                if (IsInsideCapsule(target.transform.position))
                 {
-                    enemy.gameObject.SetActive(false);
-
-                    // Tick IsDead now that this enemy has been successfully
-                    // disabled (eaten), then let WinConditionManager know.
-                    enemy.isDead = true;
-
-                    if (WinConditionManager.Instance != null)
-                        WinConditionManager.Instance.ReportEnemyDefeated(enemy.gameObject);
-
+                    EatTarget(target);
                     active.RemoveAt(i);
                 }
             }
@@ -101,6 +107,36 @@ public class SuperEat : MonoBehaviour
         }
 
         isEating = false;
+    }
+
+    /// <summary>
+    /// Shared "consume this target" logic: bumps the Infection meter (using
+    /// InfectedCell food type if this was an infected cell, Enemy otherwise),
+    /// disables the GameObject, and — if it also has a DetectionFSM — marks
+    /// it dead and reports it to WinConditionManager the same as before.
+    /// </summary>
+    private void EatTarget(GameObject target)
+    {
+        InfectedCell infectedCell = target.GetComponent<InfectedCell>();
+        InfectionManager.FoodType foodType = (infectedCell != null && infectedCell.IsInfected)
+            ? InfectionManager.FoodType.InfectedCell
+            : InfectionManager.FoodType.Enemy;
+
+        if (InfectionManager.Instance != null)
+            InfectionManager.Instance.RegisterEaten(foodType);
+
+        target.SetActive(false);
+
+        DetectionFSM enemy = target.GetComponent<DetectionFSM>();
+        if (enemy != null)
+        {
+            // Tick IsDead now that this enemy has been successfully
+            // disabled (eaten), then let WinConditionManager know.
+            enemy.isDead = true;
+
+            if (WinConditionManager.Instance != null)
+                WinConditionManager.Instance.ReportEnemyDefeated(target);
+        }
     }
 
     private bool IsInsideCapsule(Vector3 point)

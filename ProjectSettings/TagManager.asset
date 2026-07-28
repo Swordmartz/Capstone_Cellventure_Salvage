@@ -15,6 +15,7 @@ TagManager:
   - Sound
   - Waypoint
   - Nutrients
+  - RBC
   layers:
   - Default
   - TransparentFX
@@ -45,7 +46,7 @@ TagManager:
   - Healable
   - Minimap2
   - EC
-  - 
+  - Leaks
   - 
   - 
   m_SortingLayers:
