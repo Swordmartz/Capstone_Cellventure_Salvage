@@ -86,7 +86,15 @@ public class AI_TestTD : MonoBehaviour
         else if (sceneName == "Chapter 1 - IICE")
             StartCoroutine(dialogueSystem.DialogueSequenceIICE0());
         else if (sceneName == "Chapter2 - Ascariasis")
-            StartCoroutine(dialogueSystem.DialogueSequenceC2RBC());
+            StartCoroutine(dialogueSystem.DialogueSequenceC2RBCA());
+        else if (sceneName == "Chapter2 - Influenza")
+            StartCoroutine(dialogueSystem.DialogueSequenceC2RBCI());
+        else if (sceneName == "Chapter2 - Pneumonoccocal")
+            StartCoroutine(dialogueSystem.DialogueSequenceC2RBCP());
+        else if (sceneName == "Chapter2 - Dengue")
+            StartCoroutine(dialogueSystem.DialogueSequenceC2RBCD());
+        else if (sceneName == "Chapter2 - Malaria")
+            StartCoroutine(dialogueSystem.DialogueSequenceC2RBCM());
 
         UpdateCounterUI();
 
@@ -111,7 +119,15 @@ public class AI_TestTD : MonoBehaviour
             else if (sceneName == "Chapter 1 - IICE")
                 StartCoroutine(dialogueSystem.DialogueSequenceIICE0());
             else if (sceneName == "Chapter2 - Ascariasis")
-                StartCoroutine(dialogueSystem.DialogueSequenceC2RBC());
+                StartCoroutine(dialogueSystem.DialogueSequenceC2RBCA());
+            else if (sceneName == "Chapter2 - Influenza")
+                StartCoroutine(dialogueSystem.DialogueSequenceC2RBCI());
+            else if (sceneName == "Chapter2 - Pneumonoccocal")
+                StartCoroutine(dialogueSystem.DialogueSequenceC2RBCP());
+            else if (sceneName == "Chapter2 - Dengue")
+                StartCoroutine(dialogueSystem.DialogueSequenceC2RBCD());
+            else if (sceneName == "Chapter2 - Dengue")
+                StartCoroutine(dialogueSystem.DialogueSequenceC2RBCM());
 
             playerInTrigger = false;
         }

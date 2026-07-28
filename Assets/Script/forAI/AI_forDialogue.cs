@@ -2037,7 +2037,308 @@ public class AIforDialogue : MonoBehaviour
                 obj.SetActive(true);
         }
     }
-    public IEnumerator DialogueSequenceC2RBC()
+
+    //--------------Chapter2:Ascariasis-----------------------
+
+    public IEnumerator DialogueSequenceC2RBCA()
+    {
+        // 1️⃣ Disable the target object
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 2️⃣ Play dialogue index 0
+        if (dialogueSets.Count > 0)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[0].setName);
+            yield return new WaitUntil(() => dialogueFinished);
+
+            // Force disable immediately — ShowNextMessage just reactivated it
+            if (targetObject != null)
+                targetObject.SetActive(false);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 0 not found!");
+        }
+
+        // Let physics settle a frame before moving the player
+        yield return null;
+        yield return new WaitForFixedUpdate();
+
+        // 3️⃣ Teleport player to intro teleport target
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null && introTeleportTarget != null)
+        {
+            Rigidbody rb = playerObj.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.position = introTeleportTarget.position;
+            }
+            else
+            {
+                playerObj.transform.position = introTeleportTarget.position;
+            }
+            Debug.Log("Player teleported to " + introTeleportTarget.name);
+        }
+        else
+        {
+            Debug.LogWarning("Player or introTeleportTarget is missing!");
+        }
+
+        // 4️⃣ Keep target object disabled after teleport
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 5️⃣ Play dialogue index 1
+        if (dialogueSets.Count > 1)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[1].setName);
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 1 not found!");
+        }
+
+        // 6️⃣ Reactivate the target object
+        if (targetObject != null)
+            targetObject.SetActive(true);
+
+        // 7️⃣ Activate the mission timer
+        if (missionTimer != null)
+            missionTimer.ActivateTimer();
+    }
+
+    //--------------Chapter2:Influenza-----------------------
+    public IEnumerator DialogueSequenceC2RBCI()
+    {
+        // 1️⃣ Disable the target object
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 2️⃣ Play dialogue index 0
+        if (dialogueSets.Count > 0)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[0].setName);
+            yield return new WaitUntil(() => dialogueFinished);
+
+            // Force disable immediately — ShowNextMessage just reactivated it
+            if (targetObject != null)
+                targetObject.SetActive(false);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 0 not found!");
+        }
+
+        // Let physics settle a frame before moving the player
+        yield return null;
+        yield return new WaitForFixedUpdate();
+
+        // 3️⃣ Teleport player to intro teleport target
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null && introTeleportTarget != null)
+        {
+            Rigidbody rb = playerObj.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.position = introTeleportTarget.position;
+            }
+            else
+            {
+                playerObj.transform.position = introTeleportTarget.position;
+            }
+            Debug.Log("Player teleported to " + introTeleportTarget.name);
+        }
+        else
+        {
+            Debug.LogWarning("Player or introTeleportTarget is missing!");
+        }
+
+        // 4️⃣ Keep target object disabled after teleport
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 5️⃣ Play dialogue index 1
+        if (dialogueSets.Count > 1)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[1].setName);
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 1 not found!");
+        }
+
+        // 6️⃣ Reactivate the target object
+        if (targetObject != null)
+            targetObject.SetActive(true);
+
+        // 7️⃣ Activate the mission timer
+        if (missionTimer != null)
+            missionTimer.ActivateTimer();
+    }
+
+    //--------------Chapter2:Pneumonoccocal-----------------------
+    public IEnumerator DialogueSequenceC2RBCP()
+    {
+        // 1️⃣ Disable the target object
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 2️⃣ Play dialogue index 0
+        if (dialogueSets.Count > 0)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[0].setName);
+            yield return new WaitUntil(() => dialogueFinished);
+
+            // Force disable immediately — ShowNextMessage just reactivated it
+            if (targetObject != null)
+                targetObject.SetActive(false);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 0 not found!");
+        }
+
+        // Let physics settle a frame before moving the player
+        yield return null;
+        yield return new WaitForFixedUpdate();
+
+        // 3️⃣ Teleport player to intro teleport target
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null && introTeleportTarget != null)
+        {
+            Rigidbody rb = playerObj.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.position = introTeleportTarget.position;
+            }
+            else
+            {
+                playerObj.transform.position = introTeleportTarget.position;
+            }
+            Debug.Log("Player teleported to " + introTeleportTarget.name);
+        }
+        else
+        {
+            Debug.LogWarning("Player or introTeleportTarget is missing!");
+        }
+
+        // 4️⃣ Keep target object disabled after teleport
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 5️⃣ Play dialogue index 1
+        if (dialogueSets.Count > 1)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[1].setName);
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 1 not found!");
+        }
+
+        // 6️⃣ Reactivate the target object
+        if (targetObject != null)
+            targetObject.SetActive(true);
+
+        // 7️⃣ Activate the mission timer
+        if (missionTimer != null)
+            missionTimer.ActivateTimer();
+    }
+
+    //--------------Chapter2:Dengue-----------------------
+
+    public IEnumerator DialogueSequenceC2RBCD()
+    {
+        // 1️⃣ Disable the target object
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 2️⃣ Play dialogue index 0
+        if (dialogueSets.Count > 0)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[0].setName);
+            yield return new WaitUntil(() => dialogueFinished);
+
+            // Force disable immediately — ShowNextMessage just reactivated it
+            if (targetObject != null)
+                targetObject.SetActive(false);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 0 not found!");
+        }
+
+        // Let physics settle a frame before moving the player
+        yield return null;
+        yield return new WaitForFixedUpdate();
+
+        // 3️⃣ Teleport player to intro teleport target
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null && introTeleportTarget != null)
+        {
+            Rigidbody rb = playerObj.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.position = introTeleportTarget.position;
+            }
+            else
+            {
+                playerObj.transform.position = introTeleportTarget.position;
+            }
+            Debug.Log("Player teleported to " + introTeleportTarget.name);
+        }
+        else
+        {
+            Debug.LogWarning("Player or introTeleportTarget is missing!");
+        }
+
+        // 4️⃣ Keep target object disabled after teleport
+        if (targetObject != null)
+            targetObject.SetActive(false);
+
+        // 5️⃣ Play dialogue index 1
+        if (dialogueSets.Count > 1)
+        {
+            dialogueFinished = false;
+            TriggerDialogue(dialogueSets[1].setName);
+            yield return new WaitUntil(() => dialogueFinished);
+        }
+        else
+        {
+            Debug.LogWarning("Dialogue Set 1 not found!");
+        }
+
+        // 6️⃣ Reactivate the target object
+        if (targetObject != null)
+            targetObject.SetActive(true);
+
+        // 7️⃣ Activate the mission timer
+        if (missionTimer != null)
+            missionTimer.ActivateTimer();
+    }
+
+    //--------------Chapter2:Malaria-----------------------
+
+    public IEnumerator DialogueSequenceC2RBCM()
     {
         // 1️⃣ Disable the target object
         if (targetObject != null)
