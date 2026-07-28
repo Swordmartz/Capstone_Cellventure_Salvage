@@ -1,5 +1,6 @@
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.Splines;
 
 /// <summary>
@@ -47,6 +48,22 @@ public class RBCSplineSpriteSwitcher : MonoBehaviour
     [Tooltip("Sprite RBC switches to when BOTH infected AND deoxygenated are true. Takes priority over infectedSprite.")]
     [SerializeField] private Sprite deoxygenatedSprite;
 
+    [Header("Infection Timer")]
+    [Tooltip("How long (in seconds) RBC stays infected before spawning more malaria.")]
+    [SerializeField] private float infectionDuration = 5f;
+
+    [Tooltip("Malaria prefab(s) to spawn when the infection timer reaches 0. Must have a component that starts its own behavior on spawn (e.g. MalariaFSM).")]
+    [SerializeField] private GameObject malariaSpawnPrefab;
+
+    [Tooltip("Minimum number of malaria instances to spawn when the timer completes (inclusive).")]
+    [SerializeField] private int minSpawnCount = 1;
+
+    [Tooltip("Maximum number of malaria instances to spawn when the timer completes (inclusive).")]
+    [SerializeField] private int maxSpawnCount = 5;
+
+    [Tooltip("Random radius around this RBC's position that spawned malaria instances are scattered within.")]
+    [SerializeField] private float spawnRadius = 0.5f;
+
     private float currentT;
     private SpriteRenderer spriteRenderer;
 
@@ -58,6 +75,15 @@ public class RBCSplineSpriteSwitcher : MonoBehaviour
     // (as opposed to changes made through SetInfected()/SetDeoxygenated()/SwapSprite()).
     private bool lastDeoxygenated;
     private bool lastIsInfected;
+
+    // Counts down from infectionDuration while isInfected is true. When it
+    // reaches 0, SpawnMalaria() fires once and the timer stops until the
+    // next time this RBC becomes infected again.
+    private float infectionTimer;
+    private bool infectionTimerRunning;
+
+    /// <summary>Whether this RBC is currently infected.</summary>
+    public bool IsInfected => isInfected;
 
     private void Awake()
     {
@@ -73,9 +99,30 @@ public class RBCSplineSpriteSwitcher : MonoBehaviour
         // go through the setter methods, and refresh the sprite accordingly.
         if (deoxygenated != lastDeoxygenated || isInfected != lastIsInfected)
         {
+            // isInfected was toggled directly in the Inspector rather than via
+            // SetInfected() -> keep the infection timer in sync with it too.
+            if (isInfected != lastIsInfected)
+            {
+                SetInfectionTimerActive(isInfected);
+            }
+
             RefreshSpriteState();
             lastDeoxygenated = deoxygenated;
             lastIsInfected = isInfected;
+        }
+
+        if (infectionTimerRunning)
+        {
+            infectionTimer -= Time.deltaTime;
+            if (infectionTimer <= 0f)
+            {
+                infectionTimerRunning = false;
+                SpawnMalaria();
+
+                // RBC is consumed once it finishes spawning more malaria.
+                Destroy(gameObject);
+                return;
+            }
         }
 
         if (!HasValidSpline()) return;
@@ -95,6 +142,12 @@ public class RBCSplineSpriteSwitcher : MonoBehaviour
             {
                 transform.rotation = Quaternion.LookRotation(worldTangent, upVector);
             }
+        }
+
+        // Reached the end of the spline -> RBC exits the level, destroy it.
+        if (currentT >= 1f)
+        {
+            Destroy(gameObject);
         }
     }
 
@@ -140,13 +193,81 @@ public class RBCSplineSpriteSwitcher : MonoBehaviour
 
     /// <summary>
     /// Sets whether RBC is infected. Combined with `deoxygenated`, this determines
-    /// which override sprite (if any) is shown — see RefreshSpriteState().
+    /// which override sprite (if any) is shown — see RefreshSpriteState(). Also
+    /// starts/stops the infection timer that spawns more malaria on completion.
     /// </summary>
     public void SetInfected(bool infected)
     {
+        bool wasInfected = isInfected;
+
         isInfected = infected;
         lastIsInfected = infected;
         RefreshSpriteState();
+
+        if (infected != wasInfected)
+        {
+            SetInfectionTimerActive(infected);
+        }
+    }
+
+    /// <summary>
+    /// Starts (true) or stops (false) the infection countdown timer.
+    /// </summary>
+    private void SetInfectionTimerActive(bool active)
+    {
+        if (active)
+        {
+            infectionTimer = infectionDuration;
+            infectionTimerRunning = true;
+        }
+        else
+        {
+            infectionTimerRunning = false;
+        }
+    }
+
+    /// <summary>
+    /// Called automatically when the infection timer reaches 0. Spawns
+    /// spawnCount instances of malariaSpawnPrefab, scattered within spawnRadius
+    /// of this RBC's current position.
+    /// </summary>
+    private void SpawnMalaria()
+    {
+        if (malariaSpawnPrefab == null) return;
+
+        // UnityEngine.Random.Range's max is exclusive for ints, so +1 makes
+        // maxSpawnCount itself a possible result (i.e. truly inclusive 1-5).
+        int spawnCount = UnityEngine.Random.Range(minSpawnCount, maxSpawnCount + 1);
+
+        for (int i = 0; i < spawnCount; i++)
+        {
+            Vector3 offset = UnityEngine.Random.insideUnitSphere * spawnRadius;
+            offset.y = 0f; // keep spawns on the same horizontal plane as the RBC
+            Vector3 desiredPosition = transform.position + offset;
+
+            // Snap onto the actual walkable NavMesh surface before spawning.
+            // RBC follows a 3D spline, so its own position may not sit exactly
+            // on the baked NavMesh -- spawning slightly off it is what causes
+            // the new malaria's NavMeshAgent to jitter/float, since it fights
+            // every frame trying to reconcile an off-mesh starting position.
+            Vector3 spawnPosition = desiredPosition;
+            bool onMesh = NavMesh.SamplePosition(desiredPosition, out NavMeshHit navHit, spawnRadius + 2f, NavMesh.AllAreas);
+            if (onMesh)
+            {
+                spawnPosition = navHit.position;
+            }
+
+            GameObject instance = Instantiate(malariaSpawnPrefab, spawnPosition, Quaternion.identity);
+
+            // Explicitly warp the agent onto the sampled point too, as a safety
+            // net on top of the SamplePosition snap above -- Warp() correctly
+            // places a NavMeshAgent without it trying to path/interpolate there.
+            NavMeshAgent spawnedAgent = instance.GetComponent<NavMeshAgent>();
+            if (spawnedAgent != null && onMesh)
+            {
+                spawnedAgent.Warp(spawnPosition);
+            }
+        }
     }
 
     /// <summary>
@@ -178,6 +299,7 @@ public class RBCSplineSpriteSwitcher : MonoBehaviour
         currentT = 0f;
         isInfected = false;
         lastIsInfected = false;
+        SetInfectionTimerActive(false);
         SetDeoxygenated(false); // also calls RefreshSpriteState()
     }
 
