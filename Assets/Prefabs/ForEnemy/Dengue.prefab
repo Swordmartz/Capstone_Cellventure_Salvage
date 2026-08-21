@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 8281534048326184107}
   - component: {fileID: 6568796640009475015}
   - component: {fileID: -7932091805085379965}
+  - component: {fileID: -2134119251060784295}
   m_Layer: 8
   m_Name: Dengue
   m_TagString: Enemy
@@ -56,10 +57,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 1.8552551
-  m_Height: 3.924195
+  m_Radius: 1.4384003
+  m_Height: 4.0579667
   m_Direction: 1
-  m_Center: {x: -0.153656, y: 0.15455258, z: 0}
+  m_Center: {x: -0.18814087, y: -0.11690211, z: 0.004714966}
 --- !u!54 &3394497011402284935
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -102,10 +103,10 @@ MonoBehaviour:
   splineContainer: {fileID: 0}
   splineIndex: 0
   loopMode: 0
-  moveSpeed: 5
+  moveSpeed: 0
   alignToDirection: 1
   rotationSpeed: 10
-  maxHP: 10
+  maxHP: 20
   currentHP: 0
   doNotRespawnOnDeath: 1
   wanderRadius: 20
@@ -172,7 +173,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -1033245769, guid: c6d0529eed76f5a44afda0791274d10e, type: 3}
+  m_Sprite: {fileID: -650503715, guid: 041f5655c77b4244ab7ba6b327f50df2, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -194,9 +195,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6fdeecaf9fe80e4cbb99779fd10d3c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  direction: {x: 0, y: 1, z: 0}
+  direction: {x: 0, y: 500, z: -12.85}
   useLocalSpace: 1
-  lockYAxis: 1
+  lockYAxis: 0
   flip180: 0
 --- !u!195 &-7932091805085379965
 NavMeshAgent:
@@ -207,7 +208,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 8414227201896192552}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 2.5
+  m_Radius: 1.81
   m_Speed: 10
   m_Acceleration: 8
   avoidancePriority: 50
@@ -216,7 +217,29 @@ NavMeshAgent:
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
-  m_Height: 5
+  m_Height: 4.44
   m_BaseOffset: 2.5
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!95 &-2134119251060784295
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8414227201896192552}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: b2cb6c27a21ca1640bb16a035cd22ee3, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

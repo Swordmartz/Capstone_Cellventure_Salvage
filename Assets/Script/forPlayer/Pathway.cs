@@ -60,12 +60,21 @@ public class PasserbyMultiCurvePath : MonoBehaviour
             infectedCell = gameObject.AddComponent<InfectedCell>();
 
         infectedCell.OnInfectionStateChanged += HandleInfectionStateChanged;
+
+        // Register this passerby with RBCTracker so its population/infection
+        // counts (used by the win condition and the infection slider) include
+        // passerbys, not just spline-following RBCs.
+        RBCTracker.Instance?.RegisterRBC();
+        if (infectedCell.IsInfected)
+            RBCTracker.Instance?.RegisterInfection();
     }
 
     private void OnDestroy()
     {
         if (infectedCell != null)
             infectedCell.OnInfectionStateChanged -= HandleInfectionStateChanged;
+
+        RBCTracker.Instance?.RegisterRBCDeath(infectedCell != null && infectedCell.IsInfected);
     }
 
     private void Start()
@@ -186,12 +195,21 @@ public class PasserbyMultiCurvePath : MonoBehaviour
     /// whether that came from TryTriggerInfection above, a curesInfectionHere
     /// waypoint, or something external entirely (getting eaten elsewhere).
     /// There's no auto-clear timer: infection persists until something
-    /// actually cures or eats it.
+    /// actually cures or eats it. Also reports the change to RBCTracker so
+    /// the win condition/slider stay accurate.
     /// </summary>
     private void HandleInfectionStateChanged(bool infected)
     {
         if (spriteRenderer != null && infectedSprite != null)
             spriteRenderer.sprite = infected ? infectedSprite : originalSprite;
+
+        if (RBCTracker.Instance != null)
+        {
+            if (infected)
+                RBCTracker.Instance.RegisterInfection();
+            else
+                RBCTracker.Instance.RegisterCure();
+        }
     }
 
     private float GetCurrentSpeed()

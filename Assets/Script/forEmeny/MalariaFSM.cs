@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.AI;
 
 /// <summary>
-/// Simple two-state enemy FSM built on NavMeshAgent:
+/// Simple state enemy FSM built on NavMeshAgent:
 ///
 ///   Roam  -> wanders randomly within roamRadius of its spawn point, pausing
 ///            at each destination before picking a new one.
@@ -10,6 +10,9 @@ using UnityEngine.AI;
 ///            Physics.OverlapSphere on the given layer + tag), the agent
 ///            switches to chasing that target's position every frame and
 ///            does NOT give up once it starts chasing.
+///   Dead  -> HP has hit 0. All movement, detection and infection logic is
+///            frozen; the agent stops moving and nothing else runs until
+///            the object is reset (e.g. pulled back into the pool).
 ///
 /// Detection runs on its own timer (independent of the current state) so it
 /// keeps checking even while roaming, without doing an OverlapSphere every
@@ -23,11 +26,35 @@ public class MalariaFSM : MonoBehaviour
     private enum State
     {
         Roam,
-        Chase
+        Chase,
+        Dead
     }
 
     [Header("State (read-only, for debugging)")]
     [SerializeField] private State currentState = State.Roam;
+
+    [Header("Health")]
+    [Tooltip("Max HP this enemy starts with (also what it's restored to on activation reset, e.g. pooling).")]
+    [SerializeField] private int maxHealth = 3;
+
+    [Tooltip("Current HP, visible in the Inspector for debugging.")]
+    [SerializeField] private int currentHealth;
+
+    public bool IsDead => currentState == State.Dead;
+    public int CurrentHealth => currentHealth;
+    public int MaxHealth => maxHealth;
+
+    // Set true when hit by a projectile (see ProjectileBehaviour.OnTriggerEnter),
+    // mirroring InfluenzaFSM/pneumonococcalFSM's SetMarked() pattern. Purely a
+    // flag for other systems to read (e.g. UI, combo tracking) — doesn't affect
+    // this FSM's own behavior.
+    private bool isMarked;
+    public bool IsMarked => isMarked;
+
+    public void SetMarked(bool value)
+    {
+        isMarked = value;
+    }
 
     [Header("Roaming")]
     [Tooltip("How far from this enemy's spawn point it will wander.")]
@@ -109,6 +136,7 @@ public class MalariaFSM : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         roamOrigin = transform.position;
+        currentHealth = maxHealth;
     }
 
     private void OnEnable()
@@ -129,6 +157,12 @@ public class MalariaFSM : MonoBehaviour
                 targetRBC = null;
                 hasInfectedTarget = false;
                 isWaitingAtRoamPoint = false;
+                isMarked = false;
+
+                // Revive/restore full HP whenever this object is (re)activated,
+                // e.g. pulled fresh out of an object pool after a previous death.
+                currentHealth = maxHealth;
+                agent.isStopped = false;
 
                 // Re-anchor roaming around wherever this enemy actually was
                 // (re)placed, not wherever it happened to sit in the pool
@@ -147,6 +181,14 @@ public class MalariaFSM : MonoBehaviour
                 return;
             }
         }
+
+        // Dead enemies do nothing at all: no detection, no roaming/chasing,
+        // no infecting, and they are never auto-disabled or destroyed — they
+        // stay in the scene exactly where they died until something external
+        // (e.g. a pool manager) reactivates them. This check has to come
+        // before everything else below.
+        if (currentState == State.Dead)
+            return;
 
         // Detection keeps running independently of state, but once we're
         // chasing there's no need to keep scanning for a new target.
@@ -169,6 +211,65 @@ public class MalariaFSM : MonoBehaviour
                 UpdateChase();
                 break;
         }
+    }
+
+    // ---------------------------------------------------------------
+    // Health / Death
+    // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Applies damage to this enemy. Once HP reaches 0, it transitions to
+    /// State.Dead and Die() takes over — no further calls to this do anything.
+    /// </summary>
+    public void TakeDamage(int amount)
+    {
+        if (currentState == State.Dead || amount <= 0)
+            return;
+
+        currentHealth -= amount;
+
+        if (currentHealth <= 0)
+        {
+            currentHealth = 0;
+            Die();
+        }
+    }
+
+    /// <summary>
+    /// Instantly kills this enemy regardless of current HP.
+    /// </summary>
+    public void Kill()
+    {
+        if (currentState == State.Dead)
+            return;
+
+        currentHealth = 0;
+        Die();
+    }
+
+    private void Die()
+    {
+        currentState = State.Dead;
+
+        // Drop whatever target/chase data it had — nothing should reference
+        // this enemy as an active threat anymore.
+        target = null;
+        targetRBC = null;
+        hasInfectedTarget = false;
+        isWaitingAtRoamPoint = false;
+
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+
+        // Deliberately NOT calling SetActive(false) or Destroy() here — the
+        // corpse stays exactly where it is, immobile, until something external
+        // (e.g. a pool manager or level cleanup) decides to reclaim it.
+
+        // Hook animation/VFX/sound here, e.g.:
+        // animator.SetTrigger("Die");
     }
 
     // ---------------------------------------------------------------
@@ -337,7 +438,7 @@ public class MalariaFSM : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        Gizmos.color = Color.yellow;
+        Gizmos.color = currentState == State.Dead ? Color.red : Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
 
         Gizmos.color = new Color(0f, 1f, 0f, 0.25f);

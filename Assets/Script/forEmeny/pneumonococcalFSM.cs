@@ -40,7 +40,22 @@ public class pneumonococcalFSM : MonoBehaviour
     [Header("Health Settings")]
     public int maxHealth = 100;
     public int currentHealth;
-    public float deathDestroyDelay = 0f; // optional delay before removal (e.g. for a death animation)
+
+    [Header("Animation")]
+    [Tooltip("Optional. If assigned, the Animator's Dead bool is set to true the moment this enemy dies. " +
+             "If left empty, the script will try GetComponent<Animator>() at Awake.")]
+    [SerializeField] private Animator animator;
+
+    [Header("Marking")]
+    [Tooltip("Whether this enemy has been marked as a valid target (e.g. by a projectile hit or the player's mark ability). " +
+             "Mirrors DetectionFSM/InfluenzaFSM's isMarked so systems like SuperMove can treat all enemy types the same way.")]
+    public bool isMarked;
+
+    [Header("Star Reporting")]
+    [Tooltip("Optional. If assigned, this enemy's death reports one kill to ValuesForStar.ReportEnemyKilled(), " +
+             "which increments the WBC (EnemyKilled) count used by the star-rating formula. Leave empty if this " +
+             "enemy type shouldn't count toward the WBC score.")]
+    [SerializeField] private ValuesForStar valuesForStar;
 
     private NavMeshAgent agent;
     private Transform detectedTarget;
@@ -54,6 +69,9 @@ public class pneumonococcalFSM : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         currentHealth = maxHealth;
+
+        if (animator == null)
+            animator = GetComponent<Animator>();
     }
 
     void Start()
@@ -72,6 +90,13 @@ public class pneumonococcalFSM : MonoBehaviour
         wanderTimer = 0f;
         detectionTimer = 0f;
         stayTimer = 0f;
+
+        if (animator != null)
+            animator.SetBool("Dead", false);
+
+        // A reused/cloned enemy should never inherit a stale mark from
+        // whatever it was cloned/pooled from.
+        isMarked = false;
 
         if (agent != null)
         {
@@ -329,9 +354,19 @@ public class pneumonococcalFSM : MonoBehaviour
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
     }
 
+    // Death now leaves the enemy exactly where it died, doing nothing else -
+    // it no longer gets destroyed or removed from the scene. The agent is
+    // stopped in place (path cleared, movement halted) so it doesn't keep
+    // sliding/animating toward wherever it was last headed, and Update()
+    // bails out early via the isDead check at the top so no FSM logic
+    // (wander/move-to-target/stay/etc.) runs anymore. Mirrors InfluenzaFSM's
+    // Die().
     private void Die()
     {
         isDead = true;
+
+        if (animator != null)
+            animator.SetBool("Dead", true);
 
         if (currentState == State.Staying)
         {
@@ -344,15 +379,41 @@ public class pneumonococcalFSM : MonoBehaviour
             agent.isStopped = true;
         }
 
-        // Add extra death behavior here — play an animation, disable colliders,
-        // spawn loot, etc. — before it gets removed below.
-        Debug.Log(gameObject.name + " has died.");
+        // Report this kill to the star-rating tracker (WBC / EnemyKilled).
+        // Guarded so enemies without a valuesForStar assigned don't throw.
+        // Only ever reached via TakeDamage() once currentHealth <= 0, so this
+        // fires exactly once per enemy, same as InfluenzaFSM.
+        if (valuesForStar != null)
+        {
+            valuesForStar.ReportEnemyKilled();
+        }
 
-        // Death is permanent: destroy the object instead of returning it to the
-        // pool, so it can never be handed out by EnemySpawner.Spawn() again.
-        // (Cloning still goes through ReturnToPool(), so clones/originals that
-        // multiply remain reusable — only dying removes them for good.)
-        Destroy(gameObject, deathDestroyDelay);
+        // Add extra death behavior here — play an animation, disable colliders,
+        // spawn loot, etc.
+        Debug.Log(gameObject.name + " has died.");
+    }
+
+    // ------------------ Marking ------------------
+
+    // Whether this enemy is dead. Now that Die() leaves the corpse in place
+    // instead of destroying it, external systems (e.g. an "eat the dead"
+    // ability) can check this the same way they already check
+    // DetectionFSM.currentState/InfluenzaFSM.IsDead.
+    public bool IsDead => isDead;
+
+    // Marks/unmarks this enemy, mirroring DetectionFSM.SetMarked/isMarked and
+    // InfluenzaFSM.SetMarked so targeting systems (e.g. SuperMove, projectiles)
+    // can treat all enemy types the same way.
+    public void SetMarked(bool value)
+    {
+        isMarked = value;
+    }
+
+    // Clears this enemy's mark. Mirrors DetectionFSM/InfluenzaFSM's ClearMark()
+    // so callers don't need to special-case which enemy type they're clearing.
+    public void ClearMark()
+    {
+        isMarked = false;
     }
 
     // ------------------ Debug Visualization ------------------

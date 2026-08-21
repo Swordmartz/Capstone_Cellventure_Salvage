@@ -5,36 +5,33 @@ using UnityEngine.EventSystems;
 
 public class FloatingJoystick1 : Joystick
 {
-  
     protected override void Start()
     {
         base.Start();
-        background.gameObject.SetActive(false);
+        background.gameObject.SetActive(true);
     }
 
     void OnDisable()
     {
-        background.gameObject.SetActive(false);
-        // Use the base class method to reset
+        // Use the base class method to reset the knob, but keep background visible
         base.OnPointerUp(null);
     }
 
     void OnEnable()
     {
-        background.gameObject.SetActive(false);
+        background.gameObject.SetActive(true);
         base.OnPointerUp(null);
     }
 
     public override void OnPointerDown(PointerEventData eventData)
     {
-        background.anchoredPosition = ScreenPointToAnchoredPosition(eventData.position);
-        background.gameObject.SetActive(true);
+        // No repositioning — background stays where it's placed in the editor
         base.OnPointerDown(eventData);
     }
 
     public override void OnPointerUp(PointerEventData eventData)
     {
-        background.gameObject.SetActive(false);
+        // Don't hide the background anymore, just reset the knob
         base.OnPointerUp(eventData);
     }
 }

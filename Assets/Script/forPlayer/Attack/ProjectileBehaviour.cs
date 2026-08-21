@@ -59,15 +59,52 @@ public class ProjectileBehaviour : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        DetectionFSM enemy = other.GetComponent<DetectionFSM>();
-        if (enemy != null)
+        bool hitSomething = false;
+
+        DetectionFSM detectionEnemy = other.GetComponent<DetectionFSM>();
+        if (detectionEnemy != null)
         {
-            enemy.TakeDamage(damage);
-            enemy.SetTrapped(true);   // Stops the enemy and stays stopped until manually released elsewhere
-            enemy.MarkAsHit();
+            detectionEnemy.TakeDamage(damage);
+            detectionEnemy.SetTrapped(true);   // Stops the enemy and stays stopped until manually released elsewhere
+            detectionEnemy.MarkAsHit();
 
+            hitSomething = true;
+        }
+
+        InfluenzaFSM influenzaEnemy = other.GetComponent<InfluenzaFSM>();
+        if (influenzaEnemy != null)
+        {
+            influenzaEnemy.TakeDamage(damage);
+            // InfluenzaFSM has no trapped/stun state (no SetTrapped equivalent) —
+            // it just takes damage and gets marked, same as DetectionFSM's MarkAsHit().
+            influenzaEnemy.SetMarked(true);
+
+            hitSomething = true;
+        }
+
+        pneumonococcalFSM pneumonococcalEnemy = other.GetComponent<pneumonococcalFSM>();
+        if (pneumonococcalEnemy != null)
+        {
+            pneumonococcalEnemy.TakeDamage(damage);
+            // pneumonococcalFSM has no trapped/stun state (no SetTrapped equivalent) —
+            // it just takes damage and gets marked, same as InfluenzaFSM's SetMarked().
+            pneumonococcalEnemy.SetMarked(true);
+
+            hitSomething = true;
+        }
+
+        MalariaFSM malariaEnemy = other.GetComponent<MalariaFSM>();
+        if (malariaEnemy != null)
+        {
+            malariaEnemy.TakeDamage(damage);
+            malariaEnemy.SetMarked(true);
+
+            hitSomething = true;
+        }
+
+        if (hitSomething)
+        {
             comboCounter?.RegisterExternalHit();
-
             Destroy(gameObject);
         }
     }

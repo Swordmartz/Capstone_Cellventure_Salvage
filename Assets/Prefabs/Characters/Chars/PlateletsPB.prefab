@@ -186,6 +186,6 @@ MonoBehaviour:
   splineContainer: {fileID: 0}
   speed: 1
   loop: 0
-  destroyAtEnd: 0
+  destroyAtEnd: 1
   spriteRenderer: {fileID: 0}
   flipSpriteBasedOnDirection: 1

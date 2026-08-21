@@ -14,10 +14,11 @@ GameObject:
   - component: {fileID: 6025670777773554438}
   - component: {fileID: 8082030108403636306}
   - component: {fileID: 217031266736454500}
-  - component: {fileID: 4572910127522126268}
+  - component: {fileID: -3441439816020755575}
+  - component: {fileID: 496685511903911400}
   m_Layer: 8
   m_Name: Influenza
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -84,7 +85,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 116
   m_CollisionDetection: 0
 --- !u!136 &6025670777773554438
 CapsuleCollider:
@@ -105,10 +106,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 1
+  m_Radius: 0.7116308
+  m_Height: 2.4281101
   m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: -0.051516533, y: 0.71405506, z: 0}
 --- !u!114 &8082030108403636306
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -145,6 +146,8 @@ MonoBehaviour:
   maxHP: 100
   currentHP: 0
   isDead: 0
+  animator: {fileID: 496685511903911400}
+  isMarked: 0
   minCloneCount: 1
   maxCloneCount: 5
   cloneSpawnRadius: 3
@@ -204,7 +207,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -1033245769, guid: c6d0529eed76f5a44afda0791274d10e, type: 3}
+  m_Sprite: {fileID: 421156932, guid: b9903066501766c46a5df03c3dc9633a, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -214,7 +217,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &4572910127522126268
+--- !u!114 &-3441439816020755575
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -223,7 +226,32 @@ MonoBehaviour:
   m_GameObject: {fileID: 457197464924036210}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b73d5256789caf4f8cad159a74e61df, type: 3}
+  m_Script: {fileID: 11500000, guid: d6fdeecaf9fe80e4cbb99779fd10d3c3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpriteLooksCamera
-  targetCamera: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::BillboardToDirection
+  direction: {x: 209.8, y: 60000, z: -1912}
+  useLocalSpace: 0
+  lockYAxis: 0
+  flip180: 1
+--- !u!95 &496685511903911400
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 457197464924036210}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 0ad19eb5b299dce4ea4a2cfd3ed84544, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

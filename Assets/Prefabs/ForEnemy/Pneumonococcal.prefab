@@ -10,13 +10,14 @@ GameObject:
   m_Component:
   - component: {fileID: 6588344751434865610}
   - component: {fileID: 4959862740635789790}
-  - component: {fileID: 8759043991191584554}
   - component: {fileID: 2418024527612728777}
   - component: {fileID: 2922254731684074022}
-  - component: {fileID: 5513329577168534478}
-  m_Layer: 0
+  - component: {fileID: 4962924060648436984}
+  - component: {fileID: 1425250827008352575}
+  - component: {fileID: 2476364894938249597}
+  m_Layer: 8
   m_Name: Pneumonococcal
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -47,7 +48,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
-  m_Speed: 3.5
+  m_Speed: 0
   m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 120
@@ -59,29 +60,6 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
---- !u!136 &8759043991191584554
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3373121051463736803}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.70386505
-  m_Height: 1.8454494
-  m_Direction: 1
-  m_Center: {x: -0.20386505, y: 0.21885967, z: 0}
 --- !u!114 &2418024527612728777
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -110,6 +88,8 @@ MonoBehaviour:
   cloneSpawnRadius: 2
   maxHealth: 100
   currentHealth: 0
+  animator: {fileID: 2476364894938249597}
+  isMarked: 0
 --- !u!212 &2922254731684074022
 SpriteRenderer:
   serializedVersion: 2
@@ -159,7 +139,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -1033245769, guid: c6d0529eed76f5a44afda0791274d10e, type: 3}
+  m_Sprite: {fileID: 471449402, guid: a403a8f870d75764fa4678b78cbd75da, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -169,7 +149,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &5513329577168534478
+--- !u!114 &4962924060648436984
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -178,12 +158,58 @@ MonoBehaviour:
   m_GameObject: {fileID: 3373121051463736803}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 893f0ac9d8b87e24087604ef35766ce6, type: 3}
+  m_Script: {fileID: 11500000, guid: d6fdeecaf9fe80e4cbb99779fd10d3c3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BillboardToTarget
-  target: {fileID: 8503921588653157412}
+  m_EditorClassIdentifier: Assembly-CSharp::BillboardToDirection
+  direction: {x: -0.27, y: 593.97, z: -15.55}
+  useLocalSpace: 0
   lockYAxis: 0
   flip180: 0
+--- !u!136 &1425250827008352575
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3373121051463736803}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 2.0383663
+  m_Height: 4.1276417
+  m_Direction: 1
+  m_Center: {x: -0.055416107, y: 0.12774396, z: -0.13814735}
+--- !u!95 &2476364894938249597
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3373121051463736803}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 68ae37ddebda7e24dae6d5302b8ff159, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &7492710610381447329
 GameObject:
   m_ObjectHideFlags: 0
@@ -193,7 +219,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8503921588653157412}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: GOLA
   m_TagString: Untagged
   m_Icon: {fileID: 0}

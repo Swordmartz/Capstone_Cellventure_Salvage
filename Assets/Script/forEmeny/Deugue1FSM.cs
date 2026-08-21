@@ -68,6 +68,10 @@ public class EnemySplineFollower : MonoBehaviour
     [Tooltip("Extra buffer (world units) added on top of the relevant detection radius when searching for a valid NavMesh point to Warp() onto or path toward.")]
     [SerializeField] private float warpSearchBuffer = 1f;
 
+    [Header("Star Rating")]
+    [Tooltip("Optional manual assignment. If left empty, ValuesForStar.Instance is used at Awake so this doesn't have to be wired up per-prefab.")]
+    [SerializeField] private ValuesForStar valuesForStar;
+
     public event System.Action<EnemySplineFollower> OnDeath;
     public event System.Action<int, int> OnHealthChanged; // (current, max)
 
@@ -75,6 +79,12 @@ public class EnemySplineFollower : MonoBehaviour
     // the first time a pooled instance is activated (see CreateEnemy in
     // EnemySpawner, which activates the object right after Initialize()).
     private bool hasBegunRoam = false;
+
+    // Guards against ReportEnemyKilled() firing more than once for the same
+    // death, in case DeathState.Enter is ever re-entered (e.g. a future
+    // pooling change that re-runs Enter without a fresh Initialize()).
+    // Reset in Initialize() whenever this instance is (re)handed out.
+    private bool hasReportedDeath = false;
 
     // Cooldown gate for infection contact — see NotifyReachedPlayer().
     private float lastReachPlayerTime = -999f;
@@ -125,6 +135,11 @@ public class EnemySplineFollower : MonoBehaviour
                 playerTransform = playerObj.transform;
         }
 
+        // Fall back to the singleton if the field wasn't wired up in the Inspector,
+        // same pattern as playerTransform above.
+        if (valuesForStar == null)
+            valuesForStar = ValuesForStar.Instance;
+
         // Fall back to GetComponent if the field wasn't wired up in the Inspector.
         // Previously, a missing reference here caused every downstream check
         // (Awake setup, BeginRoamingFromSpawn, RoamState/ChaseState) to silently
@@ -158,6 +173,18 @@ public class EnemySplineFollower : MonoBehaviour
         currentState?.Tick(this);
     }
 
+    // Fires whenever this GameObject is deactivated for any reason — eaten
+    // (SetActive(false) from MeleeAttack2/SuperEat's EatTarget), returned to
+    // the pool, or manually disabled elsewhere. This is the ONLY place the
+    // inflammation source gets unregistered now: dying alone (DeathState)
+    // leaves the corpse active in the scene, so the inflammation bar should
+    // keep counting it as a source until it's actually removed/eaten.
+    private void OnDisable()
+    {
+        if (InflammationManager.Instance != null)
+            InflammationManager.Instance.UnregisterSource(this);
+    }
+
     /// <summary>
     /// Re-initializes this enemy for (re)use — the entry point a spawner or
     /// object pool should call every time an instance is handed out, since
@@ -177,6 +204,7 @@ public class EnemySplineFollower : MonoBehaviour
             maxHP = Mathf.Max(1, overrideMaxHP.Value);
 
         currentHP = maxHP;
+        hasReportedDeath = false;
 
         OnHealthChanged?.Invoke(currentHP, maxHP);
         BeginRoamingFromSpawn(spawnPositionOverride);
@@ -235,7 +263,9 @@ public class EnemySplineFollower : MonoBehaviour
     /// Called by a pool right before this instance is stashed away for reuse. Stops the
     /// current state cleanly and disables the NavMeshAgent so it doesn't keep pathing while
     /// inactive. Initialize() fully resets health/position/state when the instance is handed
-    /// back out, so this only needs to handle the "going to sleep" side.
+    /// back out, so this only needs to handle the "going to sleep" side. Unregistering from
+    /// InflammationManager happens in OnDisable() once the pool actually deactivates the
+    /// GameObject, not here.
     /// </summary>
     public void PrepareForPool()
     {
@@ -244,9 +274,6 @@ public class EnemySplineFollower : MonoBehaviour
 
         if (navAgent != null)
             navAgent.enabled = false;
-
-        if (InflammationManager.Instance != null)
-            InflammationManager.Instance.UnregisterSource(this);
     }
 
     private void ChangeState(IEnemyState newState)
@@ -297,6 +324,21 @@ public class EnemySplineFollower : MonoBehaviour
 
         if (InfectionManager.Instance != null)
             InfectionManager.Instance.RegisterEnemyReachedPlayer();
+    }
+
+    /// <summary>
+    /// Called once from DeathState.Enter when this enemy dies. Reports the kill to
+    /// whichever ValuesForStar reference is available — the Inspector-assigned one if
+    /// present, otherwise ValuesForStar.Instance as resolved (or re-resolved) here in
+    /// case Awake ran before the singleton existed in the scene.
+    /// </summary>
+    private void ReportDeathToValuesForStar()
+    {
+        if (valuesForStar == null)
+            valuesForStar = ValuesForStar.Instance;
+
+        if (valuesForStar != null)
+            valuesForStar.ReportEnemyKilled();
     }
 
     // ── NavMesh helpers ──────────────────────────────────────────────────
@@ -455,21 +497,36 @@ public class EnemySplineFollower : MonoBehaviour
         public void Exit(EnemySplineFollower enemy) { }
     }
 
-    /// <summary>0 HP. Fires OnDeath, then disables the GameObject.</summary>
+    /// <summary>
+    /// 0 HP. Fires OnDeath, then stops the enemy in place instead of
+    /// disabling the GameObject — the corpse stays visible/in the scene,
+    /// it just can no longer move (NavMeshAgent disabled, no further
+    /// wander/chase logic runs since Tick() here is a no-op). It also
+    /// deliberately does NOT unregister from InflammationManager — the
+    /// inflammation bar should keep counting this enemy as a source until
+    /// it's actually eaten or otherwise deactivated (see OnDisable()).
+    /// Also reports this kill to ValuesForStar (WBC / "enemies killed"
+    /// tally) exactly once per death, guarded by hasReportedDeath.
+    /// </summary>
     private class DeathState : IEnemyState
     {
         public void Enter(EnemySplineFollower enemy)
         {
             if (enemy.navAgent != null)
-                enemy.navAgent.enabled = false;
+            {
+                if (enemy.navAgent.isOnNavMesh)
+                    enemy.navAgent.ResetPath();
 
-            if (InflammationManager.Instance != null)
-                InflammationManager.Instance.UnregisterSource(enemy);
+                enemy.navAgent.enabled = false;
+            }
+
+            if (!enemy.hasReportedDeath)
+            {
+                enemy.hasReportedDeath = true;
+                enemy.ReportDeathToValuesForStar();
+            }
 
             enemy.OnDeath?.Invoke(enemy);
-
-            if (enemy.gameObject.activeSelf)
-                enemy.gameObject.SetActive(false);
         }
 
         public void Tick(EnemySplineFollower enemy) { }

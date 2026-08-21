@@ -42,6 +42,22 @@ public class InfluenzaFSM : MonoBehaviour
     [SerializeField] private float currentHP;
     [SerializeField] private bool isDead;
 
+    [Header("Animation")]
+    [Tooltip("Optional. If assigned, the Animator's Dead bool is set to true the moment this enemy dies. " +
+             "If left empty, the script will try GetComponent<Animator>() at Awake.")]
+    [SerializeField] private Animator animator;
+
+    [Header("Marking")]
+    [Tooltip("Whether this enemy has been marked as a valid target (e.g. by the player's mark ability). " +
+             "Mirrors DetectionFSM's isMarked so systems like SuperMove can treat both enemy types the same way.")]
+    public bool isMarked;
+
+    [Header("Star Reporting")]
+    [Tooltip("Optional. If assigned, this enemy's death reports one kill to ValuesForStar.ReportEnemyKilled(), " +
+             "which increments the WBC (EnemyKilled) count used by the star-rating formula. Leave empty if this " +
+             "enemy type shouldn't count toward the WBC score (e.g. a non-combat spawn).")]
+    [SerializeField] private ValuesForStar valuesForStar;
+
     [Header("Clone Settings")]
     [SerializeField] private int minCloneCount = 1;
     [SerializeField] private int maxCloneCount = 3;
@@ -118,6 +134,9 @@ public class InfluenzaFSM : MonoBehaviour
         _agent = GetComponent<NavMeshAgent>();
         _roamOrigin = transform.position;
         currentHP = maxHP;
+
+        if (animator == null)
+            animator = GetComponent<Animator>();
     }
 
     private void Start()
@@ -146,6 +165,13 @@ public class InfluenzaFSM : MonoBehaviour
 
     private void Update()
     {
+        // Dead enemies stay exactly where they died and do nothing else -
+        // no roaming, chasing, rerouting/detouring, or any other FSM logic.
+        // We deliberately return here instead of deactivating the
+        // GameObject, so the corpse remains visible/in-place in the scene.
+        if (isDead)
+            return;
+
         if (_isRerouting)
         {
             _rerouteWaitTimer -= Time.deltaTime;
@@ -429,6 +455,26 @@ public class InfluenzaFSM : MonoBehaviour
     // to decide whether it's safe to reroute the enemy's NavMeshAgent.
     public bool GoingDown => goingDown;
 
+    // Whether this enemy is dead. External systems (e.g. MeleeAttack2's
+    // "eat" logic) need to check this the same way they check
+    // DetectionFSM.currentHealth/currentState, since isDead itself is private.
+    public bool IsDead => isDead;
+
+    // Marks/unmarks this enemy, mirroring DetectionFSM's SetMarked/isMarked
+    // so targeting systems (e.g. SuperMove) can treat both enemy types the
+    // same way.
+    public void SetMarked(bool value)
+    {
+        isMarked = value;
+    }
+
+    // Clears this enemy's mark. Mirrors DetectionFSM.ClearMark() so callers
+    // don't need to special-case which enemy type they're clearing.
+    public void ClearMark()
+    {
+        isMarked = false;
+    }
+
     // Called by SolidObstacle right after it successfully reroutes this
     // enemy's NavMeshAgent around a wall. SolidObstacle's own push is always
     // a deterministic direction straight away from the wall (off the nearest
@@ -625,6 +671,9 @@ public class InfluenzaFSM : MonoBehaviour
         _hasDoneFirstMove = false;
         _roamOrigin = transform.position;
 
+        if (animator != null)
+            animator.SetBool("Dead", false);
+
         // Don't inherit a stale "true" value from Instantiate's serialized
         // snapshot of the source object. Without this, a clone could boot up
         // already considered "going down" indefinitely (since performFirstMove
@@ -638,6 +687,10 @@ public class InfluenzaFSM : MonoBehaviour
         _detourDestinationSet = false;
         _rerouteAwayDirection = Vector3.zero;
         _rerouteWaitTimer = 0f;
+
+        // A cloned enemy should never inherit the parent's mark - it's a
+        // separate, freshly-spawned target that hasn't been marked yet.
+        isMarked = false;
 
         EnterState(State.Roam);
     }
@@ -667,10 +720,32 @@ public class InfluenzaFSM : MonoBehaviour
         }
     }
 
+    // Death now leaves the enemy exactly where it died, doing nothing else -
+    // it no longer deactivates the GameObject. The agent is stopped in place
+    // (path cleared, movement halted) so it doesn't keep sliding/animating
+    // toward wherever it was last headed, and Update() bails out early via
+    // the isDead check at the top so no FSM logic (roam/chase/reroute/etc.)
+    // runs anymore.
     private void Die()
     {
         isDead = true;
-        gameObject.SetActive(false);
+
+        if (animator != null)
+            animator.SetBool("Dead", true);
+
+        if (_agent != null && _agent.isOnNavMesh)
+        {
+            _agent.ResetPath();
+            _agent.isStopped = true;
+        }
+
+        // Report this kill to the star-rating tracker (WBC / EnemyKilled).
+        // Guarded so enemies without a valuesForStar assigned (or scenes
+        // that don't use the star system) don't throw.
+        if (valuesForStar != null)
+        {
+            valuesForStar.ReportEnemyKilled();
+        }
     }
 
     private void OnDrawGizmosSelected()

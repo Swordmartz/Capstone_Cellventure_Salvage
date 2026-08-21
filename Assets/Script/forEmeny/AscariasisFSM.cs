@@ -7,7 +7,7 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Rigidbody))]
 public class EnemyPatrolFSM : MonoBehaviour
 {
-    private enum State { Patrol, MovingToNutrient, ReturningToPath, Dead }
+    private enum State { Patrol, MovingToNutrient, Eating, ReturningToPath, Dead }
 
     [Header("State (read-only, for debugging)")]
     [SerializeField] private State _state = State.Patrol;
@@ -31,7 +31,6 @@ public class EnemyPatrolFSM : MonoBehaviour
     [Header("Spline Guide")]
     public SplineContainer splineContainer;
     [SerializeField] private float patrolSpeed = 2f;
-    [SerializeField] private float rotationSpeed = 10f;
 
     private float _splineT;
     private float _splineLength;
@@ -49,6 +48,11 @@ public class EnemyPatrolFSM : MonoBehaviour
     [SerializeField] private float chaseSpeed = 4f;
     [SerializeField] private float reachDistance = 0.5f;
 
+    [Header("Eating")]
+    [Tooltip("How long (in seconds) the enemy stays put and eats after reaching a nutrient, before heading back to the spline.")]
+    [SerializeField] private float eatDuration = 2f;
+    private float _eatTimer;
+
     [Header("Returning To Path")]
     [SerializeField] private float returnSpeed = 4f;
     [SerializeField] private float returnReachDistance = 0.3f;
@@ -56,8 +60,30 @@ public class EnemyPatrolFSM : MonoBehaviour
     [SerializeField] private float postReturnCooldown = 2f;
     private float _cooldownTimer;
 
+    [Header("Animation")]
+    [Tooltip("Optional. If assigned, the Animator's LastX/LastY float parameters are updated " +
+             "with the current movement direction (X/Z plane). This does NOT rotate the transform - " +
+             "facing/rotation is left entirely to your billboard script.")]
+    [SerializeField] private Animator animator;
+
+    private static readonly int LastXHash = Animator.StringToHash("LastX");
+    private static readonly int LastYHash = Animator.StringToHash("LastY");
+
+    [Header("Hit Flash")]
+    [Tooltip("Optional. If assigned, this sprite briefly turns flashColor whenever the enemy takes damage. " +
+             "If left empty, the script will try GetComponentInChildren<SpriteRenderer>() at Start.")]
+    [SerializeField] private SpriteRenderer spriteRenderer;
+    [SerializeField] private Color flashColor = Color.red;
+    [SerializeField] private float flashDuration = 0.15f;
+    private Color _originalSpriteColor;
+    private Coroutine _flashRoutine;
+
     [Header("On Death")]
     public GameObject objectToActivateOnDeath;
+
+    [Header("Values For Star (WBC)")]
+    [Tooltip("ValuesForStar component to report into. Incremented by 1 the moment this enemy dies.")]
+    [SerializeField] private ValuesForStar valuesForStar;
 
     [Header("Slow / DoT (Super Attack)")]
     [Tooltip("Read-only: current movement speed multiplier. 1 = normal, 0.5 = half speed.")]
@@ -82,6 +108,12 @@ public class EnemyPatrolFSM : MonoBehaviour
     void Start()
     {
         currentHealth = maxHealth;
+
+        if (spriteRenderer == null)
+            spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+
+        if (spriteRenderer != null)
+            _originalSpriteColor = spriteRenderer.color;
 
         if (healthBar != null)
         {
@@ -126,6 +158,7 @@ public class EnemyPatrolFSM : MonoBehaviour
         {
             case State.Patrol: HandlePatrol(); break;
             case State.MovingToNutrient: HandleMovingToNutrient(); break;
+            case State.Eating: HandleEating(); break;
             case State.ReturningToPath: HandleReturningToPath(); break;
         }
     }
@@ -152,6 +185,8 @@ public class EnemyPatrolFSM : MonoBehaviour
         // Clamp back up to the floor instead of letting it go lower / killing.
         if (currentHealth < regularAttackDamageFloor)
             currentHealth = regularAttackDamageFloor;
+
+        FlashHit();
     }
 
     public void Heal(int amount)
@@ -201,6 +236,7 @@ public class EnemyPatrolFSM : MonoBehaviour
             if (_isDead) yield break;
 
             currentHealth -= damagePerTick;
+            FlashHit();
 
             if (currentHealth <= 0)
             {
@@ -215,14 +251,51 @@ public class EnemyPatrolFSM : MonoBehaviour
         _dotRoutine = null;
     }
 
+    /// <summary>
+    /// Briefly tints spriteRenderer flashColor, then restores the original color.
+    /// Safe to call repeatedly - each call restarts the flash from full color.
+    /// </summary>
+    void FlashHit()
+    {
+        if (spriteRenderer == null) return;
+
+        if (_flashRoutine != null)
+            StopCoroutine(_flashRoutine);
+
+        _flashRoutine = StartCoroutine(FlashHitRoutine());
+    }
+
+    private IEnumerator FlashHitRoutine()
+    {
+        spriteRenderer.color = flashColor;
+        yield return new WaitForSeconds(flashDuration);
+        spriteRenderer.color = _originalSpriteColor;
+        _flashRoutine = null;
+    }
+
     void Die()
     {
         _isDead = true;
         _state = State.Dead;
         StopAllCoroutines();
 
+        if (animator != null)
+            animator.SetBool("Death", true);
+
         if (objectToActivateOnDeath != null)
             objectToActivateOnDeath.SetActive(true);
+
+        // Report this kill to ValuesForStar's WBC field (EnemyKilled). This is
+        // the single place currentHealth reaching 0 / _state becoming Dead is
+        // handled, so no separate "if HP == 0 && state == Dead" check is needed
+        // elsewhere - Die() only ever runs once per enemy (guarded by the
+        // _isDead check at the top of TakeDamage/ApplyDamageOverTime/etc.,
+        // and DamageOverTimeRoutine only calls Die() a single time before
+        // returning).
+        if (valuesForStar != null)
+            valuesForStar.ReportEnemyKilled();
+        else
+            Debug.LogWarning($"[EnemyPatrolFSM] {name}: died but no valuesForStar is assigned - kill was not reported.");
 
         // Add death VFX/animation/disable logic here as needed.
     }
@@ -311,8 +384,29 @@ public class EnemyPatrolFSM : MonoBehaviour
 
         if (Vector3.Distance(transform.position, targetPos) <= reachDistance)
         {
+            if (animator != null)
+                animator.SetBool("Bitting", true);
+
             _targetNutrient.SetActive(false);
             _targetNutrient = null;
+            _eatTimer = eatDuration;
+            _state = State.Eating;
+        }
+    }
+
+    // =========================================================
+    // EATING
+    // =========================================================
+    // Enemy stays in place for eatDuration seconds (Bitting animation plays),
+    // then heads back to the spline.
+    void HandleEating()
+    {
+        _eatTimer -= Time.deltaTime;
+        if (_eatTimer <= 0f)
+        {
+            if (animator != null)
+                animator.SetBool("Bitting", false);
+
             _state = State.ReturningToPath;
         }
     }
@@ -373,17 +467,29 @@ public class EnemyPatrolFSM : MonoBehaviour
         if (dir.sqrMagnitude < 0.001f) return;
 
         transform.position += dir.normalized * moveSpeed * Time.deltaTime;
-        FaceTarget(destination, restrictY);
+        UpdateFacingAnimator(dir);
     }
 
-    void FaceTarget(Vector3 target, bool restrictY = true)
+    // Updates the Animator's LastX/LastY floats from the current movement
+    // direction on the X/Z plane. Only updates while actually moving - while
+    // idle the previous (non-zero) direction is kept, so idle animations still
+    // face the direction the enemy was last walking. This never touches
+    // transform.rotation; facing/rotation is entirely the billboard script's job.
+    void UpdateFacingAnimator(Vector3 dir)
     {
-        Vector3 dir = target - transform.position;
-        if (restrictY) dir.y = 0f;
-        if (dir.sqrMagnitude < 0.001f) return;
+        if (animator == null) return;
 
-        Quaternion targetRot = Quaternion.LookRotation(dir.normalized);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
+        Vector2 flatDir = new Vector2(dir.x, dir.z);
+        if (flatDir.sqrMagnitude < 0.0001f) return;
+
+        flatDir.Normalize();
+        animator.SetFloat(LastXHash, flatDir.x);
+        animator.SetFloat(LastYHash, flatDir.y);
+    }
+
+    public void FinihEat()
+    {
+        animator.SetBool("Bitting", false);
     }
 
     // =========================================================

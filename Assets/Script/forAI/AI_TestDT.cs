@@ -60,6 +60,8 @@ public class AI_TestTD : MonoBehaviour
     public bool enableMaxDeliveryEvent = false;
     [Tooltip("Assign any method(s) from any script here — runs once, the moment the delivery threshold is met.")]
     public UnityEvent onMaxDeliveryReached;
+    [Tooltip("Optional. If assigned, this GameObject will be activated once the delivery threshold is met.")]
+    public GameObject objectToActivateOnMaxDelivery;
     private bool maxDeliveryTriggered = false;
 
     [Header("Timer Reached Zero Event (Optional)")]
@@ -68,6 +70,13 @@ public class AI_TestTD : MonoBehaviour
     [Tooltip("Assign any method(s) from any script here — runs once, the moment missionTimer3 reaches 0.")]
     public UnityEvent onTimerReachedZero;
     private bool timerZeroTriggered = false;
+
+    [Header("Values For Star (RBC)")]
+    [Tooltip("ValuesForStar component to report into. The moment itemsDelivered equals " +
+             "deliveryThreshold, this sends itemsDelivered into ValuesForStar's RBC field " +
+             "(OxygenDeliver) - once, per attempt.")]
+    public ValuesForStar valuesForStar;
+    private bool oxygenDeliverReported = false;
 
     private float previousTime;
 
@@ -170,6 +179,7 @@ public class AI_TestTD : MonoBehaviour
         Debug.Log("[AI_TestTD] Items delivered: " + itemsDelivered);
 
         CheckMaxDeliveryReached();
+        CheckAndReportOxygenDeliver();
     }
 
     private void CheckMaxDeliveryReached()
@@ -182,7 +192,39 @@ public class AI_TestTD : MonoBehaviour
             maxDeliveryTriggered = true;
             Debug.Log("[AI_TestTD] Max delivery reached — invoking onMaxDeliveryReached event.");
             onMaxDeliveryReached?.Invoke();
+
+            // Optional: activate an additional GameObject when max delivery is reached.
+            // Leave unassigned in the Inspector to skip.
+            if (objectToActivateOnMaxDelivery != null)
+                objectToActivateOnMaxDelivery.SetActive(true);
         }
+    }
+
+    // Sends itemsDelivered into ValuesForStar's RBC field (OxygenDeliver) the
+    // moment itemsDelivered is EXACTLY equal to deliveryThreshold - only ever
+    // once per attempt, guarded by oxygenDeliverReported. Uses an exact
+    // equality check (not >=): if a single RegisterDelivery call can add more
+    // than 1 item and overshoot deliveryThreshold in one step, this will not
+    // fire that attempt. Call ResetOxygenDeliverReport() on level restart if
+    // you need this to be able to fire again.
+    private void CheckAndReportOxygenDeliver()
+    {
+        if (oxygenDeliverReported) return;
+        if (valuesForStar == null) return;
+
+        if (itemsDelivered == deliveryThreshold)
+        {
+            valuesForStar.ReportOxygenDeliver(itemsDelivered);
+            oxygenDeliverReported = true;
+            Debug.Log($"[AI_TestTD] itemsDelivered reached deliveryThreshold " +
+                $"({itemsDelivered}/{deliveryThreshold}) - reported to ValuesForStar.OxygenDeliver.");
+        }
+    }
+
+    /// <summary>Resets the one-shot RBC/OxygenDeliver report guard, e.g. when restarting the level/attempt.</summary>
+    public void ResetOxygenDeliverReport()
+    {
+        oxygenDeliverReported = false;
     }
 
     private void CheckTimerReachedZero()

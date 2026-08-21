@@ -91,6 +91,15 @@ public class RBCSplineSpriteSwitcher : MonoBehaviour
         baseSprite = spriteRenderer.sprite;
         lastDeoxygenated = deoxygenated;
         lastIsInfected = isInfected;
+
+        RBCTracker.Instance?.RegisterRBC();
+        if (isInfected)
+            RBCTracker.Instance?.RegisterInfection();
+    }
+
+    private void OnDestroy()
+    {
+        RBCTracker.Instance?.RegisterRBCDeath(isInfected);
     }
 
     private void Update()
@@ -100,10 +109,11 @@ public class RBCSplineSpriteSwitcher : MonoBehaviour
         if (deoxygenated != lastDeoxygenated || isInfected != lastIsInfected)
         {
             // isInfected was toggled directly in the Inspector rather than via
-            // SetInfected() -> keep the infection timer in sync with it too.
+            // SetInfected() -> keep the infection timer and RBCTracker in sync with it too.
             if (isInfected != lastIsInfected)
             {
                 SetInfectionTimerActive(isInfected);
+                ReportInfectionChange(isInfected);
             }
 
             RefreshSpriteState();
@@ -207,7 +217,23 @@ public class RBCSplineSpriteSwitcher : MonoBehaviour
         if (infected != wasInfected)
         {
             SetInfectionTimerActive(infected);
+            ReportInfectionChange(infected);
         }
+    }
+
+    /// <summary>
+    /// Tells RBCTracker about an infection state transition. Only call this
+    /// when isInfected has actually flipped - calling it without a real
+    /// change would over/under-count infectedRBC.
+    /// </summary>
+    private void ReportInfectionChange(bool nowInfected)
+    {
+        if (RBCTracker.Instance == null) return;
+
+        if (nowInfected)
+            RBCTracker.Instance.RegisterInfection();
+        else
+            RBCTracker.Instance.RegisterCure();
     }
 
     /// <summary>
@@ -297,6 +323,10 @@ public class RBCSplineSpriteSwitcher : MonoBehaviour
     public void ResetToStart()
     {
         currentT = 0f;
+
+        if (isInfected)
+            ReportInfectionChange(false);
+
         isInfected = false;
         lastIsInfected = false;
         SetInfectionTimerActive(false);

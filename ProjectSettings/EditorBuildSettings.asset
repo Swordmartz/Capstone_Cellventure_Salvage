@@ -29,6 +29,24 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Chapter 1 - IICE.unity
     guid: cce53a9aacbb0c845b6004157138437b
+  - enabled: 1
+    path: Assets/Scenes/CharacterSelect2.unity
+    guid: f4c545778aee6df4b937715768146386
+  - enabled: 1
+    path: Assets/Scenes/Chapter2 - Ascariasis.unity
+    guid: 5f67694047db2274a8113825e5f44612
+  - enabled: 1
+    path: Assets/Scenes/Chapter2 - Influenza.unity
+    guid: 5e91d3e0e2066ca4287edbc5e2d12190
+  - enabled: 1
+    path: Assets/Scenes/Chapter2 - Pneumonoccocal.unity
+    guid: b1163caabddae95498255c8e0293ce94
+  - enabled: 1
+    path: Assets/Scenes/Chapter2 - Dengue.unity
+    guid: a8a3ecb35c91ddf4ebd44e23db5f1e1b
+  - enabled: 1
+    path: Assets/Scenes/Chapter2 - Malaria.unity
+    guid: 0f6efb6269edca240ac5076d877dae4b
   m_configObjects:
     com.unity.adaptivePerformance.basic.provider_settings: {fileID: 11400000, guid: 0d3f4e05340d6274ab04857f14418b92, type: 2}
     com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: 0b278d173b927f741a3930f64bcbea4a, type: 2}

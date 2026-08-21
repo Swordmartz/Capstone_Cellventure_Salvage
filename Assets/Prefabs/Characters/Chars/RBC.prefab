@@ -151,11 +151,12 @@ MonoBehaviour:
   upVector: {x: 0, y: 1, z: 0}
   deoxygenated: 0
   isInfected: 0
-  infectedSprite: {fileID: -1911891152, guid: 456fdad0d2b1c104abd3bc0dc1a7d17e, type: 3}
-  deoxygenatedSprite: {fileID: -1033245769, guid: c6d0529eed76f5a44afda0791274d10e, type: 3}
+  infectedSprite: {fileID: -155832279, guid: 2af19334431e4274cb38b29fa733d871, type: 3}
+  deoxygenatedSprite: {fileID: 601633653, guid: 2af19334431e4274cb38b29fa733d871, type: 3}
   infectionDuration: 5
   malariaSpawnPrefab: {fileID: 2773587028250304126, guid: 2494781635283eb4d891e65e83a3b74b, type: 3}
-  spawnCount: 1
+  minSpawnCount: 1
+  maxSpawnCount: 5
   spawnRadius: 0.5
 --- !u!54 &-1465389019714178106
 Rigidbody:

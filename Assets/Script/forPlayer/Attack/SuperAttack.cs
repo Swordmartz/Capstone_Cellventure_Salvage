@@ -43,34 +43,99 @@ public class SuperMove : MonoBehaviour
     {
         if (!superBar.IsFull) return;
 
-        DetectionFSM target = GetNearestMarkedEnemy();
+        Component target = GetNearestKillableEnemy();
         if (target == null) return;
 
-        target.Die();
-        target.ClearMark();
+        // DetectionFSM enemies must be marked first, and use their own
+        // Die()/ClearMark() pair like before.
+        if (target is DetectionFSM detectionTarget)
+        {
+            if (!detectionTarget.isMarked) return;
+            detectionTarget.Die();
+            detectionTarget.ClearMark();
+        }
+        // InfluenzaFSM now has its own isMarked/ClearMark, mirroring
+        // DetectionFSM, so it's killed and un-marked the same way.
+        else if (target is InfluenzaFSM influenzaTarget)
+        {
+            if (!influenzaTarget.isMarked) return;
+            influenzaTarget.TakeDamage(float.MaxValue);
+            influenzaTarget.ClearMark();
+        }
+        // pneumonococcalFSM also has its own isMarked/ClearMark now, so it's
+        // killed and un-marked the same way — its TakeDamage takes an int,
+        // so int.MaxValue is used instead of float.MaxValue.
+        else if (target is pneumonococcalFSM pneumonococcalTarget)
+        {
+            if (!pneumonococcalTarget.isMarked) return;
+            pneumonococcalTarget.TakeDamage(int.MaxValue);
+            pneumonococcalTarget.ClearMark();
+        }
+        // MalariaFSM uses IsMarked/SetMarked instead of isMarked/ClearMark
+        // (property + setter rather than a public field + separate clear
+        // method), and Kill() instantly zeroes its HP and moves it straight
+        // to State.Dead rather than needing a huge TakeDamage() amount.
+        else if (target is MalariaFSM malariaTarget)
+        {
+            if (!malariaTarget.IsMarked) return;
+            malariaTarget.Kill();
+            malariaTarget.SetMarked(false);
+        }
+        else
+        {
+            // Not a recognized enemy type at all — nothing to kill.
+            return;
+        }
 
         UpdateUI();            // ← UI first
         superBar.ConsumeBar();  // ← then reset bar (won't fight UpdateUI)
         SwitchToNextCharacter();
     }
 
-    private DetectionFSM GetNearestMarkedEnemy()
+    // Finds the nearest killable enemy across all enemy types: DetectionFSM,
+    // InfluenzaFSM, pneumonococcalFSM, and MalariaFSM enemies must all be
+    // marked to count.
+    private Component GetNearestKillableEnemy()
     {
         Collider[] hits = Physics.OverlapSphere(transform.position, killRadius);
 
-        DetectionFSM nearest = null;
+        Component nearest = null;
         float nearestDist = Mathf.Infinity;
 
         foreach (Collider hit in hits)
         {
-            DetectionFSM enemy = hit.GetComponent<DetectionFSM>();
-            if (enemy == null || !enemy.isMarked) continue;
-
             float dist = Vector3.Distance(transform.position, hit.transform.position);
-            if (dist < nearestDist)
+            if (dist >= nearestDist) continue;
+
+            DetectionFSM detectionEnemy = hit.GetComponent<DetectionFSM>();
+            if (detectionEnemy != null && detectionEnemy.isMarked)
             {
+                nearest = detectionEnemy;
                 nearestDist = dist;
-                nearest = enemy;
+                continue;
+            }
+
+            InfluenzaFSM influenzaEnemy = hit.GetComponent<InfluenzaFSM>();
+            if (influenzaEnemy != null && influenzaEnemy.isMarked)
+            {
+                nearest = influenzaEnemy;
+                nearestDist = dist;
+                continue;
+            }
+
+            pneumonococcalFSM pneumonococcalEnemy = hit.GetComponent<pneumonococcalFSM>();
+            if (pneumonococcalEnemy != null && pneumonococcalEnemy.isMarked)
+            {
+                nearest = pneumonococcalEnemy;
+                nearestDist = dist;
+                continue;
+            }
+
+            MalariaFSM malariaEnemy = hit.GetComponent<MalariaFSM>();
+            if (malariaEnemy != null && malariaEnemy.IsMarked)
+            {
+                nearest = malariaEnemy;
+                nearestDist = dist;
             }
         }
 

@@ -38,9 +38,11 @@ public class SuperEat : MonoBehaviour
 
     /// <summary>
     /// Gathers everything within suckRadius that's currently eatable:
-    /// dead DetectionFSM enemies (original behavior), plus any InfectedCell
-    /// that's currently infected — infected cells don't need to be "dead"
-    /// first, being infected is enough.
+    /// dead DetectionFSM enemies, dead InfluenzaFSM enemies, dead
+    /// pneumonococcalFSM enemies, and dead MalariaFSM enemies (original
+    /// behavior, extended to cover the extra enemy types), plus any
+    /// InfectedCell that's currently infected — infected cells don't need
+    /// to be "dead" first, being infected is enough.
     /// </summary>
     private List<GameObject> GetEatableTargetsInRadius()
     {
@@ -58,6 +60,27 @@ public class SuperEat : MonoBehaviour
 
             DetectionFSM enemy = hit.GetComponent<DetectionFSM>();
             if (enemy != null && enemy.currentState == DetectionFSM.EnemyState.Dead)
+            {
+                targets.Add(hit.gameObject);
+                continue;
+            }
+
+            InfluenzaFSM influenzaEnemy = hit.GetComponent<InfluenzaFSM>();
+            if (influenzaEnemy != null && influenzaEnemy.IsDead)
+            {
+                targets.Add(hit.gameObject);
+                continue;
+            }
+
+            pneumonococcalFSM pneumonococcalEnemy = hit.GetComponent<pneumonococcalFSM>();
+            if (pneumonococcalEnemy != null && pneumonococcalEnemy.IsDead)
+            {
+                targets.Add(hit.gameObject);
+                continue;
+            }
+
+            MalariaFSM malariaEnemy = hit.GetComponent<MalariaFSM>();
+            if (malariaEnemy != null && malariaEnemy.IsDead)
                 targets.Add(hit.gameObject);
         }
 
@@ -112,8 +135,10 @@ public class SuperEat : MonoBehaviour
     /// <summary>
     /// Shared "consume this target" logic: bumps the Infection meter (using
     /// InfectedCell food type if this was an infected cell, Enemy otherwise),
-    /// disables the GameObject, and — if it also has a DetectionFSM — marks
-    /// it dead and reports it to WinConditionManager the same as before.
+    /// disables the GameObject, and — if it also has a DetectionFSM,
+    /// InfluenzaFSM, pneumonococcalFSM, or MalariaFSM — marks it dead
+    /// (DetectionFSM only; the others are already dead by the time they're
+    /// eatable) and reports it to WinConditionManager the same as before.
     /// </summary>
     private void EatTarget(GameObject target)
     {
@@ -134,6 +159,36 @@ public class SuperEat : MonoBehaviour
             // disabled (eaten), then let WinConditionManager know.
             enemy.isDead = true;
 
+            if (WinConditionManager.Instance != null)
+                WinConditionManager.Instance.ReportEnemyDefeated(target);
+        }
+
+        InfluenzaFSM influenzaEnemy = target.GetComponent<InfluenzaFSM>();
+        if (influenzaEnemy != null)
+        {
+            // InfluenzaFSM is only ever gathered as a target once it's
+            // already dead (see GetEatableTargetsInRadius), and IsDead has
+            // no public setter, so there's nothing to flip here — just
+            // report the kill to WinConditionManager same as DetectionFSM.
+            if (WinConditionManager.Instance != null)
+                WinConditionManager.Instance.ReportEnemyDefeated(target);
+        }
+
+        pneumonococcalFSM pneumonococcalEnemy = target.GetComponent<pneumonococcalFSM>();
+        if (pneumonococcalEnemy != null)
+        {
+            // Same story as InfluenzaFSM — already dead by the time it's
+            // eatable, and IsDead has no public setter, so just report it.
+            if (WinConditionManager.Instance != null)
+                WinConditionManager.Instance.ReportEnemyDefeated(target);
+        }
+
+        MalariaFSM malariaEnemy = target.GetComponent<MalariaFSM>();
+        if (malariaEnemy != null)
+        {
+            // Same story as InfluenzaFSM/pneumonococcalFSM — already dead by
+            // the time it's eatable, and IsDead has no public setter, so
+            // just report it.
             if (WinConditionManager.Instance != null)
                 WinConditionManager.Instance.ReportEnemyDefeated(target);
         }

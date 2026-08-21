@@ -15,9 +15,10 @@ GameObject:
   - component: {fileID: 963277407565110367}
   - component: {fileID: 1493429577703833900}
   - component: {fileID: 2938132232754927569}
-  m_Layer: 0
+  - component: {fileID: 2656680373299049874}
+  m_Layer: 8
   m_Name: Malaria
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -83,8 +84,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Radius: 1.8139648
+  m_Center: {x: 0, y: 0, z: 0.02999878}
 --- !u!212 &1399124991159554555
 SpriteRenderer:
   serializedVersion: 2
@@ -134,7 +135,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -1033245769, guid: c6d0529eed76f5a44afda0791274d10e, type: 3}
+  m_Sprite: {fileID: 1852547024, guid: 05fb8d72b4d0f674894ec896e52bb8a9, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -169,7 +170,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 2773587028250304126}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 2.5
+  m_Radius: 1.24
   m_Speed: 3.5
   m_Acceleration: 8
   avoidancePriority: 50
@@ -178,7 +179,7 @@ NavMeshAgent:
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
-  m_Height: 5
+  m_Height: 2.78
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
@@ -195,6 +196,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MalariaFSM
   currentState: 0
+  maxHealth: 3
+  currentHealth: 0
   roamRadius: 50
   roamWaitTime: 2
   roamSpeed: 6
@@ -208,3 +211,25 @@ MonoBehaviour:
   chaseRepathInterval: 0.15
   infectionDistance: 1
   disableOnInfect: 1
+--- !u!95 &2656680373299049874
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2773587028250304126}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 6f362bba26bf022439d2eed2ec46bc9b, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
