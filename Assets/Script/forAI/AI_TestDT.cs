@@ -170,6 +170,13 @@ public class AI_TestTD : MonoBehaviour
         {
             firstDeliverySkipped = true;
             Debug.Log("[AI_TestTD] First delivery ignored — playing IRB9 dialogue.");
+
+            if (missionTimer != null)
+            {
+                missionTimer.ActivateTimer();
+                Debug.Log("[AI_TestTD] missionTimer started after first (ignored) delivery.");
+            }
+
             StartCoroutine(dialogueSystem.DialogueSequenceIRB9());
             return;
         }

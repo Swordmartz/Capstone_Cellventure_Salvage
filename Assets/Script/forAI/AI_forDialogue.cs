@@ -249,18 +249,18 @@ public class AIforDialogue : MonoBehaviour
         // Step 4: Reactivate target object and line
         if (targetGameObject != null) targetGameObject.SetActive(true);
         if (line != null) line.SetActive(true);
-
-        // Step 5: Activate mission timer
-        if (missionTimer != null)
-            missionTimer.ResumeTimer();
     }
 
 
 
     public IEnumerator DialogueSequence1IRBC()
     {
+        bool timerWasActive = false;
         if (missionTimer != null)
+        {
+            timerWasActive = missionTimer.timerActive;
             missionTimer.StopTimer();
+        }
         // 1️⃣ Reset joystick input BEFORE disabling the GameObject
         if (targetGameObject != null)
         {
@@ -306,7 +306,9 @@ public class AIforDialogue : MonoBehaviour
         if (targetGameObject != null)
             targetGameObject.SetActive(true);
 
-        if (missionTimer != null)
+        // Restore the timer to whatever state it was in before this method touched it:
+        // if it was paused already, leave it paused; if it was running, resume it.
+        if (missionTimer != null && timerWasActive)
             missionTimer.ResumeTimer();
     }
     public IEnumerator DialogueSequence2IRBC()
@@ -1494,8 +1496,12 @@ public class AIforDialogue : MonoBehaviour
     }
     public IEnumerator DialogueSequenceIRBCTPA()
     {
+        bool timerWasActive = false;
         if (missionTimer != null)
+        {
+            timerWasActive = missionTimer.timerActive;
             missionTimer.StopTimer();
+        }
 
         if (targetGameObject != null)
         {
@@ -1530,14 +1536,19 @@ public class AIforDialogue : MonoBehaviour
         if (targetObject != null)
             targetObject.SetActive(true);
 
-        if (missionTimer != null)
+        // Restore the timer to whatever state it was in before this method touched it:
+        // if it was paused already, leave it paused; if it was running, resume it.
+        if (missionTimer != null && timerWasActive)
             missionTimer.ResumeTimer();
-
     }
     public IEnumerator DialogueSequenceIRBC05()
     {
+        bool timerWasActive = false;
         if (missionTimer != null)
+        {
+            timerWasActive = missionTimer.timerActive;
             missionTimer.StopTimer();
+        }
 
         if (targetGameObject != null)
         {
@@ -1573,14 +1584,19 @@ public class AIforDialogue : MonoBehaviour
         if (targetObject != null)
             targetObject.SetActive(true);
 
-        if (missionTimer != null)
+        // Restore the timer to whatever state it was in before this method touched it:
+        // if it was paused already, leave it paused; if it was running, resume it.
+        if (missionTimer != null && timerWasActive)
             missionTimer.ResumeTimer();
-
     }
     public IEnumerator DialogueSequenceIRB5()
     {
+        bool timerWasActive = false;
         if (missionTimer != null)
+        {
+            timerWasActive = missionTimer.timerActive;
             missionTimer.StopTimer();
+        }
 
         if (targetGameObject != null)
         {
@@ -1615,14 +1631,20 @@ public class AIforDialogue : MonoBehaviour
         if (targetObject != null)
             targetObject.SetActive(true);
 
-        if (missionTimer != null)
+        // Restore the timer to whatever state it was in before this method touched it:
+        // if it was paused already, leave it paused; if it was running, resume it.
+        if (missionTimer != null && timerWasActive)
             missionTimer.ResumeTimer();
     }
 
     public IEnumerator DialogueSequenceIRB66()
     {
+        bool timerWasActive = false;
         if (missionTimer != null)
+        {
+            timerWasActive = missionTimer.timerActive;
             missionTimer.StopTimer();
+        }
 
         if (targetGameObject != null)
         {
@@ -1657,14 +1679,20 @@ public class AIforDialogue : MonoBehaviour
         if (targetObject != null)
             targetObject.SetActive(true);
 
-        if (missionTimer != null)
+        // Restore the timer to whatever state it was in before this method touched it:
+        // if it was paused already, leave it paused; if it was running, resume it.
+        if (missionTimer != null && timerWasActive)
             missionTimer.ResumeTimer();
     }
 
     public IEnumerator DialogueSequenceIRB7()
     {
+        bool timerWasActive = false;
         if (missionTimer != null)
+        {
+            timerWasActive = missionTimer.timerActive;
             missionTimer.StopTimer();
+        }
 
         if (targetGameObject != null)
         {
@@ -1701,14 +1729,20 @@ public class AIforDialogue : MonoBehaviour
         else
             Debug.LogWarning("menuGameObject is not assigned!");
 
-        if (missionTimer != null)
+        // Restore the timer to whatever state it was in before this method touched it:
+        // if it was paused already, leave it paused; if it was running, resume it.
+        if (missionTimer != null && timerWasActive)
             missionTimer.ResumeTimer();
     }
 
     public IEnumerator DialogueSequenceIRB8()
     {
+        bool timerWasActive = false;
         if (missionTimer != null)
+        {
+            timerWasActive = missionTimer.timerActive;
             missionTimer.StopTimer();
+        }
 
         if (targetGameObject != null)
         {
@@ -1743,7 +1777,9 @@ public class AIforDialogue : MonoBehaviour
         if (targetObject != null)
             targetObject.SetActive(true);
 
-        if (missionTimer != null)
+        // Restore the timer to whatever state it was in before this method touched it:
+        // if it was paused already, leave it paused; if it was running, resume it.
+        if (missionTimer != null && timerWasActive)
             missionTimer.ResumeTimer();
     }
 
@@ -1790,8 +1826,12 @@ public class AIforDialogue : MonoBehaviour
     }
     public IEnumerator DialogueSequenceIRB10()
     {
+        bool timerWasActive = false;
         if (missionTimer != null)
+        {
+            timerWasActive = missionTimer.timerActive;
             missionTimer.StopTimer();
+        }
 
         // 1️⃣ Disable the target GameObject
         if (targetGameObject != null)
@@ -1827,7 +1867,9 @@ public class AIforDialogue : MonoBehaviour
         if (targetGameObject != null)
             targetGameObject.SetActive(true);
 
-        if (missionTimer != null)
+        // Restore the timer to whatever state it was in before this method touched it:
+        // if it was paused already, leave it paused; if it was running, resume it.
+        if (missionTimer != null && timerWasActive)
             missionTimer.ResumeTimer();
     }
     public IEnumerator DialogueSequence0IWBCE()

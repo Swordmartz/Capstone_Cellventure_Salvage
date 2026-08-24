@@ -2,10 +2,42 @@ using UnityEngine;
 
 public class SettingsButtonManager : MonoBehaviour
 {
-    [SerializeField] MainMenuManager.SettingButtons _Buttontype;
+    [SerializeField]
+    private MainMenuManager.SettingButtons _Buttontype;
+
 
     public void ButtonClicked()
     {
-        MainMenuManager._.SettingsButtonClicked(_Buttontype);
+        Debug.Log(
+            "[SettingsButtonManager] Button clicked: " +
+            _Buttontype
+        );
+
+
+        MainMenuManager manager =
+            MainMenuManager.Instance;
+
+
+        if (manager == null)
+        {
+            Debug.LogError(
+                "[SettingsButtonManager] " +
+                "MainMenuManager does not exist!"
+            );
+
+            return;
+        }
+
+
+        Debug.Log(
+            "[SettingsButtonManager] " +
+            "Found MainMenuManager: " +
+            manager.gameObject.name
+        );
+
+
+        manager.SettingsButtonClicked(
+            _Buttontype
+        );
     }
 }

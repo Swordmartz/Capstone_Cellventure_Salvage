@@ -81,6 +81,8 @@ public class Item : MonoBehaviour
     public float fadeOutDuration = 1f;
     [Tooltip("How long the screen takes to fade back in after the video finishes.")]
     public float fadeInDuration = 1f;
+    [Tooltip("Delay before the fade actually starts (passed straight through to RFadeManager.DoFade's delayBfade parameter). Applies to both the fade-out and the fade-in. Defaults to 0 (no delay).")]
+    public float fadeDelay = 0f;
 
     [Header("Teleport Cutscenes")]
     [Tooltip("If disabled, no cutscene video will play during the teleport.")]
@@ -95,6 +97,17 @@ public class Item : MonoBehaviour
     public VideoClip muscleVideoClip;
     [Tooltip("Video clip played when teleporting to the Heart.")]
     public VideoClip heartVideoClip;
+
+    [Header("Teleport Target (Execute) Fade & Cutscene")]
+    [Tooltip("If enabled, teleporting via Execute()'s teleportTarget will use the same fade-out, " +
+             "cutscene video, and timer-pause sequence as the Brain/Muscle/Heart buttons - the " +
+             "player is teleported while the video plays, then the screen fades back in and the " +
+             "game timer resumes. If disabled, the teleportTarget teleport happens instantly with " +
+             "no fade/video, exactly as before.")]
+    public bool useFadeAndVideoOnTeleportTarget = false;
+    [Tooltip("Video clip played while teleporting via teleportTarget. Only used if " +
+             "useFadeAndVideoOnTeleportTarget is enabled (and useVideoOnTeleport is also enabled).")]
+    public VideoClip teleportTargetVideoClip;
 
     [Header("Game Timer")]
     [Tooltip("Optional. If assigned, this timer is stopped the moment the cutscene/teleport " +
@@ -178,7 +191,8 @@ public class Item : MonoBehaviour
     /// Fades the screen out, plays the cutscene video, teleports the player (and secondary
     /// camera) while the video plays, then stops the video and fades the screen back in.
     /// The assigned gameTimer (if any) is paused for the full duration of this sequence and
-    /// resumed right at the end.
+    /// resumed right at the end. Used by the Brain/Muscle/Heart buttons, and also reused by
+    /// Execute() for the teleportTarget teleport when useFadeAndVideoOnTeleportTarget is enabled.
     /// </summary>
     private IEnumerator TeleportWithFadeAndVideo(Transform playerDestination, Transform camDestination, float orthoSize, VideoClip cutsceneClip)
     {
@@ -199,8 +213,17 @@ public class Item : MonoBehaviour
         {
             if (fadeManager != null)
             {
-                fadeManager.DoFade(0f, 1f, fadeOutDuration, 0f);
-                yield return new WaitForSeconds(fadeOutDuration);
+                // Make sure the fade canvas is at its default (high) sort order BEFORE the
+                // fade-out starts, so it's guaranteed to render above other UI regardless of
+                // whatever sort order it happens to have sitting in the Inspector. It only
+                // gets dropped later, right before the cutscene video plays.
+                if (fadeCanvas != null)
+                {
+                    fadeCanvas.sortingOrder = fadeSortOrderDefault;
+                }
+
+                fadeManager.DoFade(0f, 1f, fadeOutDuration, fadeDelay);
+                yield return new WaitForSeconds(fadeDelay + fadeOutDuration);
             }
             else
             {
@@ -270,7 +293,7 @@ public class Item : MonoBehaviour
         // 5) Fade the screen back in now that the teleport/video is done (optional).
         if (useFadeOnTeleport && fadeManager != null)
         {
-            fadeManager.DoFade(1f, 0f, fadeInDuration, 0f);
+            fadeManager.DoFade(1f, 0f, fadeInDuration, fadeDelay);
         }
 
         // 6) Resume the timer now that the sequence is fully done (optional).
@@ -320,10 +343,22 @@ public class Item : MonoBehaviour
             if (optionalObjectToDisable != null)
                 optionalObjectToDisable.SetActive(false);
 
-            TeleportPlayerToPosition(teleportTarget);
+            if (useFadeAndVideoOnTeleportTarget)
+            {
+                // Fades out, plays teleportTargetVideoClip, teleports the player mid-video,
+                // pauses/resumes gameTimer, then fades back in - same flow as the buttons.
+                StartCoroutine(TeleportWithFadeAndVideo(teleportTarget, cameraLocationA, cameraOrthoSizeA, teleportTargetVideoClip));
+            }
+            else
+            {
+                TeleportPlayerToPosition(teleportTarget);
+            }
         }
 
-        if (teleportSecondaryCamera)
+        // Skip the direct camera teleport here if the fade/video sequence above already
+        // handles it (TeleportWithFadeAndVideo calls TeleportSecondaryCamera internally),
+        // otherwise it would teleport the camera twice.
+        if (teleportSecondaryCamera && !(teleportTarget != null && useFadeAndVideoOnTeleportTarget))
         {
             TeleportSecondaryCamera(cameraLocationA, cameraOrthoSizeA);
         }

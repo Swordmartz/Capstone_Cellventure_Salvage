@@ -113,12 +113,12 @@ TextureImporter:
       name: IEC_NoBG_0
       rect:
         serializedVersion: 2
-        x: 26
-        y: 95
-        width: 740
-        height: 126
+        x: 20
+        y: 204
+        width: 2126
+        height: 306
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []

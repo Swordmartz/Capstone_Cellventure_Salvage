@@ -11,6 +11,8 @@ public class MalariaWinCondition : MonoBehaviour
     [Tooltip("Win when infected RBC percentage is at or below this value. 0.05 = 5%.")]
     [Range(0f, 1f)]
     [SerializeField] private float winInfectionThreshold = 0.05f;
+    public StarRatingManager starRatingManager;
+    public ValuesForStar rating;
 
     [Tooltip("If true, requires at least one RBC to exist before checking win " +
              "so the game can't 'win' before any RBCs have spawned in.")]
@@ -91,18 +93,26 @@ public class MalariaWinCondition : MonoBehaviour
 
     private void TriggerWinObject()
     {
-        if (objectToDeactivate == null && objectToReactivate == null)
-        {
-            Debug.LogWarning("MalariaWinCondition: neither objectToDeactivate nor " +
-                              "objectToReactivate is assigned in the Inspector.");
+        if (hasWon)
             return;
-        }
 
+        hasWon = true;
+
+        // Hide player UI
         if (objectToDeactivate != null)
             objectToDeactivate.SetActive(false);
 
+        // Show results screen
         if (objectToReactivate != null)
             objectToReactivate.SetActive(true);
+
+        // Evaluate and display star rating — this reads whatever RBC/WBC/ICE
+        // values ValuesForStar has accumulated from ReportOxygenDeliver /
+        // ReportEnemyKilled / ReportBarValue over the course of the actual
+        // playthrough, since this now only ever runs after we've confirmed
+        // zero enemies remain on the watched layer.
+        if (starRatingManager != null && rating != null)
+            starRatingManager.EvaluateScore(rating.OxygenDeliver, rating.EnemyKilled);
     }
 
     /// <summary>Call this if you need to reset the win state (e.g. restarting a level).</summary>
